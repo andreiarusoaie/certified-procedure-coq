@@ -1,0 +1,21 @@
+This file contains the style guidelines which are used for the Coq code in this project.
+These guidelines are meant to help maintaining the code on the long run and to offer a better
+understanding of it.
+
+1. Spacing & Alignment
+  - No TABS; all indents should be 2 (two) spaces
+  - Lines should not be longer than 99 characters
+  - Only Linux line breaks
+
+2. Capitalization
+  - Coq definitions use the Pascal Case capitalization
+  - Coq functions use the camel Case capitalization
+
+Info: http://msdn.microsoft.com/en-us/library/x2dbyw72%28v=vs.71%29.aspx
+
+3. Modular code
+  - Code should be modular. This is not easy to quantify, but make sure that:
+    + Each file should be focused on a single concept. Example: ProofSystem.v - contains the
+      definition of the proof system and some other stuff related strictly to it
+    + Use comments for documenting the code
+    + Use indentation in proofs
