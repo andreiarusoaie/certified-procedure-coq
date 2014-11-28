@@ -9,8 +9,7 @@ understanding of it.
 
 2. Capitalization
   - Coq definitions use the Pascal Case capitalization
-  - Coq functions use the camel Case capitalization
-
+  - Coq functions and constructors use the camel Case capitalization
 Info: http://msdn.microsoft.com/en-us/library/x2dbyw72%28v=vs.71%29.aspx
 
 3. Modular code
