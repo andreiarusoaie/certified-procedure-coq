@@ -2,8 +2,7 @@ Require Import List.
 Require Import Formula.
 
 Module ProofSystem .
-  Import Formula .
-
+  
   (* TODO: implement the functions below *)
   Fixpoint delta_S (phi : Formula) (S : System) : Formula := phi .
   Fixpoint delta_G (phi : Formula) (C : Rule) : Formula := phi .
