@@ -1,7 +1,9 @@
 Require Import List.
 Require Import Formula.
 
-Module ProofSystem .
+
+Module ProofSystem (T : TERM) .
+  Module Import F := MLFormula (T) .
   
   (* TODO: implement the functions below *)
   Fixpoint delta_S (phi : Formula) (S : System) : Formula := phi .
@@ -27,4 +29,4 @@ Module ProofSystem .
                         (phi : Formula) (phi' : Formula) (phi'' : Formula),
                    PS S G phi phi'' -> PS S G phi'' phi' -> PS S G phi phi' .
   
-End ProofSystem.
+End ProofSystem .
