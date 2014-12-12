@@ -14,7 +14,7 @@ public class Main {
 
         // parse command line options
         CommandLineOptions commandLineOptions = new CommandLineOptions();
-        JCommander jCommander = new JCommander(commandLineOptions, args);
+        new JCommander(commandLineOptions, args);
 
         // create context object
         Context context = new Context(commandLineOptions);
