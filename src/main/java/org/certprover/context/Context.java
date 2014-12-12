@@ -26,4 +26,16 @@ public class Context {
         this.goalsFileName = FileUtil.getAbsolutePath(commandLineOptions.getGoals());
         this.dataDomainFile = FileUtil.getAbsolutePath(commandLineOptions.getDomain());
     }
+
+    public String getDefinitionFileName() {
+        return definitionFileName;
+    }
+
+    public String getGoalsFileName() {
+        return goalsFileName;
+    }
+
+    public String getDataDomainFile() {
+        return dataDomainFile;
+    }
 }
