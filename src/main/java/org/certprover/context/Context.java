@@ -1,5 +1,8 @@
 package org.certprover.context;
 
+import org.certprover.options.CommandLineOptions;
+import org.certprover.utils.FileUtil;
+
 /**
  * Created by Andrei on 12/12/2014.
  * <p/>
@@ -16,5 +19,11 @@ public class Context {
         this.definitionFileName = definitionFileName;
         this.goalsFileName = goalsFileName;
         this.dataDomainFile = dataDomainFile;
+    }
+
+    public Context(CommandLineOptions commandLineOptions) {
+        this.definitionFileName = FileUtil.getAbsolutePath(commandLineOptions.getDefinition());
+        this.goalsFileName = FileUtil.getAbsolutePath(commandLineOptions.getGoals());
+        this.dataDomainFile = FileUtil.getAbsolutePath(commandLineOptions.getDomain());
     }
 }

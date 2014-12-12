@@ -8,10 +8,12 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile 'com.beust:jcommander:1.35'
 }
 
 jar {
     baseName = 'certprover';
     version = '0.1.0';
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest.attributes("Main-Class":"org.certprover.main.Main");
 }
