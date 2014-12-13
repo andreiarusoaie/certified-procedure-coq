@@ -6,10 +6,17 @@ import java.io.FileNotFoundException;
 /**
  * Created by Andrei on 12/12/2014.
  *
- * File custom utility functions.
+ * Customized utility functions.
  */
 public class FileUtil {
-    public static String getAbsolutePath(String file) {
-        return file == null ? null : new File(file).getAbsolutePath();
+    /**
+     * Compute the absolute file path.
+     * @param filename is the name of an *existing* file
+     * If filename does not exist, then the result is not guaranteed to be correct.
+     * If the filename is null, then the result is null.
+     * @return the absolute file path
+     */
+    public static String getAbsolutePath(String filename) {
+        return filename == null ? null : new File(filename).getAbsolutePath();
     }
 }
