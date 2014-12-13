@@ -2,6 +2,7 @@ package org.certprover.main;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import org.certprover.Prover;
 import org.certprover.context.Context;
 import org.certprover.options.CommandLineOptions;
 
@@ -32,5 +33,8 @@ public class Main {
 
         // create context object
         Context context = new Context(commandLineOptions);
+
+        // launch the prover
+        Prover prover = new Prover(context);
    }
 }
