@@ -16,9 +16,9 @@ public class Context {
     private String dataDomainFile;
 
     public Context(String definitionFileName, String goalsFileName, String dataDomainFile) {
-        this.definitionFileName = definitionFileName;
-        this.goalsFileName = goalsFileName;
-        this.dataDomainFile = dataDomainFile;
+        this.definitionFileName = FileUtil.getAbsolutePath(definitionFileName);
+        this.goalsFileName = FileUtil.getAbsolutePath(goalsFileName);
+        this.dataDomainFile = FileUtil.getAbsolutePath(dataDomainFile);
     }
 
     public Context(CommandLineOptions commandLineOptions) {
