@@ -7,6 +7,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 
 /**
@@ -15,15 +18,33 @@ import java.util.logging.Level;
 public class ContextTest {
     @Test
     public void buildCorrectContextTest() {
-        File def = new File("imp.k");
-        File goals = new File("sum.k");
+        String DEF = "def.k";
+        String GOALS = "goals.k";
 
-        String[] args = new String[] {"-d", def.getAbsolutePath(), "-g", goals.getAbsolutePath()};
+        // create files
+        try {
+            PrintWriter defWriter = new PrintWriter(DEF, "UTF-8");
+            defWriter.close();
+            PrintWriter goalsWriter = new PrintWriter(GOALS, "UTF-8");
+            goalsWriter.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        // parse command line arguments with given existing files
+        String[] args = new String[] {"-d", DEF, "-g", GOALS};
         CommandLineOptions commandLineOptions = new CommandLineOptions();
         new JCommander(commandLineOptions, args);
         Context context = new Context(commandLineOptions);
 
-        Assert.assertTrue(context.getDefinitionFileName().equals(def.getAbsolutePath()));
-        Assert.assertTrue(context.getGoalsFileName().equals(goals.getAbsolutePath()));
+        // delete files
+        new File(DEF).delete();
+        new File(GOALS).delete();
+
+        // final assertions
+        Assert.assertTrue(context.getDefinitionFileName().equals(new File(DEF).getAbsolutePath()));
+        Assert.assertTrue(context.getGoalsFileName().equals(new File(GOALS).getAbsolutePath()));
     }
 }
