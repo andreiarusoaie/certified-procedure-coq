@@ -8,10 +8,12 @@ import com.beust.jcommander.Parameter;
  * Command line options of the tool.
  */
 public class CommandLineOptions {
-    @Parameter(names = { "-d", "--definition" }, description = "The K definition of the language", required = true)
+    @Parameter(names = { "-d", "--definition" }, description = "The K definition of the language",
+               required = true, validateWith = FileArgumentValidator.class)
     private String definition;
 
-    @Parameter(names = { "-g", "--goals" }, description = "The goals to be proved", required = true)
+    @Parameter(names = { "-g", "--goals" }, description = "The goals to be proved", required = true,
+               validateWith = FileArgumentValidator.class)
     private String goals;
 
     @Parameter(names = { "-dom", "--domain" }, description = "The data domain file")
