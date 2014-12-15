@@ -19,4 +19,13 @@ public class FileUtil {
     public static String getAbsolutePath(String filename) {
         return filename == null ? null : new File(filename).getAbsolutePath();
     }
+
+    /**
+     * Strip extension from file name.
+     * @param filename the file name or its absolute path
+     * @return the file name without extension
+     */
+    public static String stripExtension(String filename) {
+        return filename == null ? null : new File(filename).getName().replaceAll("\\..*", "");
+    }
 }
