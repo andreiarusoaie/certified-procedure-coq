@@ -272,12 +272,12 @@ Fixpoint prove (n : nat) (G0 G S : list Rule)
                    match Map.get Formula Rule ChooseCirc phi Formula_beq  with
                      | Some circ => prove m G0
                                           ((get_two (phi => phi') (circ :: nil)
-                                                  Delta) ++ Rest)  (* rule, Sem -> Derivatives
+                                                  Delta) ++ Rest)  (* rule, Sem -> Derivatives *)
                                           S Valid Derivable Delta ChooseCirc
                                             
                      | None => if (bGetFromMap Derivable phi)
                                then prove m G0
-                                          ((delta (phi => phi') S Delta) ++ Rest)
+                                          ((get_two (phi => phi') S Delta) ++ Rest)
                                           S Valid Derivable Delta ChooseCirc
                                else false
                    end
