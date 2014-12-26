@@ -34,6 +34,7 @@ Import ImpModel .
   Notation "! B" := (bExpNeg B) (at level 75) .
   Notation "A && B" := (bExpAnd A B) .
   Notation "A <= B" := (bExpLeq A B) .
+  Notation "A < B" := (bExpLe A B) .
   Notation "A = B" := (bExpEq A B) .
   
   (* Stmts *)
@@ -45,7 +46,7 @@ Import ImpModel .
     | stmtSkip : Stmt .
   
   Notation "S1 ; S2" := (stmtList S1 S2) (at level 89, left associativity).
-(*  Notation "A := B" := (stmtAssign A B) (at level 88, right associativity). *)
+  Notation "A :== B" := (stmtAssign A B) (at level 88, right associativity).
   
   (* K sequence *)
   Inductive KSequence :=
@@ -78,7 +79,8 @@ Import ImpModel .
 
   
 
-Inductive Var : Type := varF : Z -> Var .
+Inductive Var : Type := varF : string -> Var .
+Scheme Equality for Var .
 (* Matching logic formulas *)
 Inductive Formula : Type :=
   | bp : Term -> Formula
@@ -107,6 +109,8 @@ Fixpoint Formula_beq (F1 : Formula) (F2 : Formula) : bool :=
       => orb (Formula_beq F11 F21) (Formula_beq F12 F22)
     | impliesF F11 F12, impliesF F21 F22
       => andb (Formula_beq F11 F21) (Formula_beq F12 F22)
+    | existsF V1 F1, existsF V2 F2 
+      => andb (Var_beq V1 V2) (Formula_beq F1 F2)
     | symF F1, symF F2 => SymBool_beq F1 F2
     | _, _ => false 
   end.
@@ -245,7 +249,7 @@ Fixpoint bGetFromMap (M : Map Formula bool) (phi : Formula) : bool :=
   end.
 
 
-Fixpoint get_two (r : Rule) (R : list Rule)
+Fixpoint getFromDoubleMap (r : Rule) (R : list Rule)
          (M : Map Rule (Map (list Rule) (list Rule))) :=
   match Map.get Rule (Map (list Rule) (list Rule)) M r Rule_beq with
     | Some v => match Map.get (list Rule) (list Rule) v R beqListRule with
@@ -255,6 +259,8 @@ Fixpoint get_two (r : Rule) (R : list Rule)
     | None => nil
   end.
                                                                 
+
+(* TODO: how do we ensure that the map arguments are sound? *)
                                                    
 Fixpoint prove (n : nat) (G0 G S : list Rule)
                (Valid : Map Formula bool) 
@@ -271,50 +277,106 @@ Fixpoint prove (n : nat) (G0 G S : list Rule)
                  else
                    match Map.get Formula Rule ChooseCirc phi Formula_beq  with
                      | Some circ => prove m G0
-                                          ((get_two (phi => phi') (circ :: nil)
+                                          ((getFromDoubleMap (phi => phi') (circ :: nil)
                                                   Delta) ++ Rest)  (* rule, Sem -> Derivatives *)
                                           S Valid Derivable Delta ChooseCirc
                                             
                      | None => if (bGetFromMap Derivable phi)
                                then prove m G0
-                                          ((get_two (phi => phi') S Delta) ++ Rest)
+                                          ((getFromDoubleMap (phi => phi') S Delta) ++ Rest)
                                           S Valid Derivable Delta ChooseCirc
                                else false
                    end
              end
   end.
 
+(*
 Extraction prove .
+*)
 
+
+
+
+
+
+
+
+
+(*
+RULE:
+<k> while i < n { i = i + 1 } </k> <env> i |-> I n |-> N </env> /\ I <= N
+=>
+(exists I') <k> .K </k> <env> i |-> I' n |-> N </env> /\ I' = N
+
+
+EXPLICIT:
+
+<k> while i < n { i = i + 1 } </k> 
+<env> i |-> I n |-> N </env> 
+/\ I <= N
+
+=>
+
+<k> if i < n then {i = i + 1; while i < n { i = i + 1 }} </k> 
+<env> i |-> I n |-> N </env> 
+/\ I <= N
+
+=>
+
+1) <k> .K </k> <env> i |-> I n |-> N <env> /\ (not (I < N) /\ I <= N)
+   => (implication)
+   (exists I') <k> .K </k> <env> i |-> I' n |-> N </env> /\ I' = N
+
+
+2) <k> i = i + 1 ; while i < n { i = i + 1 } </k> 
+   <env> i |-> I n |-> N </env> 
+   /\ I < N /\ I <= N
+
+   =>
+
+   <k> skip ~> while i < n { i = i + 1 } </k> 
+   <env> i |-> I + 1 n |-> N </env> 
+   /\ I < N /\ I <= N
+
+   =>
+
+   <k> while i < n { i = i + 1 } </k> 
+   <env> i |-> I + 1 n |-> N </env> 
+   /\ I < N /\ I <= N
+
+   => (circ)
+
+   (exists I') <k> .K </k> <env> i |-> I' n |-> N </env> /\ I' = N
+*)
 
 (* Testing *)
 Open Scope string_scope.
 Definition phi :=
   (andF
      (bp 
-        (cfg (kra (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1)))) kdot)
+        (cfg ((stmtWhile (($ "i") < ($ "n")) 
+                        ("i" :== ($ "i" + aExpSymInt (symZ 1)))) 
+                ~> kdot)
              (("i", symInt "I")::("n", symInt "N")::nil)))
      (symF (symLeqInt (symInt "I") (symInt "N")))).
 
 Definition phi' :=
+  (existsF (varF "I'")
   (andF
      (bp (cfg kdot
-             (("i", (symPlus (symInt "I") (symZ 1)))::("n", symInt "N")::nil)))
-     (symF (symLeqInt (symInt "N") (symInt "I")))).
+             (("i", (symInt "I'"))::("n", symInt "N")::nil)))
+     (symF (symEqInt (symInt "I'") (symInt "N"))))).
 
 
 Definition phi1 :=
   (andF
      (bp 
-        (cfg (kra
-                (stmtIfElse (bExpLe (aExpId "i") (aExpId "n"))
-                            (stmtList
-                               (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1)))
-                               (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1))))
-                            )
-                            stmtSkip
-                )
-                                 kdot)
+        (cfg ((stmtIfElse (($ "i") < ($ "n"))
+                          (( "i" :== ($ "i" + aExpSymInt (symZ 1))) ;
+                           (stmtWhile (($ "i") < ($ "n")) ("i" :== ($ "i" + aExpSymInt (symZ 1)))))
+                          stmtSkip
+              )
+                ~> kdot)
              (("i", symInt "I")::("n", symInt "N")::nil)))
      (symF (symLeqInt (symInt "I") (symInt "N")))).
 
@@ -324,23 +386,20 @@ Check stepIfElse.
 Definition phi21 :=
      (andF
         (bp 
-           (cfg (kra
-                   (stmtList
-                      (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1)))
-                      (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1))))
-                   )
-                   kdot)
+           (cfg ((("i" :== ($ "i" + aExpSymInt (symZ 1))) ;
+                  (stmtWhile (($ "i") < ($ "n")) ("i" :== ($ "i" + aExpSymInt (symZ 1)))))
+                   ~> kdot)
                 (("i", symInt "I")::("n", symInt "N")::nil)))
         (symF (symAnd
                  (symLeInt (symInt "I") (symInt "N"))
                  (symLeqInt (symInt "I") (symInt "N")))
-        ))
+     ))
 .
 
 Definition phi22 :=
      (andF
         (bp 
-           (cfg (kra stmtSkip kdot)
+           (cfg (stmtSkip ~> kdot)
                 (("i", symInt "I")::("n", symInt "N")::nil)))
         (symF (symAnd
                  (symNeg (symLeInt (symInt "I") (symInt "N")))
@@ -351,145 +410,119 @@ Definition phi22 :=
 Check stepList.
    
 Definition phi3 := 
-     (andF
-        (bp 
-           (cfg (kra
-                   
-                   (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1)))
-                   (kra
-                      (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1))))
-                      kdot)
-                   )
-                (("i", symInt "I")::("n", symInt "N")::nil)))
-        (symF (symAnd
-                 (symLeInt (symInt "I") (symInt "N"))
-                 (symLeqInt (symInt "I") (symInt "N")))
-        ))
+  (andF
+     (bp 
+        (cfg (("i" :== ($ "i" + aExpSymInt (symZ 1))) ~>
+              ((stmtWhile (($ "i") < ($ "n")) ("i" :== ($ "i" + aExpSymInt (symZ 1))))
+                   ~> kdot)
+             )
+     (("i", symInt "I")::("n", symInt "N")::nil)))
+(symF (symAnd
+         (symLeInt (symInt "I") (symInt "N"))
+         (symLeqInt (symInt "I") (symInt "N")))
+  ))
 .
 
 
 Check stepAssign.
 
 Definition phi4 :=
-     (andF
-        (bp 
-           (cfg (kra
-                   stmtSkip
-                   (kra
-                      (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1))))
-                      kdot)
-                )
-                (("i", (symPlus (symInt "I") (symZ 1)))::("n", symInt "N")::nil)))
-        (symF (symAnd
-                 (symLeInt (symInt "I") (symInt "N"))
-                 (symLeqInt (symInt "I") (symInt "N")))
-        )).
+  (andF
+     (bp 
+        (cfg 
+           (stmtSkip ~>
+                     ((stmtWhile ((aExpId "i") < (aExpId "n")) ("i" :== ($ "i" + aExpSymInt (symZ 1)))) 
+                        ~> kdot)
+           )
+           (("i", (symPlus (symInt "I") (symZ 1)))::("n", symInt "N")::nil)))
+     (symF (symAnd
+              (symLeInt (symInt "I") (symInt "N"))
+              (symLeqInt (symInt "I") (symInt "N")))
+  )).
 
 
-Definition phi5 := 
-     (andF
-        (bp 
-           (cfg
-              (kra
-                 (stmtWhile (bExpLe (aExpId "i") (aExpId "n")) (stmtAssign "i" ($ "i" + aExpSymInt (symZ 1))))
-                 kdot)
-                
-              (("i", (symPlus (symInt "I") (symZ 1)))::("n", symInt "N")::nil)))
-        (symF (symAnd
-                 (symLeInt (symInt "I") (symInt "N"))
-                 (symLeqInt (symInt "I") (symInt "N")))
-        )).
+Definition phi5 :=
+  (andF
+     (bp 
+        (cfg 
+           ((stmtWhile ((aExpId "i") < (aExpId "n")) ("i" :== ($ "i" + aExpSymInt (symZ 1)))) 
+              ~> kdot)
+           (("i", (symPlus (symInt "I") (symZ 1)))::("n", symInt "N")::nil)))
+     (symF (symAnd
+              (symLeInt (symInt "I") (symInt "N"))
+              (symLeqInt (symInt "I") (symInt "N")))
+  )).
 
 
-Lemma tr1 : exists phi', Sem (phi => phi') .
-  exists phi1.
+Lemma tr1 : Sem (phi => phi1) .
   apply stepWhile.
 Qed.
 
 
-Lemma tr21 : exists phi', Sem (phi1 => phi').
-  exists phi21.
+Lemma tr21 : Sem (phi1 => phi21).
   apply stepIfThen.
   simpl. trivial.
 Qed.
 
-Lemma tr22 : exists phi', Sem (phi1 => phi').
-  exists phi22.
+Lemma tr22 : Sem (phi1 => phi22).
   apply stepIfElse.
   simpl. trivial.
 Qed.
 
-Lemma tr3 : exists phi', Sem (phi21 => phi') .
-  exists phi3.
+Lemma tr3 : Sem (phi21 => phi3) .
   apply stepList.
 Qed.
 
-Lemma tr4 : exists phi', Sem (phi3 => phi') .
-  exists phi4.
+Lemma tr4 : Sem (phi3 => phi4) .
   eapply stepAssign; simpl; trivial.
 Qed.
 
-Lemma tr5 : exists phi', Sem (phi4 => phi') .
-  exists phi5.
+Lemma tr5 : Sem (phi4 => phi5) .
   eapply stepSkip.
 Qed.
 
 
-(*
-               (Valid : Map Formula bool)
-               (Derivable : Map Formula bool)
-               (Delta : Map Rule (Map (list Rule) (list Rule)))
-               (ChooseCirc : Map Formula Rule) :=
 
- *)
-Definition Derivable1 : Map Formula bool := (phi, true)
-                       :: (phi1, true)
-                       :: (phi21, true)
-                       :: (phi3, true)
-                       :: (phi4, true)
-                       :: nil.
 
-Check (nil, (phi1 => phi') :: nil) :: nil .
+
+
+
+(* Testing *)
+
+Definition Derivable1 : Map Formula bool := 
+  (phi, true) :: 
+  (phi1, true) ::
+  (phi21, true) :: 
+  (phi3, true) :: 
+  (phi4, true)  :: 
+  nil.
 
 Definition Delta1 : Map Rule (Map (list Rule) (list Rule)) :=
-        (phi => phi', (nil, (phi1 => phi') :: nil) :: nil)
-     :: (phi1 => phi', (nil, (phi21 => phi') :: (phi22 => phi') :: nil) :: nil)
-     :: (phi21 => phi', (nil, (phi3 => phi') :: nil) :: nil)
-     :: (phi3 => phi', (nil, (phi4 => phi') :: nil) :: nil)
-     :: (phi4 => phi', (nil, (phi5 => phi') :: nil) :: nil)
-     :: (phi5 => phi', ((phi => phi') :: nil, (phi' => phi') :: nil) :: nil)
-     :: nil.
+  (phi => phi', (nil, (phi1 => phi') :: nil) :: nil) ::
+  (phi1 => phi', (nil, (phi21 => phi') :: (phi22 => phi') :: nil) :: nil) ::
+  (phi21 => phi', (nil, (phi3 => phi') :: nil) :: nil)  :: 
+  (phi3 => phi', (nil, (phi4 => phi') :: nil) :: nil) :: 
+  (phi4 => phi', (nil, (phi5 => phi') :: nil) :: nil) :: 
+  (phi5 => phi', ((phi => phi') :: nil, (phi' => phi') :: nil) :: nil) :: 
+  nil .
 
 
 Definition Valid1 : Map Formula bool :=
-  (impliesF phi1 phi', true) :: nil .
-Definition Valid2 : Map Formula bool :=
-  (impliesF phi5 phi', true) :: nil .
+  (impliesF phi22 phi', true) :: 
+  (impliesF phi' phi', true)  ::
+  nil .
 
 
 
 Definition ChooseCirc1 : Map Formula Rule :=
-  (phi5, phi => phi') :: nil.
-Definition ChooseCirc2 : Map Formula Rule :=
-  (phi1, phi => phi') :: nil.
-
+  (phi5, phi => phi') :: 
+  nil.
 
 
 Print prove.
 
 
-Eval compute in (prove 10
+Eval compute in (prove 8
                        ((phi => phi') :: nil)
                        ((phi1 => phi') :: nil)
                        nil Valid1 Derivable1 Delta1 ChooseCirc1) .
-
-(*
-Eval compute in bGetFromMap Valid2 (impliesF phi1 phi') .
-Eval compute in Map.get Formula Rule ChooseCirc2 phi1 Formula_beq.
-Eval compute in (delta (phi => phi') ((phi => phi') :: nil) Delta1).
-*)
-
-Eval compute in (prove 10
-                       ((phi => phi') :: nil)
-                       ((phi1 => phi') :: nil)
-                       nil Valid2 Derivable1 Delta1 ChooseCirc1) .
