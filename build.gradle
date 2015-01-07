@@ -4,11 +4,16 @@ version = '1.0'
 
 repositories {
     mavenCentral()
+
+    maven {
+        url "http://office.runtimeverification.com:8888/repository/snapshots/"
+    }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile 'com.beust:jcommander:1.35'
+    compile group: 'org.kframework.k', name: 'parent', version: '3.6-SNAPSHOT'
 }
 
 jar {
