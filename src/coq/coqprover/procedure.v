@@ -86,13 +86,13 @@ Definition SDerivative (phi phi' phi1 : MLFormula) :=
        entails tau rho (phi ==> phi') /\ (Path_eq_dec tau1 (PathFrom tau 1))).
 
 (* Proper S-Derivative  phi1 => phi'  phi => phi' *)
-Definition ProperSDerivative (phi phi' phi1 : MLFormula) :=
+Definition properSDerivative (phi phi' phi1 : MLFormula) :=
   SDerivative phi phi' phi1 /\
   (exists tau, exists rho, entails tau rho (phi ==> phi')) .
 
 (* S-Derivable *)
 Definition SDerivable (F : APRLFormula) :=
-  exists (phi1 : MLFormula), ProperSDerivative (Lhs F) (Rhs F) phi1 .
+  exists (phi1 : MLFormula), properSDerivative (Lhs F) (Rhs F) phi1 .
 
 (* Complete *)
 Definition completeSetsOfDer (Δ : list APRLFormula) (phi phi' : MLFormula):=
@@ -101,7 +101,7 @@ Definition completeSetsOfDer (Δ : list APRLFormula) (phi phi' : MLFormula):=
                              
       
 
-(* FOL encoding *)
+(* utils for FOL encoding *)
 Fixpoint bp (phi : MLFormula) : list MLFormula :=
   match phi with
     | T => nil
@@ -113,6 +113,7 @@ Fixpoint bp (phi : MLFormula) : list MLFormula :=
     | Implies phi' phi'' => (bp phi') ++ (bp phi'') 
     | logic.Exists v phi' => (bp phi')
   end.
+
 
 Fixpoint conjGen (L : list MLFormula) : MLFormula :=
   match L with
