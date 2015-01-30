@@ -1,32 +1,71 @@
+Require Import JMeq .
 Require Import List .
 Require Import String .
 Require Import ZArith.
 Require Import ListSet.
 
+
 Inductive Sort : Type :=
 | Bool : Sort
-| Int : Sort
 | String : Sort
-(*
-| Float : SortName
-| Map : SortName
-| List : SortName
-| Bag : SortName
-| Array : SortName
-*)
+| Int : Sort
 .
+
+(*
+Inductive Sort : Type :=
+| Bool : Sort
+| String : Sort
+| Int : Sort
+| Id : Sort 
+| AExp : Sort
+| BExp : Sort
+| Stmt : Sort
+.
+*)
 
 Inductive Operation : Type :=
 | plus : Operation
 | land : Operation
+| int : Z -> Operation
 . 
+
+
+(*
+Inductive Operation : Type :=
+| plus : Operation
+| div : Operation
+| leq : Operation
+| land : Operation
+| lnot : Operation
+| assgn : Operation
+| ifthenelse : Operation
+| while : Operation
+| stmtlist : Operation
+. 
+ *)
+
+Import ListNotations.
 
 Definition opSort (o : Operation) : (list Sort) * Sort :=
   match o with
-    | plus => ((Int :: Int :: nil), Int) 
-    | land => ((Bool :: Bool :: nil), Bool) 
+    | plus => ([Int; Int], Int) 
+    | land => ([Bool; Bool], Bool)
+    | int z => ([], Int)
   end.
-    
+(*
+Definition opSort (o : Operation) : (list Sort) * Sort :=
+  match o with
+    | plus => ([AExp; AExp], AExp) 
+    | div => ([AExp; AExp], AExp) 
+    | leq => ([AExp; AExp], BExp)
+    | lnot => ([BExp], BExp)
+    | land => ([BExp; BExp], BExp)
+    | assgn => ([Id; AExp], Stmt)
+    | ifthenelse => ([BExp; Stmt; Stmt], Stmt)
+    | while => ([BExp; Stmt], Stmt)
+    | stmtlist => ([Stmt; Stmt], Stmt)
+  end.
+ *)  
 Record Var :=
   var {
       vName : string;
@@ -44,7 +83,17 @@ Inductive Term : Type :=
 | term : Operation -> list Term -> Term
 .
 
+Inductive WellTyped : Term -> Sort -> Type :=
+| wt_var : forall v, WellTyped (tVar v) (vSort v)
+| wt_term : forall lt o,
+    WellTyped_list lt (fst (opSort o)) ->
+    WellTyped (term o lt) (snd (opSort o)) with
 
+WellTyped_list : list Term -> list Sort -> Type :=
+| wt_nil : WellTyped_list nil nil
+| wt_cons : forall t ts s ss,
+              WellTyped t s -> WellTyped_list ts ss -> WellTyped_list (t::ts) (s::ss).
+                          
 Definition string_eq (s1 s2 : string) :=
   andb (prefix s1 s2) (prefix s2 s1) .
 
@@ -55,33 +104,50 @@ Section Semantics.
     match s with
       | Int => Z
       | Bool => bool
-      | String =>  string
-    end.
-
+      | String => string
+    end.  
   
-  
-  Fixpoint operationSemType  (inputs : list Sort)(output : Sort) :
+  Fixpoint operationSemType' (inputs : list Sort) :
     Type := match inputs with
-              | nil => sortSem output
-              | i :: is' => sortSem i -> operationSemType is' output
+              | nil => unit
+              | i :: is' => (sortSem i * operationSemType' is')%type
             end.
 
+  Definition operationSemType  (inputs : list Sort)(output : Sort) : Type :=
+    operationSemType' inputs -> sortSem output.
+
+Compute operationSemType' (fst (opSort plus)).
+  
+  (* semantics for each operation *)
   Definition operationSem (o : Operation) :
     operationSemType (fst (opSort o)) (snd (opSort o)) :=
-    match o with
-      | plus => Zplus
-      | land => andb
+    match o  as o0 return (operationSemType (fst (opSort o0)) (snd (opSort o0)))with
+      | plus => fun xy : Z*(Z*unit) => Zplus (fst xy) (fst (snd xy))
+      | land => fun xy : bool*(bool*unit) => andb (fst xy) (fst (snd xy))
+      | int z => fun _:unit => z
     end.
 
-  Compute operationSem plus 2%Z 5%Z .
+  Eval compute in operationSemType (fst (opSort plus)) (snd (opSort plus)).
+
+  Compute operationSem plus (2%Z, (5%Z, tt)) .
   
   Fixpoint termSemType (term : Term) : Type :=
     match term with
       | tVar v => sortSem (vSort v)
-      | term o _ => operationSemType (fst (opSort o)) (snd (opSort o))
+(*      | term o _ => operationSemType (fst (opSort o)) (snd (opSort o)) *)
+      | term o _ => sortSem (snd (opSort o))
     end.
 
-  (*
+  Eval compute in termSemType (tVar (var "x" Int)) .
+  Eval compute in sortSem (vSort (var "x" Int)).
+  Check term (int 1) nil.
+
+  Check operationSem (int 1) tt.
+  
+  
+  Eval compute in termSemType (term plus ((term (int 1) nil)::(term (int 2) nil) ::nil )) .
+
+(*  
 Definition    TermSem (rho : forall (x : Var), sortSem (vSort x)) (term : Term) : termSemType term.
 Proof.
   destruct term.
@@ -90,162 +156,50 @@ Show Proof.
 Defined.
 *)
 
-  
-  Fixpoint TermSem (rho : forall (x : Var), sortSem (vSort x)) (term : Term) : termSemType term :=
-    match term  as t return (termSemType t) with
-      | tVar v => rho v
-      | term o args => operationSem o (map (TermSem rho) args)
+
+  Definition termSort (term : Term) : Sort :=
+    match term with
+      | tVar v => vSort v
+      | term o _ => snd (opSort o)
     end.
-End Semantics.
 
-
-(* Functions *)
-Record Fun : Type :=
-  func {
-      fname : string;
-      ftype : Type;
-      fargs : list Set
-    }.
-
-(* Algebra *)
-Parameter Algebra : list Fun .
-
+Print WellTyped.
   
+Program Fixpoint termSem (rho : forall (x : Var), sortSem (vSort x))
+        (term : Term)(s : Sort)(wt : WellTyped term s(*termSort term*)) :
+  termSemType term := match wt with
+                        | wt_var v => rho v
+                        | wt_term lt o wt' => operationSem o (termSem_list rho o lt wt')
 
-Definition f := func "+Int" Z (Z :: Z :: nil).
-Definition zero := func "0" Z nil.
+                      end
 
-Eval compute in (f :: zero :: nil).
+with termSem_list
+       (rho : forall (x : Var), sortSem (vSort x))
+       (o : Operation) (terms : list Term)
+       (wt' : WellTyped_list terms (fst (opSort o)))
+     :
+       operationSemType' (fst (opSort o)) :=
+       match wt' in (WellTyped_list l0 l1) return (operationSemType' l1) with
+         | wt_nil => tt
+         | wt_cons t' ts' _ _ wt1 wts2 => (
+             termSem rho t' _ wt1,
+             (termSem_list rho o ts' wts2) )
+       end.
 
+Next Obligation of termSem_list.
+apply (termSem rho t' wt1).
 
-(* don't go below yet *)
-
-(* Isn't this already defined? *)
-Definition string_eq (s1 s2 : string) :=
-  andb (prefix s1 s2) (prefix s2 s1) .
-
-Fixpoint list_string_eq (l1 l2 : list string) : bool :=
-  match l1, l2 with
-    | nil, nil => true
-    | a :: l, a' :: l' => andb (string_eq a a') (list_string_eq l l')
-    | _, _ => false
-  end.
-
-Fixpoint getListOfTermsSorts (l : list Term) : list string :=
-  match l with
-    | a :: rest => (getSort a) ::
-                               (getListOfTermsSorts rest)
-    | nil => nil
-  end.
-
-(*
-Open Scope string_scope.
-Eval compute in prefix "a" "a".
-
-Eval compute in list_string_eq ("a" :: "ab" :: nil ) (nil) .
-Eval compute in list_string_eq ("a" :: "ab" :: nil ) ("a" :: "b" :: nil) .
-Eval compute in list_string_eq ("a" :: "ab" :: nil ) ("a" :: "ab" :: nil) .
-
-
-(* Well-formed terms 
-TODO: fix recursive
-*)
-Fixpoint wft (T : Term) : bool :=
-  match T with
-    | tvar v => true
-    | term o args => (list_string_eq (opargs o)
-                           (getListOfTermsSorts args))
-  end.
+  destruct wt'.
+  Show Proof.
+  apply tt.
+  
+  revert rho o .
+inversion wt'.
+Show Proof.  
+simpl in *.
+intros rho o.
+apply tt.
+Qed.
 
 
-Definition x := var "x" "BExp" .
-Eval compute in getSort (tvar x).
-
-Definition zero := op "zero" "AExp" nil .
-Definition plus := op "+" "AExp" ("AExp"::"AExp"::nil) .
-Eval compute in getSort (term zero nil).
-Eval compute in getSort (term plus ((term zero nil)::(tvar x)::nil)).
-
-Eval compute in wft (term plus ((term zero nil)::(tvar x)::nil)).
-
-
-
-(*
-(* Many-sorted signature *)
-Record Signature :=
-  sig {
-      sorts : list Sort; (* really needed? *)
-      ops : list (OpSymbol * ((list Sort) * Sort))
-    } .
-
-(* Σ-Terms *)
-Inductive Term : Type :=
-| tcst : OpSymbol -> Term
-| tvar : Var -> Term
-| tcom : OpSymbol -> list Term -> Term .
-
-
-(* TODO: Σ-Algebra ? *)
-Record Algebra :=
-  alg {
-      carriers: list Set;
-      functions: list Type
-    }.
-
-
-
-
-
-(* TODO: Well-formed sigma terms *)
-(*
-Fixpoint wf (Σ : Signature) (t : Term) : bool := TODO
-*)
-
-(*
-Variables a b c : Sort .
-Variables s t : OpSymbol .
-Eval compute in sig (a :: b :: nil)
-                    ((s, ((a :: c :: nil), b)) ::
-                    (t, ((a :: nil), c)) :: nil) .
-Definition S := sig (a :: b :: nil)
-                    ((s, ((a :: c :: nil), b)) ::
-                                               (t, ((a :: nil), c)) :: nil) .
-
-Eval compute in ops S .
-
-(*
-
-Inductive AExp :=
-| int : Z -> AExp
-| id : string -> AExp
-| add : AExp -> AExp -> AExp .
-
-Inductive BExp :=
-| bl : bool -> BExp
-| less : AExp -> AExp -> BExp 
-| and : BExp -> BExp -> BExp 
-| not : BExp -> BExp .
-
-Inductive Stmt :=
-| skip : Stmt
-| ifStmt : BExp -> Stmt -> Stmt -> Stmt
-| while : BExp -> Stmt -> Stmt
-| stmts : Stmt -> Stmt -> Stmt .
-
-
-
-(* Semantics of sorts and operations *)
-Parameter sortSem : list Sort -> Type .
-Parameter opsSem : list (Symbol * ((list Sort) * Sort)) -> Type .
-
-(* ΣAlgebra *)
-Record ΣAlgebra (sigma : Signature) : Type :=
-  alg {
-      carrierSets : (sortSem (sorts sigma));
-      functions : (opsSem (operations sigma))
-    } .
-
-
-
-*)*)
-*)*)
+End Semantics.
