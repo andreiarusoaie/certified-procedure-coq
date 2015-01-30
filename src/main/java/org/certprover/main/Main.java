@@ -36,5 +36,6 @@ public class Main {
 
         // launch the prover
         Prover prover = new Prover(context);
+        prover.start();
    }
 }
