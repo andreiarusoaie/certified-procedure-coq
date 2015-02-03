@@ -98,19 +98,19 @@ Module Soundness (F : Formulas).
                                     /\ 
                                     Path_i tau 1 = tau1).
 *)
-    Definition SDerSet (жд : list RLFormula) 
+    Definition SDerSet (Delta : list RLFormula) 
                (F : RLFormula) : RLFormula -> Prop :=
-      fun f => In f жд -> SDer f F.
+      fun f => In f Delta -> SDer f F.
       
 
-    Definition sem_SDerSet (жд : list RLFormula) 
+    Definition sem_SDerSet (Delta : list RLFormula) 
                (F : RLFormula) : Path -> Prop :=
-      fun tau => exists f, SDerSet жд F f /\ sem_RL f tau .
+      fun tau => exists f, SDerSet Delta F f /\ sem_RL f tau .
 
-    Definition completeSDerSet (жд : list RLFormula) 
+    Definition completeSDerSet (Delta : list RLFormula) 
                (F : RLFormula) : Prop :=
       forall f, 
-        SDer f F -> forall tau, sem_RL f tau -> sem_SDerSet жд F tau .
+        SDer f F -> forall tau, sem_RL f tau -> sem_SDerSet Delta F tau .
       
     Definition SDerivable (phi : MLFormula) : Prop :=
       exists gamma rho, SatML rho gamma phi /\ 
