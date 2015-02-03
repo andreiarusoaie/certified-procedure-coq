@@ -2,23 +2,35 @@ Module Type Formulas.
 
   Parameter Model : Type .
   Parameter Term : Type .
+  Parameter Var : Type .
   Parameter FOLFormula : Type .
+
   Parameter MLFormula : Type .
+  Parameter MLFormula_eq_dec : MLFormula -> MLFormula -> Prop .
+  Parameter AndML : MLFormula -> MLFormula -> MLFormula .
+  Parameter ExistsML : list Var -> MLFormula -> MLFormula .
+
   Definition Valuation : Type := Term -> Model .
   Parameter folenc : MLFormula -> FOLFormula .
+  Parameter FolToML : FOLFormula -> MLFormula .
   Parameter SatFOL : forall (rho : Valuation)
                             (phi : FOLFormula) ,Prop .
   Parameter SatML : forall (rho : Valuation) (gamma : Model)
                            (phi : MLFormula) , Prop .
+
+  Parameter FreeVars : list MLFormula -> list Var .
 
   Axiom Prop1 : forall varphi rho,
                   SatFOL rho (folenc varphi) <->
                   exists gamma, SatML rho gamma varphi .
 End Formulas.
 
+
 Module Soundness (F : Formulas).
   Require Import List .
   Import F.
+
+  Import ListNotations.
   
   Definition RLFormula := (MLFormula * MLFormula)%type .
   Notation "L => R" := (L, R) (at level 100).
@@ -32,41 +44,88 @@ Module Soundness (F : Formulas).
     In (phi => phi') S ->
     (SatML rho gamma phi) /\ (SatML rho gamma' phi').
 
-    Notation "g =>S g'" := (TS_S g g') (at level 100).
+    Notation "f =>S f'" := (TS_S f f') (at level 100).
 
     Definition Path := nat -> option Model.
     
-    Definition wfPath (p : Path) : Prop :=
-      (forall i j, i < j -> p i = None -> p j = None)
+    Definition wfPath (tau : Path) : Prop :=
+      (forall i j, i < j -> tau i = None -> tau j = None)
       /\
-      (forall i, exists gamma gamma', p i = Some gamma /\ p (i+1) = Some gamma' /\ (gamma =>S gamma'))
-    .  
-     
-    
-    Definition isInfinite (p : Path) : Prop :=
-      forall i, p i <> None.
+      (forall i, exists gamma gamma', 
+         tau i = Some gamma 
+         /\ 
+         tau (i+1) = Some gamma' /\ (gamma =>S gamma'))
+    .
+         
+    Definition isInfinite (tau : Path) : Prop :=
+      forall i, tau i <> None.
 
-    Definition Path_i (p : Path) (i : nat) : Path :=
-      fun j => p (i+j).
+    Definition Path_i (tau : Path) (i : nat) : Path :=
+      fun j => tau (i+j).
 
-    Definition startsFrom (p : Path) (phi : MLFormula) (rho : Valuation): Prop :=
+    Definition startsFrom (p : Path) (rho : Valuation) 
+               (phi : MLFormula) : Prop :=
       exists gamma, p 0 = Some gamma -> SatML rho gamma phi .
 
 
     Notation lhs := fst .
     Notation rhs := snd .
 
-    Definition SatRL (tau : Path) (rho : Valuation) (r : RLFormula) : Prop :=
-      (startsFrom tau (lhs r) rho /\ exists i gamma, tau i = Some gamma -> SatML rho gamma (rhs r)) \/ isInfinite tau .
+    Definition SatRL (tau : Path) (rho : Valuation) 
+               (F : RLFormula) : Prop :=
+      (startsFrom tau rho (lhs F) 
+       /\ 
+       exists i gamma, tau i = Some gamma -> SatML rho gamma (rhs F)) 
+      \/ isInfinite tau .
 
-    Definition SatTS_S (r : RLFormula) : Prop :=
-      forall tau rho, startsFrom tau (lhs r) rho -> SatRL tau rho r .
+    Definition SatTS_S (F : RLFormula) : Prop :=
+      forall tau rho, startsFrom tau rho (lhs F) -> SatRL tau rho F .
 
-    Definition semRL (r : RLFormula) : Path -> Prop :=
-      fun p => exists rho, SatRL p rho r .
+    Definition sem_RL (F : RLFormula) : Path -> Prop :=
+      fun tau => exists rho, SatRL tau rho F .
     
-  End RLSemantics.
+    Definition SDer (f : RLFormula) (F : RLFormula) : Prop :=
+      MLFormula_eq_dec (rhs f) (rhs F) ->
+      forall tau1 rho, SatRL tau1 rho (lhs f => rhs f) -> 
+                       (exists tau, SatRL tau rho (lhs F => rhs F) 
+                                    /\ 
+                                    Path_i tau 1 = tau1).
+(*
+    Definition SDer (phi : MLFormula) (phi' : MLFormula)
+               (phi1 : MLFormula) : Prop :=
+      forall tau1 rho, SatRL tau1 rho (phi1 => phi') -> 
+                       (exists tau, SatRL tau rho (phi => phi') 
+                                    /\ 
+                                    Path_i tau 1 = tau1).
+*)
+    Definition SDerSet (жд : list RLFormula) 
+               (F : RLFormula) : RLFormula -> Prop :=
+      fun f => In f жд -> SDer f F.
+      
 
-  
+    Definition sem_SDerSet (жд : list RLFormula) 
+               (F : RLFormula) : Path -> Prop :=
+      fun tau => exists f, SDerSet жд F f /\ sem_RL f tau .
+
+    Definition completeSDerSet (жд : list RLFormula) 
+               (F : RLFormula) : Prop :=
+      forall f, 
+        SDer f F -> forall tau, sem_RL f tau -> sem_SDerSet жд F tau .
+      
+    Definition SDerivable (phi : MLFormula) : Prop :=
+      exists gamma rho, SatML rho gamma phi /\ 
+                        exists gamma', TS_S gamma gamma' .
+
+    Definition SynSDerML (phi : MLFormula) : MLFormula -> Prop :=
+      fun f =>  exists F, In F S ->
+                          f = (AndML 
+                                 (ExistsML (FreeVars [lhs F; rhs F]) 
+                                           (FolToML (folenc (AndML (lhs F) phi))))
+                                 (rhs F)). 
+    
+    Definition SynSDerRL (F : RLFormula) : RLFormula -> Prop :=
+      fun f => (rhs F) = (rhs f) /\ SynSDerML (lhs F) (lhs f) .
+
+  End RLSemantics.
     
 End Soundness.
