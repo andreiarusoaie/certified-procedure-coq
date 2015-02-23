@@ -52,6 +52,11 @@ Module Type Formulas.
   (* Define SatFOL with model M *)
   Axiom simplEnc : forall phi rho,
                      SatFOL rho (FOLEquiv (folenc (FolToML (folenc phi))) (folenc phi)).
+  Axiom FOLEquiv_comm : forall phi phi' rho,
+                          SatFOL rho (FOLEquiv phi phi') <-> SatFOL rho (FOLEquiv phi' phi).
+  
+  Axiom rewriteEquiv : forall phi phi' rho,
+                         SatFOL rho phi -> SatFOL rho (FOLEquiv phi' phi) -> SatFOL rho phi'.
   Axiom SatFOL_equiv : forall phi phi' rho,
                          SatFOL rho (FOLEquiv phi phi') ->
                          SatFOL rho phi -> SatFOL rho phi'. 
@@ -256,8 +261,7 @@ Module Soundness (F : Formulas).
         + clear x H0.
           assert (H0 : exists gamma0,  SatML gamma0 (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ [])) (FolToML (folenc (AndML phi_l phi)))).
           * apply Prop1.
-           Admitted.
-(*            rewrite simplEnc.
+            apply rewriteEquiv with (phi := (folenc (AndML phi_l phi))).
             apply Prop1.
             exists gamma.
             rewrite SatMLAnd.
@@ -278,8 +282,15 @@ Module Soundness (F : Formulas).
             apply Assumption_1 with (phi := phi).
             assumption.
             assumption.
+            apply simplEnc.
           * apply Prop1 in H0.
-            rewrite simplEnc in H0.
+            assert (H0' : SatFOL (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ []))
+                                 (folenc (AndML phi_l phi))).
+            apply rewriteEquiv with (phi := (folenc (FolToML (folenc (AndML phi_l phi))))).
+            assumption.
+            apply FOLEquiv_comm.
+            apply simplEnc.
+            clear H0.
             assert (H1 : SatML gamma' (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ [])) phi_r ).
             apply SatExtend.
             split.
@@ -291,10 +302,10 @@ Module Soundness (F : Formulas).
             left.
             assumption.
             apply Prop3.
-            split; assumption.
+            assumption.
+            assumption.
     Qed.
-  *)        
-
+    
     Lemma CoverageByDerivatives':
       forall tau rho phi,
         wfPath tau -> startsFrom tau rho phi
