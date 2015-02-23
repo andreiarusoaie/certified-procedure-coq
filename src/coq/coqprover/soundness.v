@@ -55,11 +55,10 @@ Module Type Formulas.
   Axiom FOLEquiv_comm : forall phi phi' rho,
                           SatFOL rho (FOLEquiv phi phi') <-> SatFOL rho (FOLEquiv phi' phi).
   
-  Axiom rewriteEquiv : forall phi phi' rho,
-                         SatFOL rho phi -> SatFOL rho (FOLEquiv phi' phi) -> SatFOL rho phi'.
   Axiom SatFOL_equiv : forall phi phi' rho,
+                         SatFOL rho phi ->
                          SatFOL rho (FOLEquiv phi phi') ->
-                         SatFOL rho phi -> SatFOL rho phi'. 
+                         SatFOL rho phi'. 
   
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
   Parameter FreeVars : MLFormula -> list Var .
@@ -242,7 +241,6 @@ Module Soundness (F : Formulas).
     Proof.
       intros gamma gamma' rho phi (H1 & H2).
       unfold TS_S in H1.
-
       destruct H1 as (phi_l & phi_r & rho' & H & H' & H'').
       exists (phi_l => phi_r).
       split.
@@ -261,7 +259,7 @@ Module Soundness (F : Formulas).
         + clear x H0.
           assert (H0 : exists gamma0,  SatML gamma0 (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ [])) (FolToML (folenc (AndML phi_l phi)))).
           * apply Prop1.
-            apply rewriteEquiv with (phi := (folenc (AndML phi_l phi))).
+            apply SatFOL_equiv with (phi := (folenc (AndML phi_l phi))).
             apply Prop1.
             exists gamma.
             rewrite SatMLAnd.
@@ -282,13 +280,13 @@ Module Soundness (F : Formulas).
             apply Assumption_1 with (phi := phi).
             assumption.
             assumption.
+            apply FOLEquiv_comm.
             apply simplEnc.
           * apply Prop1 in H0.
             assert (H0' : SatFOL (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ []))
                                  (folenc (AndML phi_l phi))).
-            apply rewriteEquiv with (phi := (folenc (FolToML (folenc (AndML phi_l phi))))).
+            apply SatFOL_equiv with (phi := (folenc (FolToML (folenc (AndML phi_l phi))))).
             assumption.
-            apply FOLEquiv_comm.
             apply simplEnc.
             clear H0.
             assert (H1 : SatML gamma' (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ [])) phi_r ).
