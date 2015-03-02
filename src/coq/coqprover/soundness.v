@@ -35,6 +35,14 @@ Module Type Formulas.
   Axiom SatFOLTrue: forall rho, SatFOL rho TrueFOL.
   Axiom SatFOLNot : forall rho phi,
                       SatFOL rho (NotFOL phi) <-> ~ SatFOL rho phi.
+  Axiom FOLEquiv_comm : forall phi phi' rho,
+                          SatFOL rho (FOLEquiv phi phi') <->
+                          SatFOL rho (FOLEquiv phi' phi).
+  
+  Axiom SatFOL_equiv : forall phi phi' rho,
+                         SatFOL rho phi ->
+                         SatFOL rho (FOLEquiv phi phi') ->
+                         SatFOL rho phi'. 
 
   
   (* ML *)
@@ -45,33 +53,37 @@ Module Type Formulas.
   Axiom MLFormula_eq_sym : forall F F' : MLFormula, MLFormula_eq F F' <-> MLFormula_eq F' F.
   
   Parameter AndML : MLFormula -> MLFormula -> MLFormula .
+  Parameter NotML : MLFormula -> MLFormula.
   Parameter ExistsML : list Var -> MLFormula -> MLFormula .
+  Definition ImpliesML (phi phi' : MLFormula) : MLFormula :=
+    NotML (AndML phi (NotML phi')) .
 
+          
   Parameter folenc : MLFormula -> FOLFormula .
   Parameter FolToML : FOLFormula -> MLFormula .
   (* Define SatFOL with model M *)
   Axiom simplEnc : forall phi rho,
                      SatFOL rho (FOLEquiv (folenc (FolToML (folenc phi))) (folenc phi)).
-  Axiom FOLEquiv_comm : forall phi phi' rho,
-                          SatFOL rho (FOLEquiv phi phi') <-> SatFOL rho (FOLEquiv phi' phi).
-  
-  Axiom SatFOL_equiv : forall phi phi' rho,
-                         SatFOL rho phi ->
-                         SatFOL rho (FOLEquiv phi phi') ->
-                         SatFOL rho phi'. 
   
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
+  Parameter SatML_dec : State -> Valuation -> MLFormula -> bool.
+
   Parameter FreeVars : MLFormula -> list Var .
 
   Axiom SatMLExists :
     forall gamma rho X phi,
       SatML gamma rho (ExistsML X phi) <->
-      exists rho', forall x, ~(In x X) -> (ModelEq (rho x) (rho' x) /\  SatML gamma rho' phi) .
+      exists rho', forall x, ~(In x X) ->
+                             (ModelEq (rho x) (rho' x) /\
+                              SatML gamma rho' phi) .
   Axiom SatMLAnd :
     forall gamma rho phi phi',
       SatML gamma rho (AndML phi phi') <->
       SatML gamma rho phi /\ SatML gamma rho phi'.
 
+  Definition SatML_Model (phi : MLFormula) : Prop :=
+    forall gamma rho, SatML gamma rho phi.
+  Parameter SatML_Model_dec : MLFormula -> bool .
   
   (* Paper *)
   Axiom Prop1 : forall varphi rho,
@@ -195,22 +207,37 @@ Module Soundness (F : Formulas).
     Definition SDerivable (phi : MLFormula) : Prop :=
       exists gamma rho gamma', SatML gamma rho phi /\ (gamma =>S gamma') .
 
+    Parameter SDerivable_dec : MLFormula -> bool .
 
-    Definition SynSDerML' (phi : MLFormula)
+    (*
+    Definition SDerivable_dec (phi : MLFormula) : Prop :=
+      exists gamma rho gamma', SatML_dec gamma rho phi /\ (gamma =>S gamma') .
+     *)
+
+
+    Definition SynDerML' (phi : MLFormula)
                (F : RLFormula)  : MLFormula :=
       (ExistsML (flat_map FreeVars [lhs F; rhs F])
               (AndML
                  (FolToML (folenc (AndML (lhs F) phi)))
                  (rhs F))) .
-      
-    Definition SynSDerML (phi : MLFormula) : list MLFormula := map (SynSDerML' phi) S .
-
-    Definition SynSDerRL' (F : RLFormula) (phi1 : MLFormula) : RLFormula :=
+    Definition SynDerRL' (F : RLFormula) (phi1 : MLFormula) : RLFormula :=
       phi1 => rhs F .
+
+    
+    Definition SynDerML (phi : MLFormula)
+               (S' : TS_Spec) : list MLFormula :=
+      map (SynDerML' phi) S'.
+    
+    Definition SynDerRL (F : RLFormula) (S' : TS_Spec) : list RLFormula :=
+      map (SynDerRL' F) (SynDerML (lhs F) S').
+    
+    Definition SynSDerML (phi : MLFormula) : list MLFormula := map (SynDerML' phi) S .
     
     Definition SynSDerRL (F : RLFormula) : list RLFormula :=
-      map (SynSDerRL' F) (SynSDerML (lhs F)) .
+      map (SynDerRL' F) (SynDerML (lhs F) S) .
 
+      
     
     (* Only 'half' of it *)
     Axiom Assumption_1 :
@@ -237,7 +264,7 @@ Module Soundness (F : Formulas).
       forall gamma gamma' rho phi,
         ((gamma =>S gamma') /\ SatML gamma rho phi) ->
         exists alpha,
-          In alpha S /\ SatML gamma' rho (SynSDerML' phi alpha).
+          In alpha S /\ SatML gamma' rho (SynDerML' phi alpha).
     Proof.
       intros gamma gamma' rho phi (H1 & H2).
       unfold TS_S in H1.
@@ -245,7 +272,7 @@ Module Soundness (F : Formulas).
       exists (phi_l => phi_r).
       split.
       - assumption.
-      - unfold SynSDerML'.
+      - unfold SynDerML'.
         simpl.
         rewrite -> SatMLExists.
         exists (extendVal rho rho' (FreeVars phi_l ++ FreeVars phi_r ++ [])).
@@ -362,7 +389,7 @@ Module Soundness (F : Formulas).
         generalize (CS (conj H8 H10)).
         intros (alpha & H11 & H12).
         clear CS.
-        exists (SynSDerML' phi alpha).
+        exists (SynDerML' phi alpha).
         exists gamma'.
         exists phi.
         split; trivial.
@@ -414,7 +441,7 @@ Module Soundness (F : Formulas).
         assert (gamma0 = gamma_i); try congruence; subst gamma_i.
         generalize (CS (conj H8 H4)).
         intros (alpha & H9 & H10).
-        exists (SynSDerML' phi_i alpha).
+        exists (SynDerML' phi_i alpha).
         exists gamma'.
         exists phi_i.
         split; trivial.
@@ -424,7 +451,68 @@ Module Soundness (F : Formulas).
         exists alpha.
         split; trivial.
     Qed.
-        
-  End RLSemantics.
+
+
+    (* PROVE *)
+
+    Inductive Result : Type := success | failure.
+    Fixpoint chooseCirc (G0 : TS_Spec)
+               (phi : MLFormula) : option RLFormula :=
+      match G0 with
+        | nil => None
+        | (phi_c => phi_c') :: G0' =>
+          if SatML_Model_dec
+               (ImpliesML phi
+                          (ExistsML (FreeVars phi_c) phi_c))
+          then Some (phi_c => phi_c')
+          else chooseCirc G0' phi
+      end.
+
+    Fixpoint prove (G0 G : TS_Spec) (n : nat) : Result :=
+      match n with
+        | 0 => failure
+        | Datatypes.S n' =>
+          match G with
+            | nil => success
+            | (phi => phi') :: G' =>
+              if (SatML_Model_dec (ImpliesML phi phi'))
+              then prove G0 G' n'
+              else match chooseCirc G0 phi with
+                     | Some (phi_c => phi_c') =>
+                       prove G0 (G' ++
+                                    (SynDerRL (phi => phi') [phi_c => phi_c'])) n'
+                     | None => if SDerivable_dec phi
+                               then prove G0 (G' ++ (SynSDerRL (phi => phi'))) n'
+                               else failure
+                   end
+          end
+      end.
+
+
+    (* HELPER Lemma *)
+    Definition Walk := nat -> option RLFormula .
+
+    (* TODO: parameterize the well-formedness function for State and RLFormula? - (arg G0?) *)
+    Definition wfWalk (wk : Walk) (G0 : TS_Spec) : Prop :=
+      (forall i j, i < j -> wk i = None -> wk j = None)
+      /\
+      (forall i,
+         ((wk i <> None) /\ (wk (i + 1) <> None)) ->
+       exists alpha alpha',
+         wk i = Some alpha /\ 
+         wk (i+1) = Some alpha' /\
+         ((exists circ, chooseCirc G0 (lhs alpha) = Some circ ->
+           (In alpha' (SynDerRL alpha [circ]))) \/
+          ((chooseCirc G0 (lhs alpha) = None) /\
+           (SDerivable (lhs alpha)) ->
+           (In alpha' (SynSDerRL alpha))))).
+
     
+         
+           
+
+
+    
+  End RLSemantics.
+
 End Soundness.
