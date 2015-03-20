@@ -488,40 +488,6 @@ Module Soundness (F : Formulas).
       end.
 
       
-(*              
-    Fixpoint prove (P G : TS_Spec) (n : nat) : Result :=
-      match n with
-        | 0 => failure
-        | Datatypes.S n' =>
-          match step P G with
-            | None => failure
-            | Some (P', G') => match G' with
-                                 | nil => success
-                                 | _ => prove P' G' n'
-                               end
-          end
-      end.
- 
-    
-    Fixpoint step (P G : TS_Spec) :
-      option (TS_Spec * TS_Spec) :=
-      match P, G with
-        | nil, _ => Some (G0, Delta S G0)
-        | p :: _, nil => Some (P, nil)
-        | p :: _, (phi => phi') :: G1 =>
-          if (SatML_Model_dec (ImpliesML phi phi'))
-          then Some (P ++ [phi => phi'], G1)
-          else
-            match chooseCirc G0 phi with
-              | Some (phi_c => phi_c') =>
-                Some (P ++ [phi => phi'],
-                      G1 ++ (SynDerRL [phi_c => phi_c'] (phi => phi') ))
-              | None => if SDerivable_dec phi
-                        then Some (P ++ [phi => phi'], G1 ++ (SynDerRL S (phi => phi')))
-                        else None
-            end
-      end. 
- *)
 
     
     Inductive Rstep : TS_Spec -> TS_Spec -> Prop :=
@@ -591,7 +557,7 @@ Module Soundness (F : Formulas).
 
 
     (* should be called only with prove(Delta_S G0)!!! *)
-    Fixpoint prove (G GF: TS_Spec) (n : nat) : (Result * TS_Spec) :=
+    Fixpoint prove (G GF : TS_Spec) (n : nat) : (Result * TS_Spec) :=
       match n with
         | 0 => (failure, GF)
         | Datatypes.S n' =>
@@ -734,84 +700,11 @@ Module Soundness (F : Formulas).
     Lemma non_empty_der : forall G, G <> nil -> Delta S G <> [] .
     Admitted.
       
-    Lemma prove_Rstep_star : forall n F G0,
+    Lemma prove_Rstep_star : forall n F,
                                G0 <> nil ->
                                prove (Delta S G0) G0 n = (success, F) ->
                                Rstep_star (Delta S G0) nil F.
-    Proof.
-      induction n.
-      - intros F H0 H.
-        unfold prove in H.
-        inversion H.
-      - intros F H0 H.
-        inversion H.
-        clear H.
-        case_eq (step (Delta S G0)).
-        + intros t H3.
-          assert (H4: Rstep (Delta S G0) t).
-          apply step_Rstep.
-          rewrite H3.
-          reflexivity.
-          rewrite H3 in H2.
-          case_eq t.
-          * intros H5.
-            rewrite H5 in H2.
-            apply IHn.
-            assumption.
-            admit.
-
-          * destruct r.
-            intros l H.
-            rewrite H in H2.
-            apply IHn.
-            assumption.
-            
-            unfold prove.
-            rewrite H.
-            
-          apply tranz.
-        + intros H1.
-          contradict H1.
-          apply non_empty_der.
-          assumption.
-        + destruct r.
-          intros l H3.
-          rewrite H3 in H2.
-          simpl in H2.
-          case_eq (SatML_Model_dec (ImpliesML m m0)).
-          intros H4.
-          rewrite H4 in H2.
-          rewrite <- H3.
-          apply IHn.
-          assumption.
-          unfold prove.
-          rewrite H3.
-          rewrite n.
-      
-      
-      
-            
-            
-        
-    
-    Lemma Rstep_step : forall G G', Rstep G G' -> Some G' = step G.
-    Proof.
-      intros G G'.
-      intros R.
-      case_eq G.
-      - intros H.
-        unfold step.
-        induction R;
-        contradict H0;
-        rewrite H;
-        simpl;
-        omega.
-      - destruct r.
-        intros l H.
-        induction R.
-        + unfold step.
-        
-
+    Admitted.
 
   End RLSemantics.
 
