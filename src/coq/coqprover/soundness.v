@@ -265,7 +265,7 @@ Module Soundness (F : Formulas).
     
     Definition SynSDerRL (F : RLFormula) : list RLFormula :=
       map (SynDerRL' F) (SynDerML (lhs F) S) .
-
+    
     Fixpoint Delta (S' G' : TS_Spec) : TS_Spec :=
       match G' with
         | nil => nil
@@ -523,36 +523,9 @@ Module Soundness (F : Formulas).
       end. 
  *)
 
-    Fixpoint step (G : TS_Spec) : option TS_Spec :=
-      match G with
-        | nil => Some G
-        | (phi => phi') :: G' =>
-          if (SatML_Model_dec (ImpliesML phi phi'))
-          then Some G'
-          else
-            match chooseCirc G0 phi with
-              | Some (phi_c => phi_c') =>
-                Some (G' ++ (SynDerRL [phi_c => phi_c'] (phi => phi')))
-              | None => if SDerivable_dec phi
-                        then Some (G' ++ (SynDerRL S (phi => phi')))
-                        else None
-            end
-      end.
-
-
-    (* should be called only with prove(Delta_S G0)!!! *)
-    Fixpoint prove (G : TS_Spec) (n : nat) : Result :=
-      match n with
-        | 0 => failure
-        | Datatypes.S n' =>
-          match step G with
-            | None => failure
-            | Some G' => prove G' n'
-          end
-      end.
-
     
     Inductive Rstep : TS_Spec -> TS_Spec -> Prop :=
+    | nil_case : Rstep [] []
     | base_case : forall G G', forall phi phi',
                     In (phi => phi') G ->
                     SatML_Model (ImpliesML phi phi') ->
@@ -578,24 +551,19 @@ Module Soundness (F : Formulas).
                 Rstep G G'' -> Rstep_star G'' G' F -> Rstep_star G G' (F ++ G).
 
 
-    Fixpoint SynDerRLSet (S' G' : TS_Spec) : TS_Spec :=
-      match G' with
-        | nil => nil
-        | F :: G'' => (SynDerRL S' F) ++ (SynDerRLSet S' G'')
-      end.
     
     Lemma soundness : forall F,
-                        Rstep_star (SynDerRLSet S G0) nil F -> SatTS G0.
+                        Rstep_star (Delta S G0) nil F -> SatTS G0.
     Admitted.
 
-    Lemma helper7 : forall F, Rstep_star (SynDerRLSet S G0) nil F ->
+    Lemma helper7 : forall F, Rstep_star (Delta S G0) nil F ->
                       forall phi phi', In (phi => phi') F ->
                              (SatML_Model (ImpliesML phi phi')
                                  \/
                              SDerivable phi).
     Admitted.
 
-    Lemma helper8 : forall F, Rstep_star (SynDerRLSet S G0) nil F ->
+    Lemma helper8 : forall F, Rstep_star (Delta S G0) nil F ->
                               forall tau rho phi phi',
                                 In (phi => phi') F ->
                                 ~ isInfinite tau -> complete tau ->
@@ -605,244 +573,245 @@ Module Soundness (F : Formulas).
 
     
 
-
-
-
-
-
-    
-
-    
-    Axiom firstStep : SatTS (Delta S G0) -> SatTS G0.
-    Axiom higherStep : forall P G P' G',
-                         Some (P', G') = step P G ->
-                         SatTS P -> SatTS G' ->
-                         subset G0 P ->
-                         (SatTS P' /\ SatTS G /\
-                          subset G0 P').
-    
-    Fixpoint stepn (P G : TS_Spec) (n : nat) : option (TS_Spec * TS_Spec) :=
-      match n with
-        | 0 => Some (P, G)
-        | Datatypes.S n' => match step P G with
-                              | None => None
-                              | Some (P', G') => (stepn P' G' n')
-                            end
+    Fixpoint step (G : TS_Spec) : option TS_Spec :=
+      match G with
+        | nil => Some G
+        | (phi => phi') :: G' =>
+          if (SatML_Model_dec (ImpliesML phi phi'))
+          then Some G'
+          else
+            match chooseCirc G0 phi with
+              | Some (phi_c => phi_c') =>
+                Some (G' ++ (SynDerRL [phi_c => phi_c'] (phi => phi')))
+              | None => if SDerivable_dec phi
+                        then Some (G' ++ (SynDerRL S (phi => phi')))
+                        else None
+            end
       end.
 
 
+    (* should be called only with prove(Delta_S G0)!!! *)
+    Fixpoint prove (G GF: TS_Spec) (n : nat) : (Result * TS_Spec) :=
+      match n with
+        | 0 => (failure, GF)
+        | Datatypes.S n' =>
+          match step G with
+            | None => (failure, GF)
+            | Some G' => match G' with
+                           | nil => (success, GF)
+                           | _ => prove G' (GF ++ G) n'
+                         end
+          end
+      end.
 
-    Lemma soundness : forall n, prove nil G0 n = success -> SatTS G0.
-    Proof.
-      induction n.
-      - unfold prove.
-        congruence.
-      - intros H.
-        unfold prove in H.
-        case_eq (step [] G0).
-        fold prove in H.
-        + destruct p.
-          intros p.
-          rewrite p in H.
-          case_eq t0.
-          * intros H0.
-            rewrite H0 in p.
-            unfold step in p.
-            inversion p.
-            rewrite <- H2 in H3.
-            rewrite <- H3 in H0.
-            rewrite H0 in H.
-            case_eq (Delta S G0).
-            intros H'.
-            rewrite <- H2.
-            apply firstStep.
-            rewrite H'.
-            unfold SatTS.
-            simpl.
-            intros F.
-            intros f.
-            contradict f.
-            intros r l H1.
-            rewrite H1 in H.
-            contradict H.
-            unfold prove.
-            congruence.
-          * intros r l H0.
-            rewrite H0 in H.
-            Admitted.
-            (*
-        
-        induction n.
-        + intros n0.
-          unfold prove in H.
-          unfold step in H.
-          case_eq (Delta S G0).
-          fold step in H.
-          intros H'.
-          apply firstStep.
-          * rewrite H'.
-            unfold SatTS.
-            simpl.
-            intros F.
-            intros f.
-            contradict f.
-          * intros r l H0.
-            rewrite H0 in H.
-            contradict H.
-            unfold prove.
-            congruence.
-        + apply IHn0.
-          * intros H'.
-            apply IHn.
-            unfold prove.
-            case_eq (step [] G0).
-            destruct p.
-            fold prove.
-          
-            
-            
-          case_eq (step [] G0').
-          * intros p H0.
-            destruct p.
-            unfold 
-            
-            rewrite H0 in H'.
+    Axiom Sat_dec : forall phi, SatML_Model_dec phi = true -> SatML_Model phi.
+    Axiom SDer_dec : forall phi, SDerivable_dec phi = true -> SDerivable phi.
 
-            case_eq t0.
-            {
-              - intros H1.
-                rewrite H1 in H'.
-            
-          
-        unfold prove in H.
-        case_eq (step [] G0).
-        + intros p H'.
-          destruct p in H'.
-          rewrite H' in H.
-          fold prove in H.
-      
-      intros n H.
-      unfold prove in H.
-      case_eq n.
-      - intros n0.
-        rewrite n0 in H.
-        contradict H.
-        congruence.
-      - intros n0 N.
-        rewrite N in H.
-        fold prove in H.
-        case_eq G0.
-        + intros E.
-          unfold SatTS.
-          intros F H'.
-          contradict H'.
-        + intros r l H'.
-          rewrite H' in H.
-          case_eq (step [] (r :: l)).
-          * intros p
-          admit.
-          Qed.
+    Lemma helper0 : forall c phi, chooseCirc G0 phi = Some c -> In c G0.
+    Admitted.
+    Lemma helper1 : forall phic phic' phi, chooseCirc G0 phi = Some (phic => phic') -> SatML_Model (ImpliesML phi (ExistsML (FreeVars phic) phic)) .
+    Admitted.
     
-    *)
-    Lemma higherStepGen : forall n P G P' G',
-                            Some (P', G') = stepn P G n ->
-                            SatTS P -> SatTS G' ->
-                            subset G0 P ->
-                            (SatTS P' /\ SatTS G /\
-                             subset G0 P').
+
+    Lemma step_Rstep : forall G G', Some G' = step G -> Rstep G G' .
     Proof.
-      induction n.
-      - intros P G P' G' H0 H1 H2 H3.
-        unfold stepn in H0.
-        inversion H0.
-        split.
-        assumption.
-        split.
-        rewrite <- H5.
-        assumption.
-        assumption.
-      - intros P G P' G' H0 H1 H2 H3.
-        case_eq (stepn P G n).
-        + intros p H.
-          
-          apply IHn with (G' := (rhs p)) (P' := (lhs p)).
-          * rewrite H0.
-            
-
-
-          
-
-          
-          assert (H' : SatTS (lhs p) /\ SatTS G /\
-                       subset G0 (lhs p)).
-          * apply higherStep with (P := P) (G' := (rhs p)).
-            rewrite H.
-            destruct p.
-            simpl.
-            reflexivity.
-            assumption.
-            {
-              assert (H4:  SatTS P' /\ SatTS (rhs p) /\ subset G0 P').
-              - apply IHn with (P := (lhs p)) (G' := G').
-                + admit.
-                  Admitted.
-
-
-(*    
-    Lemma stepUnfold : forall P G P' G' n, stepn P G (Datatypes.S n) = Some (P', G') ->
-                                     exists P'' G'', Some (P'', G'') = step P G /\
-                                                     Some (P', G') = stepn P'' G'' n.
-    Proof.
-      intros P G P' G' n H.
-      case_eq (step P G).
-      intros p H'.
-      exists (fst p).
-      exists (snd p).
-      split.
-      - destruct p.
-        simpl.
-        reflexivity.
-      - rewrite <- H.
-        simpl.
-        rewrite H'.
-        destruct p.
-        simpl.
-        reflexivity.
+      intros G G' H.
+      case_eq G'.
       - intros H'.
-        unfold stepn in H.
         rewrite H' in H.
-        contradict H.
-        congruence.
+        unfold step in H.
+        case_eq G.
+        + intros H''.
+          rewrite H'' in H.
+          apply nil_case.
+        + destruct r.
+          intros l H''.
+          rewrite H'' in H.
+          case_eq (SatML_Model_dec (ImpliesML m m0)).
+          * intros H0.
+            rewrite H0 in H.
+            apply base_case with (phi := m) (phi' := m0).
+            simpl.
+            left.
+            reflexivity.
+            apply Sat_dec.
+            assumption.
+            inversion H.
+            simpl.
+            admit.
+            
+          * intros H0.
+            rewrite H0 in H.
+            case_eq (chooseCirc G0 m).
+            destruct r.
+            intros C.
+            rewrite C in H.
+            inversion H.
+            contradict H2.
+            admit.
+            
+            intros H1.
+            rewrite H1 in H.
+            case_eq (SDerivable_dec m) .
+            intros H2.
+            rewrite H2 in H.
+            inversion H.
+            contradict H4.
+            admit.
+
+            intros H2.
+            rewrite H2 in H.
+            contradict H.
+            congruence.
+      - destruct r.
+        intros l H'.
+        unfold step in H.
+        case_eq G.
+        intros H0.
+        rewrite H0 in H.
+        + inversion H.
+          contradict H'.
+          rewrite H2.
+          congruence.
+        + destruct r.
+          intros l0 H0.
+          rewrite H0 in H.
+          case_eq (SatML_Model_dec (ImpliesML m1 m2)).
+          * intros H1.
+            rewrite H1 in H.
+            apply base_case with (phi := m1) (phi' := m2).
+            simpl.
+            left.
+            reflexivity.
+            apply Sat_dec.
+            assumption.
+            inversion H.
+            rewrite <- H3.
+            rewrite H'.
+            admit.
+            
+          * intros H1.
+            rewrite H1 in H.
+            case_eq (chooseCirc G0 m1).
+            destruct r.
+            intros H2.
+            apply circ_case with (phi := m1) (phi' := m2) (phic := m3) (phic' := m4).
+            simpl.
+            left.
+            reflexivity.
+            apply helper0 with (phi := m1).
+            assumption.
+            apply helper1 with (phic' := m4).
+            assumption.
+            rewrite H2 in H.
+            inversion H.
+            rewrite <- H'.
+            rewrite H4.
+            admit.
+
+            intros H2.
+            rewrite H2 in H.
+            case_eq (SDerivable_dec m1).
+            intros H3.
+            rewrite H3 in H.
+            inversion H.
+            apply deriv_case with (phi := m1) (phi' := m2).
+            simpl.
+            left.
+            reflexivity.
+            apply SDer_dec.
+            assumption.
+            rewrite <- H'.
+            rewrite H5.
+            admit.
+
+            intros H3.
+            rewrite H3 in H.
+            contradict H.
+            congruence.
     Qed.
-*)        
+
+    Lemma non_empty_der : forall G, G <> nil -> Delta S G <> [] .
+    Admitted.
+      
+    Lemma prove_Rstep_star : forall n F G0,
+                               G0 <> nil ->
+                               prove (Delta S G0) G0 n = (success, F) ->
+                               Rstep_star (Delta S G0) nil F.
+    Proof.
+      induction n.
+      - intros F H0 H.
+        unfold prove in H.
+        inversion H.
+      - intros F H0 H.
+        inversion H.
+        clear H.
+        case_eq (step (Delta S G0)).
+        + intros t H3.
+          assert (H4: Rstep (Delta S G0) t).
+          apply step_Rstep.
+          rewrite H3.
+          reflexivity.
+          rewrite H3 in H2.
+          case_eq t.
+          * intros H5.
+            rewrite H5 in H2.
+            apply IHn.
+            assumption.
+            admit.
+
+          * destruct r.
+            intros l H.
+            rewrite H in H2.
+            apply IHn.
+            assumption.
+            
+            unfold prove.
+            rewrite H.
+            
+          apply tranz.
+        + intros H1.
+          contradict H1.
+          apply non_empty_der.
+          assumption.
+        + destruct r.
+          intros l H3.
+          rewrite H3 in H2.
+          simpl in H2.
+          case_eq (SatML_Model_dec (ImpliesML m m0)).
+          intros H4.
+          rewrite H4 in H2.
+          rewrite <- H3.
+          apply IHn.
+          assumption.
+          unfold prove.
+          rewrite H3.
+          rewrite n.
+      
+      
+      
+            
+            
         
     
-    Lemma steps : forall P G P' G' n, Some (P', G') = (stepn P G n)
-                                      /\ SatTS P /\ SatTS G' ->
-                                      (SatTS P' /\ SatTS G).
+    Lemma Rstep_step : forall G G', Rstep G G' -> Some G' = step G.
     Proof.
-      intros P G P' G' n (H0 & H1 & H2).
-      induction n.
-      - unfold stepn in H0.
-        inversion H0.
-        split.
-        assumption.
-        rewrite <- H4.
-        apply H2.
-      - assert (H : exists P'' G'', Some (P'', G'') = step P G /\
-                                  Some (P', G') = stepn P'' G'' n).
-        apply stepUnfold.
-        rewrite H0.
-        reflexivity.
-        destruct H as (P1 & (G1 & (H3 & H4))).
+      intros G G'.
+      intros R.
+      case_eq G.
+      - intros H.
+        unfold step.
+        induction R;
+        contradict H0;
+        rewrite H;
+        simpl;
+        omega.
+      - destruct r.
+        intros l H.
+        induction R.
+        + unfold step.
         
 
-        case_eq n.
-        intros n0.
-        case_eq (step P G).
-        intros p H.
-        Unfold stepn in H0.
-        
 
   End RLSemantics.
 
