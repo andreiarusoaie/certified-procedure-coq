@@ -67,7 +67,7 @@ Module Type Formulas.
   
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
   Parameter SatML_dec : State -> Valuation -> MLFormula -> bool.
-
+  
   Parameter FreeVars : MLFormula -> list Var .
 
   Axiom SatMLExists :
@@ -84,7 +84,8 @@ Module Type Formulas.
   Definition SatML_Model (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
   Parameter SatML_Model_dec : MLFormula -> bool .
-  
+  Axiom Sat_dec : forall phi, SatML_Model_dec phi = true -> SatML_Model phi.
+
   (* Paper *)
   Axiom Prop1 : forall varphi rho,
                   SatFOL rho (folenc varphi) <->
@@ -242,11 +243,9 @@ Module Soundness (F : Formulas).
       exists gamma rho gamma', SatML gamma rho phi /\ (gamma =>S gamma') .
 
     Parameter SDerivable_dec : MLFormula -> bool .
+    Axiom SDer_dec : forall phi, SDerivable_dec phi = true -> SDerivable phi.
 
-    (*
-    Axiom SDerivable_dec_impl : forall phi, SDerivable_dec phi = true -> SDerivable phi.
-    *)
-
+    
     Definition SynDerML' (phi : MLFormula)
                (F : RLFormula)  : MLFormula :=
       (ExistsML (flat_map FreeVars [lhs F; rhs F])
@@ -500,7 +499,7 @@ Module Soundness (F : Formulas).
                      else remove_first x tl
       end.
 
-    
+    (* Rstep G G' iff G' = step G *)
     Inductive Rstep : TS_Spec -> TS_Spec -> TS_Spec -> Prop :=
     | nil_case : forall G0, Rstep [] [] G0
     | base_case : forall G G' G0, forall phi phi',
@@ -521,17 +520,19 @@ Module Soundness (F : Formulas).
                     G' = (remove_first (phi => phi') G)
                            ++ (SynDerRL S (phi => phi')) ->
                     Rstep G G' G0.
-                                                                   
+
+    Check Rstep_ind.
+
+    Definition list_eq (S1 S2 : list RLFormula) :=
+      incl S1 S2 /\ incl S2 S1.
+    
     Inductive Rstep_star : TS_Spec -> TS_Spec -> TS_Spec -> TS_Spec -> Prop :=
     | refl : forall G G' F G0, G = G' -> Rstep_star G G' F G0
-    | tranz : forall G G' F G0, forall G'',
-                Rstep G G'' G0 -> Rstep_star G'' G' F G0 -> Rstep_star G G' (F ++ G) G0.
+    | tranz : forall G G' F G0, forall F' G'',
+                Rstep G G'' G0 -> Rstep_star G'' G' F G0 -> list_eq F' (F ++ G) -> Rstep_star G G' F' G0.
 
 
     
-    Lemma star_soundness : forall G0 F,
-                        Rstep_star (Delta S G0) nil F G0 -> SatTS G0.
-    Admitted.
 
     Lemma helper7 : forall G0 F, Rstep_star (Delta S G0) nil F G0 ->
                       forall phi phi', In (phi => phi') F ->
@@ -548,7 +549,12 @@ Module Soundness (F : Formulas).
                                 SatRL tau rho (phi => phi').
     Admitted.
 
-    
+    Lemma star_soundness : forall G0 F,
+                        Rstep_star (Delta S G0) nil F G0 -> SatTS G0.
+    Admitted.
+
+
+    (* Section prove -> Rstep *)
 
     Fixpoint step (G G0 : TS_Spec) : option TS_Spec :=
       match G with
@@ -581,13 +587,53 @@ Module Soundness (F : Formulas).
           end
       end.
 
-    Axiom Sat_dec : forall phi, SatML_Model_dec phi = true -> SatML_Model phi.
-    Axiom SDer_dec : forall phi, SDerivable_dec phi = true -> SDerivable phi.
 
     Lemma helper0 : forall c phi G0, chooseCirc G0 phi = Some c -> In c G0.
-    Admitted.
+    Proof.
+      intros c phi G0 H.
+      unfold chooseCirc in H.
+      induction G0.
+      - inversion H.
+      - fold chooseCirc in H.
+        fold chooseCirc in IHG0.
+        destruct a.
+        case_eq (SatML_Model_dec (ImpliesML phi (ExistsML (FreeVars m) m))).
+        + intros H'.
+          rewrite H' in H.
+          inversion H.
+          simpl.
+          left.
+          reflexivity.
+        + intros H'.
+          rewrite H' in H.
+          simpl.
+          right.
+          apply IHG0.
+          assumption.
+    Qed.
+        
+      
     Lemma helper1 : forall phic phic' phi G0, chooseCirc G0 phi = Some (phic => phic') -> SatML_Model (ImpliesML phi (ExistsML (FreeVars phic) phic)) .
-    Admitted.
+    Proof.
+      intros phic phic' phi G0 H.
+      unfold chooseCirc in H.
+      induction G0.
+      - inversion H.
+      - fold chooseCirc in H.
+        fold chooseCirc in IHG0.
+        destruct a.
+        case_eq (SatML_Model_dec (ImpliesML phi (ExistsML (FreeVars m) m))).
+        + intros H'.
+          rewrite H' in H.
+          inversion H.
+          rewrite <- H1.
+          apply Sat_dec.
+          assumption.
+        + intros H'.
+          rewrite H' in H.
+          apply IHG0.
+          assumption.
+    Qed.
     
 
     Lemma step_Rstep : forall G G' G0, Some G' = step G G0 -> Rstep G G' G0.
@@ -604,10 +650,8 @@ Module Soundness (F : Formulas).
         + destruct r.
           intros l H''.
           rewrite H'' in H.
-          case_eq (SatML_Model_dec (ImpliesML m m0)).
-          * intros H0.
-            rewrite H0 in H.
-            apply base_case with (phi := m) (phi' := m0).
+          case_eq (SatML_Model_dec (ImpliesML m m0)); intros H0; rewrite H0 in H.
+          * apply base_case with (phi := m) (phi' := m0).
             simpl.
             left.
             reflexivity.
@@ -617,9 +661,7 @@ Module Soundness (F : Formulas).
             simpl.
             rewrite RLFormula_eq_dec_refl.
             reflexivity.
-          * intros H0.
-            rewrite H0 in H.
-            case_eq (chooseCirc G0 m).
+          * case_eq (chooseCirc G0 m).
             destruct r.
             intros C.
             rewrite C in H.
@@ -719,219 +761,146 @@ Module Soundness (F : Formulas).
             congruence.
     Qed.
 
-    Lemma non_empty_der : forall G, G <> nil -> Delta S G <> [] .
-    Admitted.
-
-
-    Axiom list_as_set_comm: forall l1 l2 : list RLFormula, l1 ++ l2 = l2 ++ l1.
-    Axiom first_to_unit : forall x : RLFormula,
-                          forall l : list RLFormula, x :: l = [x] ++ l.
-
-    Parameter list_minus : list RLFormula -> list RLFormula -> list RLFormula .
-    Axiom list_minus_add : forall S X, S = (list_minus S X) ++ X.
-    Axiom list_add_minus : forall S X, S = list_minus (S ++ X) X.
-    Axiom list_minus_nil : forall S, S = list_minus S [] .
-    
-    Lemma prove_one_step : forall n G' G G0 F,
-                             prove G' (G0 ++ G) n G0 = (success, F) ->
-                             step G G0 = Some G' ->
-                             prove G' G0 n G0 = (success, list_minus F G).
+    Lemma incl_G_F : forall n G F0 G0 F,
+                     prove G F0 n G0 = (success, F)
+                     ->
+                     incl (F0 ++ G) F.
     Proof.
       induction n.
-      - intros G' G G0 F H H'.
-        unfold prove in H.
-        inversion H.
-      - intros G' G G0 F H H'.
-        case_eq G'.
-        + intros H0.
-          rewrite H0 in H.
-          unfold prove in H.
-          fold prove in H.
-          simpl in H.
-          rewrite app_nil_r in H.
-          inversion H.
-          unfold prove.
-          simpl.
-          rewrite <- list_add_minus.
-          rewrite app_nil_r.
-          reflexivity.
-        + intros r l H0.
-          destruct r.
-          unfold step in H'.
-          case_eq G.
-          * intros H1.
-            rewrite H1 in H'.
-            rewrite H1 in H.
-            rewrite app_nil_r in H.
-            rewrite <- H0.
-            rewrite H.
-            rewrite <- list_minus_nil.
-            reflexivity.
-          * intros r l0 H1.
-            rewrite H1 in H'.
-            destruct r.
-            
-            case_eq (SatML_Model_dec (ImpliesML m1 m2)).
-            {
-              - intros H2.
-                rewrite H2 in H'.
-                inversion H'.
-                rewrite <- H0.
-                unfold prove in H.
-                rewrite H0 in H.
-                simpl in H.
-                case_eq (SatML_Model_dec (ImpliesML m m0)).
-                + intros H5.
-                  rewrite H5 in H.
-                  fold prove in H.
-                  rewrite <- H0 in H.
-                  case_eq l.
-                  * intros H6.
-                    rewrite H6 in H.
-                    rewrite list_as_set_comm in H.
-                    inversion H.
-                    rewrite H7.
-                    rewrite <- H4.
-                    rewrite <- H1.
-                    rewrite app_assoc in H7.
-                    rewrite <- H7.
-                    rewrite <- list_add_minus.
-                    unfold prove.
-                    rewrite H4.
-                    rewrite H0.
-                    simpl.
-                    rewrite H5.
-                    rewrite H6.
-                    rewrite <- H6.
-                    rewrite app_comm_cons.
-                    rewrite <- H0.
-                    rewrite list_as_set_comm.
-                    reflexivity.
-                  * intros r l1 H6.
-                    rewrite H6 in H.
-                    unfold prove in H.
-                    case_eq n.
-                    intros n0.
-                    rewrite n0 in H.
-                    inversion H.
-                    intros n0 N.
-                    rewrite N in H.
-                    fold prove in H.
-                    
-        
-        
-        
-        
-        
-      
-    Admitted.
-      
-
-    
-    Lemma prove_Rstep_star' : forall n G0 G F,
-                               G0 <> nil ->
-                               prove G G0 n G0 = (success, F) ->
-                               Rstep_star G nil F G0.
-    Proof.
-      induction n.
-      - intros G0 G F H H'.
-        unfold prove in H'.
-        inversion H'.
-      - intros G0 G F H' H.
+      - intros G F0 G0 F H.
         simpl in H.
-        case_eq G.
-        + intros H0.
-          apply refl.
-          reflexivity.
-        + intros r l H0.
-          rewrite H0 in H.
-          case_eq (step (r :: l) G0).
-          * intros t H1.
-            rewrite H1 in H.
-            case_eq t.
-            {
-              intros t0.
-              rewrite t0 in H.
-              inversion H.
-              apply tranz with (G'' := t).
-              apply step_Rstep.
-              rewrite H1.
-              reflexivity.
-              apply refl.
-              assumption.
-            }
-            {
-              intros r0 l0 H2.
-              assert (H3: Rstep G t G0).
-              apply step_Rstep.
-              rewrite <- H1.
-              rewrite H0.
-              reflexivity.
-              rewrite H2 in H.
-              rewrite <- H2 in H.
-              rewrite <- H0 in H.
-
-              assert (H4 : F = (list_minus F G) ++ G).
-              rewrite <- list_minus_add.
-              reflexivity.
-
-              rewrite H4.
-              rewrite <- H0.
-              apply tranz with (G'' := t).
-              assumption.
-              apply IHn.
-              assumption.
-
-              apply prove_one_step.
-              assumption.
-              rewrite H0.
-              assumption.
-            }
-          * intros H1.
-            rewrite H1 in H.
-            inversion H.
-    Qed.
-
-              
-              
-                  
-    
-    Lemma prove_Rstep_star : forall n G0 F,
-                               G0 <> nil ->
-                               prove (Delta S G0) G0 n G0 = (success, F) ->
-                               Rstep_star (Delta S G0) nil F G0.
-    Proof.
-      induction n.
-      - intros G0 F H' H.
-        unfold prove in H.
-        inversion H.
-      - intros G0 F H' H.
+        discriminate H.
+      - intros G F0 G0 F H.
         unfold prove in H.
         fold prove in H.
-        case_eq (step (Delta S G0) G0).
+        case_eq (step G G0).
         + intros t H0.
           rewrite H0 in H.
           case_eq t.
           * intros H1.
             rewrite H1 in H.
             inversion H.
-            apply tranz with (G'' := t).
-            apply step_Rstep.
-            rewrite H0.
-            reflexivity.
-            apply refl.
-            assumption.
+            apply incl_refl.
           * intros r l H1.
             rewrite H1 in H.
-            apply tranz with (G'' := t).
-            (* How do we apply IHn ??? *)
-            Admitted.
-      
-(*    Proof.
-      intros n G0 F.
-      apply prove_Rstep_star' with (G := Delta S G0).
+            apply IHn in H.
+            rewrite <- H1 in H.
+            unfold incl in H.
+            unfold incl.
+            intros a H2.
+            apply H.
+            apply in_app_iff.
+            left.
+            apply H2.
+        + intros H'.
+          rewrite H' in H.
+          discriminate H.
     Qed.
-*)
+
+
+    Lemma prove_Rstep_star_gen :
+      forall n G0 G F0 F,
+        incl G F ->
+        prove G F0 n G0 = (success, F) ->
+        Rstep_star G nil F G0.
+    Proof.
+      induction n.
+      - intros G0 G F0 F H' H.
+        unfold prove in H.
+        discriminate H.
+      - intros G0 G F0 F H' H.
+        unfold prove in H.
+        fold prove in H.
+        case_eq (step G G0).
+        + intros t H0.
+          rewrite H0 in H.
+          case_eq t.
+          * intros H1.
+            rewrite H1 in H.
+            injection H.
+            intros H2.
+            subst t.
+            eapply tranz.
+            apply step_Rstep.
+            instantiate (1 := []).
+            (* symmetry. *)
+            congruence.
+            apply refl.
+            reflexivity.
+            rewrite <- H2.
+            instantiate (1 := F0).
+            unfold list_eq.
+            split;
+            apply incl_refl.
+          * intros r l H1.
+            subst t.
+            apply IHn in H.
+            eapply tranz.
+            apply step_Rstep.
+            instantiate (1 := (r :: l)).
+            congruence.
+            instantiate (1 := F).
+            exact H.
+            unfold list_eq.
+            split.
+            apply incl_appl.
+            apply incl_refl.
+            apply incl_app.
+            apply incl_refl.
+            exact H'.
+            apply incl_G_F in H.
+            unfold incl in H.
+            unfold incl.
+            intros a H1.
+            apply H.
+            apply in_app_iff.
+            right.
+            apply H1.
+        + intros H0.
+          rewrite H0 in H.
+          discriminate H.
+    Qed.
+    
+    
+    Lemma prove_Rstep_star :
+      forall n G0 F,
+        prove (Delta S G0) G0 n G0 = (success, F) ->
+        Rstep_star (Delta S G0) nil F G0.
+    Proof.
+      intros n G0 F H.
+      apply prove_Rstep_star_gen
+      with (n := n) (F0 := G0).
+      assert (H' : incl (G0 ++ (Delta S G0)) F).
+      - apply incl_G_F with (n := n) (G0 := G0).
+        exact H.
+      - unfold incl in H'.
+        unfold incl.
+        intros a H0.
+        apply H'.
+        apply in_app_iff.
+        right.
+        exact H0.
+      - exact H.
+    Qed.
+
+
+
+
+
+    (* Main theorem *)
+    Theorem soundness : forall n G0 F,
+                          prove (Delta S G0) G0 n G0 = (success, F) ->
+                          SatTS G0.
+    Proof.
+      intros n G0 F.
+      intros H.
+      eapply star_soundness.
+      instantiate (1 := F).
+      eapply prove_Rstep_star.
+      instantiate (1 := n).
+      exact H.
+    Qed.
+    
   End RLSemantics.
 
 
