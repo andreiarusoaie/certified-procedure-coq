@@ -57,7 +57,7 @@ Module Type Formulas.
   Parameter ExistsML : list Var -> MLFormula -> MLFormula .
   Definition ImpliesML (phi phi' : MLFormula) : MLFormula :=
     NotML (AndML phi (NotML phi')) .
-
+ 
           
   Parameter folenc : MLFormula -> FOLFormula .
   Parameter FolToML : FOLFormula -> MLFormula .
@@ -67,6 +67,7 @@ Module Type Formulas.
   
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
   Parameter SatML_dec : State -> Valuation -> MLFormula -> bool.
+
   
   Parameter FreeVars : MLFormula -> list Var .
 
@@ -81,11 +82,17 @@ Module Type Formulas.
       SatML gamma rho (AndML phi phi') <->
       SatML gamma rho phi /\ SatML gamma rho phi'.
 
+
+  
   Definition SatML_Model (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
   Parameter SatML_Model_dec : MLFormula -> bool .
   Axiom Sat_dec : forall phi, SatML_Model_dec phi = true -> SatML_Model phi.
 
+  (* Probably turn this into a Lemma *)
+  Axiom impl_sat : forall gamma rho phi phi', SatML gamma rho phi /\ SatML_Model (ImpliesML phi phi') -> SatML gamma rho phi'.
+
+  
   (* Paper *)
   Axiom Prop1 : forall varphi rho,
                   SatFOL rho (folenc varphi) <->
@@ -154,6 +161,10 @@ Module Soundness (F : Formulas).
 
     Notation "f =>S f'" := (TS_S f f') (at level 100).
 
+    Definition total : Prop :=
+      forall phi gamma rho,  SatML gamma rho phi ->
+                             exists gamma' , gamma =>S gamma'.
+    
     Definition Path := nat -> option State.
     
     Definition wfPath (tau : Path) : Prop :=
@@ -165,19 +176,15 @@ Module Soundness (F : Formulas).
          tau i = Some gamma 
          /\ 
          tau (i+1) = Some gamma' /\ (gamma =>S gamma')).
-         
+
+      
+    
     Definition isInfinite (tau : Path) : Prop :=
       forall i, tau i <> None.
 
     Definition Path_i (tau : Path) (i : nat) : Path :=
       fun j => tau (i+j).
 
-    (*
-    Definition insertBefore (gamma : State)
-               (tau : Path) : Path :=
-      fun i => if (beq_nat i 0) then Some gamma
-               else tau (i - 1) .
-     *)
     
     Definition startsFrom (tau : Path) (rho : Valuation) 
                (phi : MLFormula) : Prop :=
@@ -187,6 +194,7 @@ Module Soundness (F : Formulas).
       forall gamma', not (gamma =>S gamma') .
 
     Definition complete (tau : Path) :=
+      isInfinite tau \/
       exists i gamma, tau i = Some gamma /\ terminating gamma.
     
     (* the input tau should be well-formed *)
@@ -198,8 +206,8 @@ Module Soundness (F : Formulas).
        \/ isInfinite tau .
     
     Definition SatTS_S (F : RLFormula) : Prop :=
-      forall tau rho, wfPath tau -> (complete tau \/ isInfinite tau)
-                      -> startsFrom tau rho (lhs F) -> SatRL tau rho F .
+      forall tau rho, wfPath tau -> complete tau ->
+                      startsFrom tau rho (lhs F) -> SatRL tau rho F .
 
     Definition SatTS (G : TS_Spec) : Prop :=
       forall F, In F G -> SatTS_S F.
@@ -473,8 +481,8 @@ Module Soundness (F : Formulas).
     Qed.
 
 
-    (* PROVE *)
-(*    Variable G0 : TS_Spec. *)
+    (* Section: Rstep -> |= G0 *)
+    
     Inductive Result : Type := success | failure.
 
     Fixpoint chooseCirc (G0 : TS_Spec)
@@ -521,37 +529,149 @@ Module Soundness (F : Formulas).
                            ++ (SynDerRL S (phi => phi')) ->
                     Rstep G G' G0.
 
-    Check Rstep_ind.
-
+    
     Definition list_eq (S1 S2 : list RLFormula) :=
       incl S1 S2 /\ incl S2 S1.
     
-    Inductive Rstep_star : TS_Spec -> TS_Spec -> TS_Spec -> TS_Spec -> Prop :=
-    | refl : forall G G' F G0, G = G' -> Rstep_star G G' F G0
+    Inductive Rstep_star : TS_Spec -> TS_Spec
+                           -> TS_Spec -> TS_Spec -> Prop :=
+    | refl : forall G G' F G0, list_eq G G' -> Rstep_star G G' F G0
     | tranz : forall G G' F G0, forall F' G'',
-                Rstep G G'' G0 -> Rstep_star G'' G' F G0 -> list_eq F' (F ++ G) -> Rstep_star G G' F' G0.
+                Rstep G G'' G0 ->
+                Rstep_star G'' G' F G0 ->
+                list_eq F' (F ++ G) -> Rstep_star G G' F' G0.
 
 
-    
 
     Lemma helper7 : forall G0 F, Rstep_star (Delta S G0) nil F G0 ->
                       forall phi phi', In (phi => phi') F ->
                              (SatML_Model (ImpliesML phi phi')
                                  \/
-                             SDerivable phi).
+                                 SDerivable phi).
+    Proof.
+      intros G0 F H phi phi' H'.
+      elim H.
+      
     Admitted.
 
-    Lemma helper8 : forall F G0, Rstep_star (Delta S G0) nil F G0 ->
-                              forall tau rho phi phi',
+(*    Inductive length : Path -> nat -> Prop :=
+    | finite : forall tau n,
+                 (exists i gamma, tau i = Some gamma ->
+                                  terminating gamma ->
+                                  i = n) ->
+                 length tau n          
+    .
+*)    
+    Lemma helper8' :
+      total ->
+      forall F G0, Rstep_star (Delta S G0) nil F G0 ->
+                   forall i tau rho phi phi',
+                     In (phi => phi') F ->
+                     (exists gamma, tau i = Some gamma /\ terminating gamma) ->
+                     startsFrom tau rho phi ->
+                     SatRL tau rho (phi => phi').
+    Proof.
+      intros T G G0 H.
+      induction i.
+      - intros tau rho phi phi' H0 H1 H2.
+        destruct H1 as (gamma & (H1 & H3)).
+        apply helper7 with (phi := phi) (phi' := phi') in H.
+        + destruct H as [H | H'].
+          * unfold startsFrom in H2.
+            destruct H2 as (gamma0 & (H4 & H5)).
+            unfold SatRL.
+            left.
+            split.
+            {
+              simpl.
+              unfold startsFrom.
+              exists gamma0.
+              split; assumption.
+            }
+            split.
+            {
+              unfold complete.
+              right.
+              exists 0.
+              exists gamma.
+              split; assumption.
+            }
+            exists 0.
+            exists gamma0.
+            split.
+            exact H4.
+            simpl.
+            eapply impl_sat.
+            instantiate (1 := phi).
+            split; assumption.
+            
+          * unfold terminating in H3.
+            unfold startsFrom in H2.
+            destruct H2 as (gamma1 & (H4 & H5)).
+            rewrite H1 in H4.
+            injection H4.
+            clear H4.
+            intros H4.
+            unfold total in T.
+            apply T in H5.
+            contradict H3.
+            destruct H5 as (gamma' & H5).
+            apply ex_not_not_all.
+            exists gamma'.
+            unfold not.
+            intros H3.
+            apply H3.
+            rewrite H4.
+            exact H5.
+        + exact H0.
+      - intros tau rho phi phi' H0 H1 H2.
+        destruct H.
+        
+        admit.
+      
+      
+      Lemma helper8 : forall F G0, Rstep_star (Delta S G0) nil F G0 ->
+                                   forall tau rho phi phi',
                                 In (phi => phi') F ->
-                                ~ isInfinite tau -> complete tau ->
+                                complete tau ->
                                 startsFrom tau rho phi ->
                                 SatRL tau rho (phi => phi').
-    Admitted.
-
+      Proof.
+      intros F G0 H tau rho phi phi' H0 H1 H2.
+      unfold complete in H1.
+      destruct H1 as [H1 | H3].
+      - unfold SatRL.
+        right.
+        exact H1.
+      - destruct H3 as (i & (gamma & (H1 & H3))).
+        apply helper8' with (F := F) (G0 := G0) (i := i).
+        + exact H.
+        + exact H0.
+        + auto. exists gamma. split; assumption.
+        + exact H2.
+    Qed.
+         
+                 
+          
+                         
+                  
+       
     Lemma star_soundness : forall G0 F,
-                        Rstep_star (Delta S G0) nil F G0 -> SatTS G0.
-    Admitted.
+                             incl G0 F ->
+                             Rstep_star (Delta S G0) nil F G0 -> SatTS G0.
+      intros G0 F I H.
+      unfold SatTS.
+      intros alpha H'.
+      unfold SatTS_S.
+      intros tau rho H0 H1.
+      destruct alpha.
+      apply helper8 with (F := F) (G0 := G0).
+      - exact H.
+      - unfold incl in I.
+        apply I.
+        exact H'.
+      - exact H1.
+    Qed.
 
 
     (* Section prove -> Rstep *)
@@ -826,7 +946,8 @@ Module Soundness (F : Formulas).
             (* symmetry. *)
             congruence.
             apply refl.
-            reflexivity.
+            unfold list_eq.
+            split; apply incl_refl.
             rewrite <- H2.
             instantiate (1 := F0).
             unfold list_eq.
@@ -887,18 +1008,27 @@ Module Soundness (F : Formulas).
 
 
 
-    (* Main theorem *)
+    (* Main theorem - maybe? *)
     Theorem soundness : forall n G0 F,
                           prove (Delta S G0) G0 n G0 = (success, F) ->
                           SatTS G0.
     Proof.
-      intros n G0 F.
-      intros H.
+      intros n G0 F H.
       eapply star_soundness.
       instantiate (1 := F).
-      eapply prove_Rstep_star.
-      instantiate (1 := n).
-      exact H.
+      assert (H' : incl (G0 ++ (Delta S G0)) F).
+      - apply incl_G_F with (n := n) (G0 := G0).
+        exact H.
+      - unfold incl in H'.
+        unfold incl.
+        intros a H''.
+        apply H'.
+        apply in_app_iff.
+        left.
+        exact H''.
+      - eapply prove_Rstep_star.
+        instantiate (1 := n).
+        exact H.
     Qed.
     
   End RLSemantics.
