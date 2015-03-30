@@ -534,12 +534,12 @@ Module Soundness (F : Formulas).
       incl S1 S2 /\ incl S2 S1.
     
     Inductive Rstep_star : TS_Spec -> TS_Spec
-                           -> TS_Spec -> TS_Spec -> Prop :=
-    | refl : forall G G' F G0, list_eq G G' -> Rstep_star G G' F G0
-    | tranz : forall G G' F G0, forall F' G'',
+                           -> TS_Spec -> TS_Spec -> nat -> Prop :=
+    | refl : forall G G' F G0 n, list_eq G G' -> Rstep_star G G' F G0 n
+    | tranz : forall G G' F G0 n F' G'',
                 Rstep G G'' G0 ->
-                Rstep_star G'' G' F G0 ->
-                list_eq F' (F ++ G) -> Rstep_star G G' F' G0.
+                Rstep_star G'' G' F G0 n ->
+                list_eq F' (F ++ G) -> Rstep_star G G' F' G0 (Datatypes.S n).
 
 (*
     Fixpoint len (G G' F G0 : TS_Spec) (steps : Rstep_star G G' F G0) : nat :=
@@ -547,25 +547,62 @@ Module Soundness (F : Formulas).
         | refl _ _ _ _ _ => 0
         | tranz _ _ _ _ _ _ _ _ _ => 1
       end.
-*)
-    Lemma exists_G : forall F G0 g,
-                       Rstep_star (Delta S G0) nil F G0 ->
-                       In g F ->
-                       exists G G' F0,
-                         (Rstep G G' G0 /\
-                         Rstep_star G' nil F0 G0 /\
-                         list_eq F (F0 ++ G)) /\
-                         (In g G /\ ~ (In g G')) .
+ *)
+
+    Lemma g_in_goals :
+      forall G G' G'' F F0 G0 g n,
+        Rstep G G' G0 ->
+        Rstep_star G' G'' F0 G0 n ->
+        list_eq F (F0 ++ G) ->
+        In g F
+        ->
+        (In g G /\ ~ In g F0) \/ (In g F0).
     Proof.
-      intros F G0 g H H'.
+      intros G G' G'' F F0 G0 g n H0 H1 H2 H3.
+      unfold list_eq in H2.
+      destruct H2 as (H2 & H2').
+      unfold incl in H2.
+      assert (((In g G /\ ~ In g F0) \/ (In g F0))
+              \/
+              ~ ((In g G /\ ~ In g F0) \/ (In g F0))).
+      apply classic.
+      destruct H.
+      - assumption.
+      - apply not_or_and in H.
+        destruct H as (H & H').
+        apply not_and_or in H.
+        destruct H.
+        + apply H2 in H3.
+          apply in_app_or in H3.
+          contradict H3.
+          apply and_not_or.
+          split; assumption.
+        + right.
+          apply NNPP in H.
+          assumption.
+    Qed.
+
+    
+    Lemma exists_G :
+      forall n G F G0 g,
+        G <> nil ->
+        Rstep_star G nil F G0 (Datatypes.S n) ->
+        In g F ->
+        exists G' G'',
+          Rstep G' G'' G0 /\ In g G' /\ ~ (In g G'') .
+    Proof.
     Admitted.
 
 
-    Lemma helper7 : forall G0 F, Rstep_star (Delta S G0) nil F G0 ->
-                      forall phi phi', In (phi => phi') F ->
-                             (SatML_Model (ImpliesML phi phi')
-                                 \/
-                                 SDerivable phi).
+    
+
+    Lemma helper7 :
+      forall G0 F n,
+        Rstep_star (Delta S G0) nil F G0 n ->
+        forall phi phi', In (phi => phi') F ->
+                         (SatML_Model (ImpliesML phi phi')
+                          \/
+                          SDerivable phi).
     Proof.
       intros G0 F H phi phi' H'.
     Admitted.
@@ -574,62 +611,55 @@ Module Soundness (F : Formulas).
             
     
     Lemma helper8' :
-      forall F G0, G0 <> nil -> total ->
-                   Rstep_star (Delta S G0) nil F G0 ->
-                   forall i tau rho phi phi',
-                     (* wfPath tau *)
-                     In (phi => phi') F ->
-                     (exists gamma, tau i = Some gamma /\ terminating gamma) ->
-                     startsFrom tau rho phi ->
-                     SatRL tau rho (phi => phi').
+      forall F G0 n, G0 <> nil -> total ->
+                     Rstep_star (Delta S G0) nil F G0 n ->
+                     forall i tau rho phi phi',
+                       (* wfPath tau *)
+                       In (phi => phi') F ->
+                       (exists gamma, tau i = Some gamma /\ terminating gamma) ->
+                       startsFrom tau rho phi ->
+                       SatRL tau rho (phi => phi').
     Proof.
-      intros F G0 NE T H.
-      induction i.
-      - intros tau rho phi phi' H0 H1 H2.
-        destruct H1 as (gamma & (H1 & H3)).
-        apply helper7 with (phi := phi) (phi' := phi') in H.
-        + destruct H as [H | H'].
-          * unfold startsFrom in H2.
-            destruct H2 as (gamma0 & (H4 & H5)).
-            unfold SatRL.
-            left. split.
-            { simpl. unfold startsFrom. exists gamma0. split; assumption. }
-            split.
-            { unfold complete. right. exists 0, gamma. split; assumption. }
-            exists 0, gamma0.
-            split.
-            exact H4.
-            simpl.
-            eapply impl_sat.
-            instantiate (1 := phi).
-            split; assumption.
-            
-          * unfold terminating in H3.
-            unfold startsFrom in H2.
-            destruct H2 as (gamma1 & (H4 & H5)).
-            rewrite H1 in H4.
-            injection H4. clear H4.
-            intros H4.
-            unfold total in T.
-            apply T in H5.
-            contradict H3.
-            destruct H5 as (gamma' & H5).
-            apply ex_not_not_all.
-            exists gamma'.
-            unfold not.
-            intros H3.
-            apply H3.
-            rewrite H4.
-            exact H5.
-        + exact H0.
-      - intros tau rho phi phi' H0 H1 H2.
-        
+      intros F G0 n NE T H.
+      induction i using lt_wf_ind.
+      intros tau rho phi phi' H01 H2 H3.
 
+      Lemma exists_G' : forall F G0 n phi phi',
+                         Rstep_star (Delta S G0) [] F G0 n ->
+                         In (phi => phi') F ->
+                         exists G G',
+                           Rstep G G' G0 /\ In (phi => phi') G /\ ~ In (phi => phi') G'.
+      Proof.
+      Admitted.
+
+      apply exists_G'  with (phi := phi) (phi' := phi') in H.
+      destruct H as (G & (G' & (H4 & (H5 & H6)))).
+
+      inversion H4.
+      - contradict H5.
+        rewrite <- H.
+        apply in_nil.
+      - subst G1 G'0 G2.
+        case_eq G.
+        + intros H8.
+          rewrite H8 in H5.
+          contradict H5.
+        + rewrite H7 in H6.
+          unfold remove_first in H6.
+          intros r l H8.
+          rewrite H8 in H6.
+          fold remove_first in H6.
+          case_eq (RLFormula_eq_dec (phi0 => phi'0) r).
+          * intros e H9.
+            rewrite H9 in H6.
+            rewrite H8 in H5.
     Admitted.
+            
+  
       
-    Lemma helper8 : forall F G0,
+    Lemma helper8 : forall F G0 n,
                       total -> G0 <> nil ->
-                      Rstep_star (Delta S G0) nil F G0 ->
+                      Rstep_star (Delta S G0) nil F G0 n ->
                       forall tau rho phi phi',
                         (* wfPath tau *)
                         In (phi => phi') F ->
@@ -637,12 +667,12 @@ Module Soundness (F : Formulas).
                         startsFrom tau rho phi ->
                         SatRL tau rho (phi => phi').
       Proof.
-      intros F G0 T H' H tau rho phi phi' H0 H1 H2.
+      intros F G0 n T H' H tau rho phi phi' H0 H1 H2.
       unfold complete in H1.
       destruct H1 as [H1 | H1].
       - unfold SatRL. right. exact H1.
       - destruct H1 as (i & (gamma & (H1 & H3))).
-        apply helper8' with (F := F) (G0 := G0) (i := i).
+        apply helper8' with (F := F) (G0 := G0) (i := i) (n := n).
         + exact H'.
         + exact T.
         + exact H.
@@ -656,32 +686,34 @@ Module Soundness (F : Formulas).
                          
                   
        
-    Lemma star_soundness : forall G0 F,
-                             total -> incl G0 F ->
-                             Rstep_star (Delta S G0) nil F G0 -> SatTS G0.
-      intros G0 F T I H.
-      unfold SatTS.
-      intros alpha H'.
-      unfold SatTS_S.
-      intros tau rho H0 H1.
-      case_eq G0.
-      - intros H2.
-        rewrite H2 in H'.
-        contradict H'.
-      - destruct alpha.
-        simpl.
-        intros r l H2 H3.
-        apply helper8 with (F := F) (G0 := G0).
-        + exact T.
-        + rewrite H2.
-          congruence.
-        + exact H.
-        + unfold incl in I.
-          apply I.
-          exact H'.
-        + exact H1.
-        + exact H3.
-    Qed.
+      Lemma star_soundness :
+        forall G0 F n,
+          total -> incl G0 F ->
+          Rstep_star (Delta S G0) nil F G0 n -> SatTS G0.
+      Proof.
+        intros G0 F n T I H.
+        unfold SatTS.
+        intros alpha H'.
+        unfold SatTS_S.
+        intros tau rho H0 H1.
+        case_eq G0.
+        - intros H2.
+          rewrite H2 in H'.
+          contradict H'.
+        - destruct alpha.
+          simpl.
+          intros r l H2 H3.
+          apply helper8 with (F := F) (G0 := G0) (n := n).
+          + exact T.
+          + rewrite H2.
+            congruence.
+          + exact H.
+          + unfold incl in I.
+            apply I.
+            exact H'.
+          + exact H1.
+          + exact H3.
+      Qed.
 
 
 
@@ -935,7 +967,7 @@ Module Soundness (F : Formulas).
       forall n G0 G F0 F,
         incl G F ->
         prove G F0 n G0 = (success, F) ->
-        Rstep_star G nil F G0.
+        Rstep_star G nil F G0 n.
     Proof.
       induction n.
       - intros G0 G F0 F H' H.
@@ -999,7 +1031,7 @@ Module Soundness (F : Formulas).
     Lemma prove_Rstep_star :
       forall n G0 F,
         prove (Delta S G0) G0 n G0 = (success, F) ->
-        Rstep_star (Delta S G0) nil F G0.
+        Rstep_star (Delta S G0) nil F G0 n.
     Proof.
       intros n G0 F H.
       apply prove_Rstep_star_gen
@@ -1018,8 +1050,7 @@ Module Soundness (F : Formulas).
     Qed.
 
 
-
-
+ 
 
     (* Main theorem - maybe? *)
     Theorem soundness : forall n G0 F,
@@ -1045,6 +1076,8 @@ Module Soundness (F : Formulas).
         instantiate (1 := n).
         exact H.
     Qed.
+
+
     
   End RLSemantics.
 
