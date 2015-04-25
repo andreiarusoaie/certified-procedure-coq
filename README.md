@@ -4,10 +4,7 @@ Certprover
 Build
 ----------
 
-1. Windows: `.\gradlew.bat build`
-2. UNIX: `./gradlew build`
+:-$ cd /src/coq
+:-$ coq_makefile *.v -o Makefile
+:-$ make
 
-Install
-----------
-
-Add `./bin/` folder in your path
