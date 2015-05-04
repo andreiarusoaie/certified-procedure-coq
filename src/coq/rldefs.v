@@ -12,6 +12,18 @@ Module Type RL (F : Formulas) (U : Utils).
   Notation lhs := fst .
   Notation rhs := snd .
 
+  Parameter RLFormula_eq_dec :
+    forall x y : RLFormula, {x = y} + {x <> y}.
+
+  Lemma RL_decompose :
+    forall F : RLFormula, F = ((lhs F) => (rhs F)).
+  Proof.
+    intros F.
+    destruct F.
+    simpl.
+    reflexivity.
+  Qed.
+  
   (* Hereafter S is a set of RLFormula *)
   Variable S : list RLFormula .
       

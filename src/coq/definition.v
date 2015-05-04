@@ -10,6 +10,10 @@ Module Type Definitions (U : Utils)
   Import R.
   Import ListNotations.
 
+  (* existential closure *)
+  Definition EClos (phi : MLFormula) :=
+    (ExistsML (FreeVars [phi]) phi).
+  
   (* S - derivable *)
   Definition SDerivable (phi : MLFormula) : Prop :=
     exists gamma rho gamma', SatML gamma rho phi /\ (gamma =>S gamma') .
@@ -19,7 +23,7 @@ Module Type Definitions (U : Utils)
              (F : RLFormula)  : MLFormula :=
     (ExistsML (FreeVars [lhs F; rhs F])
               (AndML
-                 (injectFOL (encoding (AndML (lhs F) phi)))
+                 (encoding (AndML (lhs F) phi))
                  (rhs F))) .
   Definition SynDerRL' (F : RLFormula)
              (phi1 : MLFormula) : RLFormula :=
@@ -52,7 +56,9 @@ Module Type Definitions (U : Utils)
   
   (* Symbolic transition relation *)
   Definition TS_Symb (phi phi' : MLFormula) : Prop :=
-    In phi' (SynSDerML phi).
+    In phi' (SynDerML phi S).
+  Notation "f =>Ss f'" := (TS_Symb f f') (at level 100).
+
   
   (* Symbolic paths *)
   Definition SymPath := GPath MLFormula .
@@ -60,19 +66,25 @@ Module Type Definitions (U : Utils)
   Definition isInfiniteSym (mu : SymPath) :=
     isInfiniteGPath MLFormula mu.
   Definition SymPath_i (mu : SymPath) := GPath_i MLFormula mu.
-
+  
   (* complete SPath *)
-  Definition completeSymPath (mu : SymPath) : Prop :=
+  Definition completeSymPathFinite (mu : SymPath) (n : nat) : Prop :=
+    ~ isInfiniteSym mu /\ 
+    (exists phi, mu n = Some phi /\
+                   (~ SDerivable phi) /\
+                   forall i, exists phi',
+                     mu i = Some phi' /\ i < n
+                     /\ SDerivable phi').
+
+  Definition completeSymPathInfinite (mu : SymPath) : Prop :=
     (isInfiniteSym mu -> forall i,
                          exists phi,
-                           mu i = Some phi-> SDerivable phi)
-    \/
-    (exists n phi, mu n = Some phi ->
-                   (~ SDerivable phi)
-                   /\
-                   forall i, exists phi',
-                     i < n -> mu i = Some phi'
-                     -> SDerivable phi').
+                           mu i = Some phi /\
+                           SDerivable phi).
+      
+  Definition completeSymPath (mu : SymPath) : Prop :=
+    completeSymPathInfinite mu \/
+    exists n, completeSymPathFinite mu n.
 
   (* startsFromSymPath *)
   Definition startsFromSymPath (mu : SymPath)
@@ -96,11 +108,5 @@ Module Type Definitions (U : Utils)
     forall i, exists rho phi gamma,
       mu i = Some phi /\ tau i = Some gamma ->
       SatML gamma rho phi .
-
-  (* Cover 2 : symb covers symb *)
-  Definition scover (mu mu' : SymPath) : Prop :=
-    forall i, exists phi phi',
-      mu i = Some phi /\ mu' i = Some phi' ->
-      ValidML (ImpliesML phi' phi).
   
 End Definitions.
