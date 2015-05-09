@@ -106,7 +106,7 @@ Module Type Definitions (U : Utils)
   (* Cover 1 : symb covers concrete *)
   Definition cover (mu : SymPath) (tau : Path) : Prop :=
     forall i, exists rho phi gamma,
-      mu i = Some phi /\ tau i = Some gamma ->
+      mu i = Some phi /\ tau i = Some gamma /\
       SatML gamma rho phi .
   
 End Definitions.

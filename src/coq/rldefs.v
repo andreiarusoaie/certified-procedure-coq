@@ -51,7 +51,7 @@ Module Type RL (F : Formulas) (U : Utils).
 
   (* complete path *)
   Definition complete (tau : Path) :=
-    exists i gamma, tau i = Some gamma /\ terminating gamma.
+    exists n gamma, tau n = Some gamma /\ terminating gamma.
 
   (* path satisfaction *)
   (* Note: the path should be well-formed *)
@@ -60,9 +60,10 @@ Module Type RL (F : Formulas) (U : Utils).
     startsFrom tau rho (lhs F) /\
     (isInfinite tau
       \/
-      (complete tau /\
-       exists i gamma, tau i = Some gamma
-                       /\ SatML gamma rho (rhs F))).
+      (exists n gamma,
+         complete tau /\
+         tau n = Some gamma /\
+         SatML gamma rho (rhs F))).
 
   (* RL satisfaction *)
   Definition SatTS (F : RLFormula) : Prop :=
