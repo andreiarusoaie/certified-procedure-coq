@@ -180,15 +180,6 @@ Module Type Soundness
         mu 0 = Some phi0 /\ scover mu mu'/\
         completeSymPathFinite mu n.
   Admitted.
-
-  Lemma cover_clos :
-    forall mu' n phi,
-      mu' 0 = Some (EClos phi) ->
-      completeSymPathFinite mu' n ->
-      exists mu,
-        mu 0 = Some phi /\ scover mu mu' /\
-        completeSymPathFinite mu n.
-  Admitted.
   
   Lemma zero_subpath : forall mu i,
                          SymPath_i mu 0 i = mu i.
@@ -513,7 +504,7 @@ Module Type Soundness
    Qed.
 
 
-   (* customize a bit the induction principle *)
+   (* custom induction principle *)
    Lemma custom_lt_wf_ind :
      forall (P:nat -> Prop),
        P 0 ->
@@ -608,7 +599,117 @@ Module Type Soundness
             destruct H7 as (G' & (H7 & H7')).
             inversion H7.
             - apply valid_starts_satv; assumption.
-            - apply SatV_trans with
+            -
+              simpl in H8.
+
+              
+(*              unfold startsFromSymPathV in H2.
+              destruct H2 as (phi0 & (H2 & H2')).
+              Check prop3.
+              apply prop3 with (phi := phi0)
+                                 (phi' := phi) (phi'' := (EClos (lhs c))) in H2'.
+              Check cover_finite_symb_path.
+              apply cover_finite_symb_path
+              with (mu' := mu) (n := Datatypes.S n) in H2'.
+                
+              destruct H2' as (mu_c & (H12 & (H10 & H11))).
+
+              Lemma cover_circ :
+                forall mu_c mu_C mu phic n,
+                  mu_c 0 = Some (EClos phic) ->
+                  scover mu_c mu ->
+                  completeSymPathFinite mu_c n ->
+                  mu_C 0 = Some phic ->
+                  scover mu_C mu /\
+                  completeSymPathFinite mu_C n.
+              Proof.
+                intros mu_c mu_C mu phic n H1 H2 H3 H4.
+                split.
+                - unfold scover.
+                  intros tau H.
+                  unfold cover.
+                  intros i.
+                  
+                
+              Admitted.
+
+              apply cover_circ with
+              (phic := (lhs c)) (n := Datatypes.S n) in H10.
+              destruct H10 as (mu_C & (H13 & (H14 & H15))).
+              clear H11 H12 mu_c.
+
+              Lemma one_step_Sn :
+                forall mu phi n,
+                  completeSymPathFinite mu (Datatypes.S n) ->
+                  mu 0 = Some phi ->
+                  exists phi1,
+                    phi =>Ss phi1.
+              Proof.
+              Admitted.
+
+              apply one_step_Sn with
+              (phi := (lhs c)) in H15.
+
+              destruct H15 as (phi1 & H15).
+              unfold TS_Symb in H15.
+
+              assert (SatV (SymPath_i mu 1) phi1 (rhs c)).
+              + apply H with (m := n) (F := F).
+                omega.
+                
+                Lemma complete_subpath :
+                  forall mu n,
+                    completeSymPathFinite mu (Datatypes.S n) ->
+                    wfSymPath mu ->
+                    completeSymPathFinite (SymPath_i mu 1) n.
+                  intros mu n H H'.
+                  unfold completeSymPathFinite in *.
+                  destruct H as (H0 & (phi & (H1 & (H2 & H3)))).
+                  split.
+                Admitted.
+
+                apply complete_subpath.
+                exact H0.
+                exact H1.
+
+                Lemma wf_subpath :
+                  forall mu j,
+                    wfSymPath mu ->
+                    wfSymPath (SymPath_i mu j).
+                Admitted.
+
+                apply wf_subpath.
+                exact H1.
+                Check startsFrom_i.
+                unfold startsFromSymPathV.
+
+                apply one_step_Sn with (n := n) in H2.
+                destruct H2 as (phi_1 & H2).
+                exists phi_1.
+                split.
+                rewrite index_shift.
+                simpl.
+                admit.
+ *)
+              
+                        
+                           
+                
+              
+                
+              admit.
+
+            -
+                admit.
+                admit.
+              + 
+
+              assert (H10 :  exists mu' : nat -> option MLFormula,
+         mu' 0 = Some phi0 /\ scover mu' mu /\ completeSymPathFinite mu' n
+                     ).
+              
+              
+              apply SatV_trans with
               (phi' := (SynDerML' phi c)).
               + unfold SatV.
                 split.
@@ -638,7 +739,7 @@ Module Type Soundness
                 apply H with (m := n - 1) (F := F).
                 * omega.
                 *)
-            - 
+         
           }
           exact H4.
           exact H3.
