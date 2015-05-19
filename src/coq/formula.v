@@ -70,12 +70,21 @@ Module Type Formulas.
   Parameter encoding : MLFormula -> MLFormula .
 
   (* encoding properties *)
-  (* Axiom SatFOL_iff_SatML :
+  (* 
+    The following proposition, looks cleaner when 
+    working with both FOL and ML:
+    Axiom SatFOL_iff_SatML :
     forall phi rho,
       SatFOL rho (encoding phi) <->
       exists gamma, SatML gamma rho phi.
    *)
+  Axiom Proposition1 :
+    forall gamma' phi rho,
+      SatML gamma' rho (encoding phi) <->
+      exists gamma, SatML gamma rho phi.
 
+  
+  
   Axiom enc_sat :
     forall gamma rho phi,
       SatML gamma rho (encoding phi) <->
