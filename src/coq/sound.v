@@ -334,7 +334,22 @@ Module Type Soundness
            rewrite H2 in H0'.
            inversion H0'.
    Qed.
-           
+   
+   Lemma complete_shift :
+     forall tau i n',
+       complete (Path_i tau (i + 1)) n' ->
+       complete (Path_i tau 1) (n' + i) .
+   Proof.
+     intros tau i n' H.
+     unfold complete in *.
+     destruct H as (gamma & H & H').
+     exists gamma.
+     split; trivial.
+     rewrite shift_index in *.
+     rewrite plus_assoc in H.
+     exact H.
+   Qed.
+
 
    (* Are these axioms ? *)
    Lemma disjoint_domain :
@@ -505,8 +520,6 @@ Module Type Soundness
                    simpl.
                    split; trivial.
                }
-
-
                unfold SatRL in H14.
                simpl in H14.
                destruct H14 as (H14 & n0 & i & gamma_i & H15 & H16 & H17 & H18).
@@ -533,7 +546,6 @@ Module Type Soundness
                }
 
                clear H18 H13 H14 H7 H7' rho'.
-               
                assert (H20 : SatRL (Path_i tau (i + 1)) rho
                                        ((SynDerML' phi c) => phi')).
                {
@@ -578,22 +590,6 @@ Module Type Soundness
                  split; trivial.
                + auto. exists (Datatypes.S n), (j + (i + 1)), gamma_j.
                  split; trivial.
-
-                 Lemma complete_shift :
-                   forall tau i n',
-                     complete (Path_i tau (i + 1)) n' ->
-                     complete (Path_i tau 1) (n' + i) .
-                 Proof.
-                   intros tau i n' H.
-                   unfold complete in *.
-                   destruct H as (gamma & H & H').
-                   exists gamma.
-                   split; trivial.
-                   rewrite shift_index in *.
-                   rewrite plus_assoc in H.
-                   exact H.
-                 Qed.
-
                  apply complete_shift in H22.
                  apply one_step_less with (n := n) in H22; trivial.
                  apply plus_le_compat_r with (p := i) in H21.
@@ -605,7 +601,67 @@ Module Type Soundness
                  * rewrite shift_index in H23.
                    exact H23.
                  * simpl. exact H24.
-             - admit.
+             - simpl in H6.
+               unfold startsFrom in H2.
+               destruct H2 as (gamma & H2 & H8).
+
+               assert (H9 : exists gamma', tau 1 = Some gamma').
+               { apply first_step_gamma with (n := n) in H2; trivial. }
+               destruct H9 as (gamma' & H9).
+
+               assert (H10 : gamma =>S gamma').
+               {
+                 unfold wfPath, wfGPath in WF.
+                 destruct WF as (WF & WF').
+                 assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+                 {
+                   split; unfold not; intros H10.
+                   - rewrite H10 in *.
+                     inversion H2.
+                   - simpl in H10.
+                     rewrite H10 in *.
+                     inversion H9.
+                 }
+                 apply WF' in H10.
+                 destruct H10 as (e & e' & H10 & H11 & H12).
+                 simpl in H11.
+                 rewrite H10 in H2.
+                 rewrite H11 in H9.
+                 inversion H2.
+                 inversion H9.
+                 subst e e'.
+                 assumption.
+               }
+
+               apply cover_step with (rho := rho) (phi := phi) in H10.
+               destruct H10 as (alpha & phi1 & H10 & H11 & H12).
+
+               assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
+               {
+                 apply H with (m := n) (G := G) (F := F); trivial.
+                 - apply wf_subpath; trivial.
+                 - admit.
+                 - unfold startsFrom.
+                   exists gamma'.
+                   split; trivial.
+               }
+
+               unfold SatRL.
+               split.
+               + simpl.
+                 unfold startsFrom.
+                 exists gamma.
+                 split; trivial.
+               + unfold SatRL in H13.
+                 simpl in H13.
+                 destruct H13 as (H13 & n0 & j & gamma_j & Hj & H14 & H15 & H16).
+                 exists (Datatypes.S n), (j + 1), gamma_j.
+                 split.
+                 rewrite one_step_less with (tau := tau) (n := n) in Hj; trivial.
+                 * omega.
+                 * repeat split; trivial.
+                   rewrite shift_index in H15; trivial.
+               + assumption.
            }
    Qed.
    
