@@ -71,7 +71,11 @@ Module Type RL (F : Formulas) (U : Utils).
                                 
   (* RL satisfaction *)
   Definition SatTS (F : RLFormula) : Prop :=
-    forall tau rho, SatRL tau rho F .
+    forall tau rho n,
+      wfPath tau ->
+      startsFrom tau rho (lhs F) ->
+      complete tau n ->
+      SatRL tau rho F.
 
   (* RL satisfaction for a set of formulas *)
   Definition SatTS_G (G : list RLFormula) : Prop :=

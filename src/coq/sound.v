@@ -665,77 +665,29 @@ Module Type Soundness
            }
    Qed.
    
-                     
-                     
-                   
-                 
-   Admitted.               
 
-
-   Lemma all_G0_in_F : forall g G F,
-                         In g G0 ->
-                         step_star G [] F ->
-                         In g F.
-   Admitted.
-
-   Lemma  len_finite_path :
-     forall tau,
-       ~isInfinite tau ->
-       (forall i j, i < j -> tau i = None -> tau j = None) ->
-       exists n, tau n <> None /\ tau (Datatypes.S n) = None.
-   Admitted.
-
-   
-   Lemma not_infinite : forall tau,
-                          wfPath tau ->
-                          ~ (isInfinite tau) ->
-                          exists n, complete tau n.
+   Lemma all_G0_in_F:
+     forall g G F,
+       In g G0 ->
+       step_star G [] F ->
+       In g F.
    Proof.
-     intros tau H H'.
-     generalize H'.
-     intros H1.
-     apply len_finite_path in H'.
-     - destruct H' as (n & H2 & H3).
-       exists n.
-       unfold complete.
-       split; trivial.
-       unfold wfPath, wfGPath in H.
-       destruct H as (H & H4).
-       destruct H2 as (H2 & H5).
-       assert (H6 : exists gamma', tau n = Some gamma').
-       admit.
-       destruct H6 as (gamma & H6).
-       exists gamma.
-       split; trivial.
-       unfold terminating.
-       intros gamma' H7.
-   Admitted.
-       
-       
+     intros g G F H H'.
+     induction H'; trivial.
+     simpl.
+     tauto.
+   Qed.
    
    Lemma sound : forall F,
                    total ->
                    step_star (Delta S G0) [] F ->
                    SatTS_G G0.
    Proof.
-     intros F T H g H0 tau rho WF H1.
-     assert (H' : isInfinite tau \/ ~ (isInfinite tau)).
-     { apply classic. }
-     destruct H' as [H' | H'].
-     - unfold SatRL.
-       split.
-       + exact H1.
-       + left.
-         exact H'.
-     - eapply finite_sound.
-       + exact WF.
-       + exact H'.
-       + instantiate (1 := F).
-         destruct g.
-         apply all_G0_in_F with (Delta S G0); trivial.
-       + unfold complete.
-   Admitted.
-
+     intros F T H g H0 tau rho n H1 H2 H3.
+     apply finite_sound with (n := n) (G := (Delta S G0)) (F := F); trivial.
+     destruct g.
+     apply all_G0_in_F with (G := (Delta S G0)); trivial.
+   Qed.
               
 End Soundness.
        
