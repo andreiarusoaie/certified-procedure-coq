@@ -165,77 +165,7 @@ Module Type Soundness
    Admitted.
 
    
-   Lemma complete_subpath :
-     forall tau n j,
-       wfPath tau ->
-       complete tau (n + j) ->
-       complete (Path_i tau j) n.
-   Proof.
-     intros tau n j WF H.
-     unfold complete in *.
-     destruct H as (I & gamma & H').
-     split.
-     - apply not_infinite_subpath.
-       exact I.
-     - auto. exists gamma.
-       rewrite shift_index.
-       exact H'.
-   Qed.
    
-   Lemma first_step :
-     forall (phi phi' phi1 : MLFormula) (G F : list RLFormula),
-       step_star G [] F ->
-       In (phi => phi') G0 ->
-       In phi1 (SynDerML phi S) ->
-       In (phi1 => phi') F .
-   Admitted.
-
-   Lemma starts_first_step :
-     forall tau rho phi,
-       startsFrom tau rho phi ->
-       exists phi1,
-         In phi1 (SynDerML phi S) ->
-         startsFrom (Path_i tau 1) rho phi1.
-   Admitted.
-
-
-   
-   Lemma complete_path :
-     forall tau j n,
-       ~ isInfinite tau ->
-       wfPath tau ->
-       complete (Path_i tau j) n ->
-       complete tau (n + j).
-   Proof.
-     intros tau j n I WF H.
-     unfold complete in *.
-     destruct H as (H2 & gamma & H0 & H1).
-     split; trivial.
-     exists gamma.
-     split.
-     - rewrite <- shift_index.
-       exact H0.
-     - exact H1.
-   Qed.
-
-   (* S total -> S |= Delta_S (G0) -> S |= G0 *)
-   Lemma G1_sat_G0_sat :
-     forall tau rho phi phi',
-       wfPath tau ->
-       startsFrom tau rho phi ->
-       (forall phi1,
-          In phi1 (SynDerML phi S) ->
-          SatRL (Path_i tau 1) rho (phi1 => phi')) ->
-       SatRL tau rho (phi => phi').
-   Proof.
-   Admitted.
-   
-   Lemma wf_subpath : forall tau j,
-                        wfPath tau ->
-                        wfPath (Path_i tau j).
-   Admitted.
-
-
    Lemma cover_step :
      forall gamma gamma' rho phi,
        SatML gamma rho phi ->
@@ -246,11 +176,6 @@ Module Type Soundness
          SatML gamma' rho phi' .
    Admitted.   
                    
-   Lemma alpha_to_S : forall alpha phi phi1,
-                        In alpha S ->
-                        phi1 = SynDerML' phi alpha ->
-                        In phi1 (SynDerML phi S).
-   Admitted.
 
    (* axiom ? *)
    Lemma rhs_vars_in_lhs :
@@ -259,18 +184,18 @@ Module Type Soundness
    Admitted.
    
    Lemma finite_sound :
-     forall n tau rho phi phi' G F,
+     forall steps tau rho phi phi' G F,
        wfPath tau ->
-       ~ isInfinite tau -> 
        In (phi => phi') F ->
-       complete tau n ->
+       complete tau ->
        step_star G [] F ->
        startsFrom tau rho phi ->
        total ->
+       steps = (length tau - 1) ->
        SatRL tau rho (phi => phi').
    Proof.
-     induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' G F WF I H' H0 H H1 T.
+     induction steps using custom_lt_wf_ind.
+     - intros tau rho phi phi' G F WF H' H0 H H1 T H2.
        apply impl_or_der with
        (phi := phi) (phi' := phi') in H.
        + destruct H as [H | H].
@@ -279,54 +204,73 @@ Module Type Soundness
            {simpl.
              unfold startsFrom.
              unfold complete in H0.
-             destruct H0 as (H3 & gamma & H0 & H2).
+             destruct H0 as (gamma & H0 & H3).
              exists gamma.
              split.
-             - exact H0.
-             - unfold startsFrom in H1.
-               destruct H1 as (gamma0 & H1 & H4).
-               rewrite H0 in H1.
-               inversion H1.
-               assumption. }
-           right.
+            - rewrite <- H0.
+
+              (*
+              Lemma singleton : forall tau,
+                                  length tau = 1 ->
+                                  hd None tau = last tau None.
+              *)
+              
+              admit.
+            - unfold startsFrom in H1.
+              destruct H1 as (gamma0 & H1 & H4).
+              admit.
+           }
            unfold startsFrom in H1.
-           destruct H1 as (gamma & (H1 & H2)).
-           exists 0, 0, gamma.
+           destruct H1 as (gamma & (H1 & H3)).
+           exists 0, gamma.
            split.
-           omega.
-           split.
-           exact H0.
-           split.
-           exact H1.
-           simpl.
-           apply valid_impl with (phi := phi);assumption.
+           {
+             rewrite <- H1.
+
+           (* 
+           Lemma element_at_zero_hd : forall tau,
+                                        nth 0 tau None = hd None tau.                      *)
+          
+             admit.
+           }
+
+           {
+             simpl.
+             apply valid_impl with (phi := phi);assumption.
+           }
          * unfold complete in H0.
-           destruct H0 as (I' & gamma & H2 & H3).
+           destruct H0 as (gamma & H0 & H3).
            unfold total in T.
            apply T with
            (gamma := gamma) (rho := rho) in H.
-           destruct H as (gamma' & H).
-           unfold terminating in H3.
-           contradict H.
-           apply H3.
-           unfold startsFrom in H1.
-           destruct H1 as (gamma0 & (H1 & H1')).
-           rewrite H2 in H1.
-           inversion H1.
-           exact H1'.
+           {
+             destruct H as (gamma' & H).
+             unfold terminating in H3.
+             contradict H.
+             apply H3.
+           }
+           {
+             unfold startsFrom in H1. 
+             destruct H1 as (gamma0 & (H1 & H1')).
+             admit.
+           }
        + exact H'.
-     - intros tau rho phi phi' G F WF I H' H0 H1 H2 T.
+     - intros tau rho phi phi' G F WF H' H0 H1 H2 T H2'.
        assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)).
        + apply classic.
        + destruct H3 as [H3 | H3].
          * assert (H4 : forall phi1,
                           In phi1 (SynDerML phi S) ->
-                          SatRL (Path_i tau 1) rho (phi1 => phi')).
+                          SatRL (tl tau) rho (phi1 => phi')).
            {
              intros phi1 H5.
-             apply H with (m := n) (G := G) (F := F).
+             apply H with (m := steps) (G := G) (F := F).
              - omega.
-             - apply wf_subpath.
+             - unfold wfPath in *.
+               intro
+               
+
+               apply wf_subpath.
                exact WF.
              - apply not_infinite_subpath.
                exact I.
