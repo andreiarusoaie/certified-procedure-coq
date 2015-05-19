@@ -32,18 +32,23 @@ Module Type RL (F : Formulas) (U : Utils).
     exists phi phi' rho,
       In (phi => phi') S /\
       (SatML gamma rho phi) /\ (SatML gamma' rho phi').
-  Notation "f =>S f'" := (TS f f') (at level 100).
-
-  (* concrete paths *)
-  Definition Path := GPath State.
-  Definition wfPath := wfGPath State TS.
-  Definition isInfinite (tau : Path) := isInfiniteGPath State tau.
-  Definition Path_i (tau : Path) := GPath_i State tau.
+  Notation "f =>S f'" := (TS f f') (at level 100).  
   
+  (* concrete paths *)
+  Definition Path := list (option State).
+
+  
+  Definition wfPath (tau : Path) : Prop :=
+    forall i,
+    exists gamma gamma',
+      nth i tau None = Some gamma /\
+      nth (i + 1) tau None = Some gamma' ->
+      (gamma =>S gamma').
+    
   (* starts from *)
   Definition startsFrom (tau : Path) (rho : Valuation) 
              (phi : MLFormula) : Prop :=
-    exists gamma, tau 0 = Some gamma /\ SatML gamma rho phi .
+    exists gamma, (hd None tau) = Some gamma /\ SatML gamma rho phi .
 
   (* terminating state *)
   Definition terminating (gamma : State) :=
@@ -51,30 +56,25 @@ Module Type RL (F : Formulas) (U : Utils).
 
   (* complete path *)
   Definition complete (tau : Path) :=
-    exists n gamma, tau n = Some gamma /\ terminating gamma.
+    exists gamma, last tau None = Some gamma /\ terminating gamma.
 
   (* path satisfaction *)
   (* Note: the path should be well-formed *)
   Definition SatRL (tau : Path) (rho : Valuation) 
              (F : RLFormula) : Prop :=
     startsFrom tau rho (lhs F) /\
-    (isInfinite tau
-      \/
-      (exists n gamma,
-         complete tau /\
-         tau n = Some gamma /\
-         SatML gamma rho (rhs F))).
+    (exists i gamma,
+       nth i tau None  = Some gamma /\ 
+       SatML gamma rho (rhs F)).
 
   (* RL satisfaction *)
   Definition SatTS (F : RLFormula) : Prop :=
     forall tau rho, wfPath tau -> 
                     startsFrom tau rho (lhs F) ->
-                    (complete tau \/ isInfinite tau) ->
                     SatRL tau rho F .
 
   (* RL satisfaction for a set of formulas *)
   Definition SatTS_G (G : list RLFormula) : Prop :=
     forall F, In F G -> SatTS F.
-
   
 End RL.

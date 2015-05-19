@@ -44,6 +44,19 @@ Module Type Formulas.
 
   (* ML satisfaction *)
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
+
+  Axiom SatML_Exists :
+    forall phi gamma rho V,
+      SatML gamma rho (ExistsML V phi) <->
+      exists rho',
+        (forall v, ~In v V -> rho v = rho' v) /\
+        SatML gamma rho' phi.
+
+  Axiom SatML_And :
+    forall gamma rho phi phi',
+      SatML gamma rho (AndML phi phi') <->
+      SatML gamma rho phi /\ SatML gamma rho phi'.
+  
   Definition ValidML (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
   Definition SatisfiableML (phi : MLFormula) : Prop :=

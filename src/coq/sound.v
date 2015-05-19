@@ -3,7 +3,6 @@ Require Import util.
 Require Import rldefs.
 Require Import definition.
 Require Import List.
-Require Import ext.
 Require Import ListSet.
 Require Import Classical.
 Require Arith.
@@ -11,9 +10,8 @@ Require Import Omega.
 
 Module Type Soundness
        (U : Utils) (F : Formulas)
-       (R : RL F U) (Def : Definitions U F R)
-       (E : External F U R Def).
-  Import U F R Def E.
+       (R : RL F U) (Def : Definitions U F R) .
+  Import U F R Def.
   Import ListNotations.
   Import Wf_nat.
   
@@ -21,24 +19,26 @@ Module Type Soundness
   Variable G0 : list RLFormula .
 
   Axiom all_G0_der :
-    forall phi phi', In (phi => phi') G0 -> DerivableS phi.
-
+    forall phi phi',
+      In (phi => phi') G0 -> SDerivable phi.
 
   
-  Inductive step (G G': list RLFormula)(g : RLFormula) : Prop :=
-    | base_case : In g G -> Valid g ->
-                  G' = remove RLFormula_eq_dec g G ->
-                  step G G' g
-    | circ_case : forall c, 
-                    In g G -> In c G0 ->
-                    Valid ((lhs g) => (EClos (lhs c))) ->
-                    G' = (remove RLFormula_eq_dec g G)
-                           ++ (SynDerRL [c] g) ->
-                    step G G' g
-    | deriv_case: In g G -> DerivableS (lhs g) ->
+  Inductive step (G G': list RLFormula)
+            (g : RLFormula) : Prop :=
+  | base_case : In g G ->
+                ValidML (ImpliesML (lhs g) (rhs g)) ->
+                G' = remove RLFormula_eq_dec g G ->
+                step G G' g
+  | circ_case : forall c, 
+                  In g G -> In c G0 ->
+                  ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
                   G' = (remove RLFormula_eq_dec g G)
-                         ++ (SynDerRL S g) ->
-                    step G G' g.
+                         ++ (SynDerRL [c] g) ->
+                  step G G' g
+  | deriv_case: In g G -> SDerivable (lhs g) ->
+                G' = (remove RLFormula_eq_dec g G)
+                       ++ (SynDerRL S g) ->
+                step G G' g.
   
   Inductive step_star : list RLFormula -> list RLFormula ->
                         list RLFormula -> Prop :=
@@ -102,409 +102,41 @@ Module Type Soundness
   Qed.
 
 
-  
-  Lemma V_or_D : forall F G phi phi',
-                   step_star G [] F ->
-                   In (phi => phi') F ->
-                   (Valid (phi => phi') \/ DerivableS phi).
+  Lemma impl_or_der :
+    forall F G phi phi',
+      step_star G [] F ->
+      In (phi => phi') F ->
+      ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
     intros F G phi phi' H H0.
-    assert (H' : In (phi => phi') G0 \/ ~(In (phi => phi') G0)).
+    assert (In (phi => phi') G0 \/ ~(In (phi => phi') G0)).
     - apply classic.
-    - destruct H' as [H' | H'].
+    - destruct H1 as [H1 | H1].
       + right.
         apply all_G0_der with (phi' := phi').
-        assumption.
+        exact H1.
       + apply helper_2 with (g := (phi => phi')) in H.
-        destruct H as (G' & (F0 & H)).
-        apply helper_1 in H.
-        clear G.
-        destruct H as (G'' & (H & H'')).
-        inversion H.
-        * left.
-          assumption.
-        * simpl in H3.
-          assert (H8 : DerivableS (lhs c)).
-          apply all_G0_der with (phi' := (rhs c)).
-          simpl.
-          rewrite <- RL_decompose.
-          assumption.
-          apply prop2 in H8.
-          apply prop1 with (phi := phi) in H8.
-          right.
-          assumption.
-          assumption.
-        * simpl in H2.
-          right.
-          assumption.
-        * assumption.
-        * assumption.
-        * assumption.
-  Qed.
-
-
-  (* startsFromSymPath - def using Valid set *)
-  Definition startsFromSymPathV (mu : SymPath)
-             (phi : MLFormula) : Prop :=
-    exists phi0,
-      mu 0 = Some phi0 /\ Valid (phi0 => phi).
-
-  
-  Definition SatV (mu : SymPath)
-             (phi phi' : MLFormula) : Prop :=
-    startsFromSymPathV mu phi
-    /\
-    (isInfiniteSym mu
-     \/
-     exists j phi_j,
-       mu j = Some phi_j /\ Valid (phi_j => phi')).
-
-  (* Cover 2 : symb covers symb *)
-  Definition scover (mu mu' : SymPath) : Prop :=
-    forall tau,
-      cover mu' tau -> cover mu tau .
-
-  Lemma scover_step :
-    forall phi1' phi2' phi1,
-      (phi1' =>Ss phi2') -> Valid (phi1' => phi1) ->
-      exists phi2,
-        phi1 =>Ss phi2.
-  Admitted.
-  
-  Lemma cover_finite_symb_path :
-    forall mu' n phi0' phi0,
-      mu' 0 = Some phi0' ->
-      Valid (phi0' => phi0) ->
-      completeSymPathFinite mu' n ->
-      exists mu,
-        mu 0 = Some phi0 /\ scover mu mu'/\
-        completeSymPathFinite mu n.
-  Admitted.
-  
-  Lemma zero_subpath : forall mu i,
-                         SymPath_i mu 0 i = mu i.
-    intros.
-    unfold SymPath_i.
-    unfold GPath_i.
-    simpl.
-    reflexivity.
-  Qed.
-
-
-  Lemma index_shift : forall mu k j o,
-                        SymPath_i mu k j = o <->
-                        mu (k + j) = o .
-  Proof.
-    intros.
-    split. 
-    - intros H.
-      unfold SymPath_i in H.
-      unfold GPath_i in H.
-      assumption.
-    - intros H.
-      unfold SymPath_i.
-      unfold GPath_i.
-      assumption.
-  Qed.
-
-  Lemma infinite_subpath : forall j mu,
-                             isInfiniteSym (SymPath_i mu j) ->
-                             wfSymPath mu ->
-                             isInfiniteSym mu.
-  Proof.
-    induction j.
-    - intros.
-      unfold isInfiniteSym in *.
-      unfold isInfiniteGPath in *.
-      intros i.
-      rewrite <- zero_subpath.
-      apply H.
-    - intros mu H H'.
-      apply IHj.
-      + unfold isInfiniteSym in H.
-        unfold isInfiniteGPath in H.
-        unfold wfSymPath in H'.
-        unfold wfGPath in H'.
-        destruct H' as (H' & H1).
-        assert (H0 : forall i, SymPath_i mu (1 + j) i <> None -> SymPath_i mu j i <> None).
-        * intros i H2.
-          unfold not.
-          unfold not in H2.
-          intros.
-          apply H2.
-          rewrite index_shift in *.
-          apply H' with (i := j + i).
-          apply Plus.plus_lt_compat_r.
-          simpl.
-          apply Lt.lt_n_Sn.
-          assumption.
-        * unfold isInfiniteSym.
-          unfold isInfiniteGPath.
-          intros i.
-          apply H0.
-          apply H.
-      + assumption.
-  Qed.
-    
-  
-  Lemma first_step : forall phi phi' phi1 mu,
-                       SatV ((SymPath_i mu) 1) phi1 phi' ->
-                       startsFromSymPathV mu phi ->
-                       wfSymPath mu ->
-                       SatV mu phi phi'.
-  Proof.
-    intros phi phi' phi1 mu H1 H2 H3.
-    unfold SatV in H1.
-    destruct H1 as (H1 & H1').
-    destruct H1' as [H1' | H1'].
-    - apply infinite_subpath in H1'.
-      unfold SatV.
-      split.
-      + assumption.
-      + left.
-        assumption.
-      + assumption.
-    - unfold SatV.
-      split.
-      + assumption.
-      + right.
-        destruct H1' as (j & (phi_j & (H4' & H4))).
-        exists (1 + j), phi_j.
-        split.
-        * apply index_shift in H4'.
-          assumption.
-        * assumption.
-  Qed.
-
-  
-        
-  Lemma valid_starts_satv : forall phi phi' mu,
-                              startsFromSymPathV mu phi ->
-                              Valid (phi => phi') ->
-                              SatV mu phi phi'.
-  Proof.
-    intros.
-    unfold SatV.
-    split.
-    - assumption.
-    - right.
-      unfold startsFromSymPathV in H.
-      destruct H as (phi0 & (H & H0')).
-      exists 0, phi0.
-      split.
-      + assumption.
-      + apply prop3 with (phi' := phi); assumption.
-  Qed.      
-
-
-  Lemma wf_subPath : forall mu j,
-                       wfSymPath mu ->
-                       wfSymPath (SymPath_i mu j).
-  Proof.
-    intros mu j H.
-    unfold wfSymPath in *.
-    unfold wfGPath in *.
-    destruct H as (H & H').
-    split.
-    - intros i j0 H1 H2.
-      apply index_shift.
-      rewrite index_shift in H2.
-      apply plus_lt_compat_l with (p := j) in H1.
-      apply H in H1; assumption.
-    - intros i H''.
-      rewrite index_shift in H''.
-      rewrite index_shift in H''.
-      rewrite <- plus_assoc_reverse in H''.
-      apply H' in H''.
-      destruct H'' as (e & (e' & (H0 & (H1 & H2)))).
-      exists e, e'.
-      split.
-      + rewrite index_shift.
-        assumption.
-      + rewrite index_shift.
-        split.
-        * rewrite <- plus_assoc_reverse.
-          assumption.
-        * assumption.
-  Qed.
-  
-  Lemma helper_3 : forall mu n j,
-                     completeSymPathFinite mu n ->
-                     j <= n ->
-                     wfSymPath mu ->
-                     completeSymPathFinite (SymPath_i mu j) (n - j) .
-  Proof.
-    intros mu n j H H3 H4.
-    unfold completeSymPathFinite in *.
-    destruct H as (H & (phi & (H0 & (H1 & H2)))).
-    split.
-    - unfold isInfiniteSym in *.
-      unfold isInfiniteGPath in *.
-      apply not_all_not_ex in H.
-      destruct H as (n0 & H).
-      apply ex_not_not_all.
-      exists (n0 - j).
-      unfold not.
-      intros H'.
-      apply H'.
-      rewrite index_shift.
-      assert (H'' : j + (n0 - j) = n0).
-      + apply Minus.le_plus_minus_r.
-        unfold wfSymPath in H4.
-        unfold wfGPath in H4.
-        destruct H4 as (H4 & H4').
-        assert (H5 : n < n0).
-        * assert ( n < n0 \/ ~( n < n0)).
-          apply classic.
-          destruct H5 as [H5 | H5].
-          assumption.                  
-          assert (H6: n0 < n \/ n = n0).
+        * destruct H as (G' & (F0 & H)).
+          apply helper_1 in H.
+          clear G.
+          destruct H as (G & (H & H')).
           {
-            apply Compare_dec.not_lt in H5.
-            omega.
+            clear H'.
+            inversion H; simpl in H3.
+            - left.
+              exact H3.
+            - simpl in H4.
+              right.
+              admit.
+            - right.
+              exact H3.
           }
-          destruct H6 as [H6 | H6].
-          {
-            apply H4 in H6.
-            rewrite H6 in H0.
-            inversion H0.
-            assumption.
-          }
-          subst n.
-          rewrite H0 in H.
-          inversion H.
-        * apply le_lt_trans with (p := n0) in H3.
-          omega.
-          assumption.
-      + rewrite H''.
-        assumption.
-    - auto. exists phi.
-      split.
-      + apply index_shift.
-        assert (H' : j + (n - j) = n).
-        * omega.
-        * rewrite H'.
-          assumption.
-      + split.
-        * assumption.
-        * intros k.
-          assert (H5 : exists phi', mu (j + k) = Some phi' /\ (j + k) < n /\ SDerivable phi').
-          apply H2.
-          destruct H5 as (phi' & (H6 & (H7 & H8))).
-          exists phi'.
-          split.
-          apply index_shift.
-          assumption.
-          split.
-          omega.
-          assumption.
+          exact H1.
+        * exact H0.
+        * exact H1.
   Qed.
 
-  Lemma startsFrom_i : forall j mu phi_j,
-                         mu j = Some phi_j ->
-                         startsFromSymPathV (SymPath_i mu j) phi_j.
-  Proof.
-    intros j mu phi_j H0.
-    unfold startsFromSymPathV.
-    exists phi_j.
-    split.
-    - apply index_shift.
-      rewrite <- plus_n_O.
-      assumption.
-    - apply prop4.
-  Qed.
-
-  Lemma all_G_in_F : forall G F g,
-                       step_star G [] F ->
-                       In g G ->
-                       In g F.
-  Admitted.
-
-  Lemma G1_in_Delta : forall phi phi' phi_1 mu,
-                        In (phi => phi') G0 ->
-                        startsFromSymPathV mu phi ->
-                        mu 1 = Some phi_1 ->
-                        In (phi_1 => phi') (Delta S G0).
-  Admitted.
-
-   Lemma complete_wf : forall mu n,
-                         completeSymPathFinite mu n ->
-                         wfSymPath mu ->
-                         forall j,
-                           j > n -> mu j = None.
-   Proof.
-     intros.
-     unfold wfSymPath in *.
-     unfold wfGPath in *.
-     destruct H0 as (H0 & H0').
-     unfold completeSymPathFinite in H.
-     destruct H as (H & (phi_n & (H2 & (H3 & H4)))).
-   Admitted.
-
-   Lemma helper_4 : forall mu n phi1,
-                      completeSymPathFinite mu n ->
-                      wfSymPath mu ->
-                      mu 1 = Some phi1 ->
-                      1 <= n.
-   Proof.
-     intros mu n phi1 H W H0.
-     assert (H18: 1 <= n \/ ~(1 <= n)).
-     apply classic.
-     destruct H18 as [H18 | H18].
-     - assumption.
-     - apply not_le in H18.
-       assert (n = 0).
-       + omega.
-       + clear H18.
-         subst n.
-         assert (H20 : mu 1 = None).
-         * apply complete_wf with (n := 0).
-           assumption.
-           assumption.
-           omega.
-         * rewrite H0 in H20.
-           inversion H20.
-   Qed.
-
-   Lemma wf_scover : forall mu mu',
-                       wfSymPath mu ->
-                       scover mu' mu ->
-                       wfSymPath mu'.
-   Admitted.
-
-   Lemma SatV_trans :
-     forall mu phi phi' phi'',
-       SatV mu phi phi' ->
-       SatV mu phi' phi'' ->
-       SatV mu phi phi''.
-   Proof.
-     intros mu phi phi' phi'' H1 H2.
-     unfold SatV in *.
-     destruct H1 as (H1 & H1').
-     destruct H2 as (H2 & H2').
-     split.
-     - exact H1.
-     - exact H2'.
-   Qed.
-
-   Lemma step_back_1 :
-     forall mu c phi phi',
-       SatV mu (SynDerML' phi c) phi' ->
-       ~ isInfiniteSym mu ->
-       exists (j : nat) (phi_j : MLFormula),
-         mu j = Some phi_j /\ Valid (phi_j => phi').
-   Proof.
-     intros mu v phi phi' H H'.
-     unfold SatV in H.
-     destruct H as (H1 & H2).
-     destruct H2 as [H | H].
-     - contradict H.
-       exact H'.
-     - exact H.
-   Qed.
-
-
-   (* custom induction principle *)
+  (* custom induction principle *)
    Lemma custom_lt_wf_ind :
      forall (P:nat -> Prop),
        P 0 ->
@@ -524,389 +156,374 @@ Module Type Soundness
        apply le_lt_n_Sm in H.
        exact H.
    Qed.
-     
 
-        
-  Lemma mu_satV_phi_phi' :
-    forall n mu phi phi' F,
-      completeSymPathFinite mu n ->
-      wfSymPath mu ->
-      startsFromSymPathV mu phi ->
-      In (phi => phi') F ->
-      step_star (Delta S G0) [] F ->
-      SatV mu phi phi'.
-  Proof.
-    induction n using custom_lt_wf_ind.
-    - intros mu phi phi' F H0 H1 H2 H3 H4.
-      unfold completeSymPathFinite in H0.
-      destruct H0 as (H0 & (phi_n & (H5 & (H6 & H8)))).
-      contradict H8.
-      apply ex_not_not_all.
-      exists 0.
-      unfold not.
-      intros H.
-      destruct H as (phi0 & (H0' & (H1' & H2'))).
-      contradict H1'.
-      omega.
-    - intros  mu phi phi' F H0 H1 H2 H3 H4.
-      assert (H7 : In (phi => phi') G0 \/ ~(In (phi => phi') G0)).
-      + apply classic.
-      + destruct H7 as [H7 | H7].
-        * unfold completeSymPathFinite in H0.
-          destruct H0 as (H8 & (phi_Sn & (H9 & (H10 & H11)))).
-          assert (H8' : exists phi' : MLFormula, mu 1 = Some phi' /\ 1 < Datatypes.S n /\ SDerivable phi').
-          {
-            apply H11 with (i := 1).
-          }
-          destruct H8' as (phi_1 & (H8' & (H12 & H13))).
+   Lemma valid_impl :
+     forall gamma rho phi phi',
+       ValidML (ImpliesML phi phi') ->
+       SatML gamma rho phi ->
+       SatML gamma rho phi'.
+   Admitted.
 
-          apply first_step with (phi1 := phi_1).
-          {
-            apply H with (m := n) (F := F).
-            - omega.
-            - assert (H14 : n = Datatypes.S n - 1).
-              omega.
-              rewrite H14.
-              apply helper_3.
-              + unfold completeSymPathFinite.
-                split.
-                assumption.
-                exists phi_Sn.
-                split.
-                assumption.
-                split.
-                assumption.
-                assumption.
-              + omega.
-              + assumption.
-            - apply wf_subPath.
-              assumption.
-            - apply startsFrom_i.
-              assumption.
-            - apply all_G_in_F with (g := phi_1 => phi') in H4.
-              + assumption.
-              + apply G1_in_Delta with (phi := phi) (mu := mu);
-                assumption.
-            - assumption.
-          }
-          assumption.
-          assumption.
+   
+   Lemma complete_subpath :
+     forall tau n j,
+       wfPath tau ->
+       complete tau (n + j) ->
+       complete (Path_i tau j) n.
+   Proof.
+     intros tau n j WF H.
+     unfold complete in *.
+     destruct H as (I & gamma & H').
+     split.
+     - apply not_infinite_subpath.
+       exact I.
+     - auto. exists gamma.
+       rewrite shift_index.
+       exact H'.
+   Qed.
+   
+   Lemma first_step :
+     forall (phi phi' phi1 : MLFormula) (G F : list RLFormula),
+       step_star G [] F ->
+       In (phi => phi') G0 ->
+       In phi1 (SynDerML phi S) ->
+       In (phi1 => phi') F .
+   Admitted.
 
-        * apply helper_2 with (g := phi => phi') in H4.
-          destruct H4 as (G & (F0 & H4)).
-          apply helper_1 with (G := G) (F0 := F0) in H7.
-          {
-            destruct H7 as (G' & (H7 & H7')).
-            inversion H7.
-            - apply valid_starts_satv; assumption.
-            -
-              simpl in H8.
+   Lemma starts_first_step :
+     forall tau rho phi,
+       startsFrom tau rho phi ->
+       exists phi1,
+         In phi1 (SynDerML phi S) ->
+         startsFrom (Path_i tau 1) rho phi1.
+   Admitted.
+
+
+   
+   Lemma complete_path :
+     forall tau j n,
+       ~ isInfinite tau ->
+       wfPath tau ->
+       complete (Path_i tau j) n ->
+       complete tau (n + j).
+   Proof.
+     intros tau j n I WF H.
+     unfold complete in *.
+     destruct H as (H2 & gamma & H0 & H1).
+     split; trivial.
+     exists gamma.
+     split.
+     - rewrite <- shift_index.
+       exact H0.
+     - exact H1.
+   Qed.
+
+   (* S total -> S |= Delta_S (G0) -> S |= G0 *)
+   Lemma G1_sat_G0_sat :
+     forall tau rho phi phi',
+       wfPath tau ->
+       startsFrom tau rho phi ->
+       (forall phi1,
+          In phi1 (SynDerML phi S) ->
+          SatRL (Path_i tau 1) rho (phi1 => phi')) ->
+       SatRL tau rho (phi => phi').
+   Proof.
+   Admitted.
+   
+   Lemma wf_subpath : forall tau j,
+                        wfPath tau ->
+                        wfPath (Path_i tau j).
+   Admitted.
+
+
+   Lemma cover_step :
+     forall gamma gamma' rho phi,
+       SatML gamma rho phi ->
+       (gamma =>S gamma') ->
+       exists phi' alpha,
+         In alpha S /\
+         phi' = SynDerML' phi alpha /\
+         SatML gamma' rho phi' .
+   Admitted.   
+                   
+   Lemma alpha_to_S : forall alpha phi phi1,
+                        In alpha S ->
+                        phi1 = SynDerML' phi alpha ->
+                        In phi1 (SynDerML phi S).
+   Admitted.
+
+   (* axiom ? *)
+   Lemma rhs_vars_in_lhs :
+     forall x F,
+       In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
+   Admitted.
+   
+   Lemma finite_sound :
+     forall n tau rho phi phi' G F,
+       wfPath tau ->
+       ~ isInfinite tau -> 
+       In (phi => phi') F ->
+       complete tau n ->
+       step_star G [] F ->
+       startsFrom tau rho phi ->
+       total ->
+       SatRL tau rho (phi => phi').
+   Proof.
+     induction n using custom_lt_wf_ind.
+     - intros tau rho phi phi' G F WF I H' H0 H H1 T.
+       apply impl_or_der with
+       (phi := phi) (phi' := phi') in H.
+       + destruct H as [H | H].
+         * unfold SatRL.
+           split.
+           {simpl.
+             unfold startsFrom.
+             unfold complete in H0.
+             destruct H0 as (H3 & gamma & H0 & H2).
+             exists gamma.
+             split.
+             - exact H0.
+             - unfold startsFrom in H1.
+               destruct H1 as (gamma0 & H1 & H4).
+               rewrite H0 in H1.
+               inversion H1.
+               assumption. }
+           right.
+           unfold startsFrom in H1.
+           destruct H1 as (gamma & (H1 & H2)).
+           exists 0, 0, gamma.
+           split.
+           omega.
+           split.
+           exact H0.
+           split.
+           exact H1.
+           simpl.
+           apply valid_impl with (phi := phi);assumption.
+         * unfold complete in H0.
+           destruct H0 as (I' & gamma & H2 & H3).
+           unfold total in T.
+           apply T with
+           (gamma := gamma) (rho := rho) in H.
+           destruct H as (gamma' & H).
+           unfold terminating in H3.
+           contradict H.
+           apply H3.
+           unfold startsFrom in H1.
+           destruct H1 as (gamma0 & (H1 & H1')).
+           rewrite H2 in H1.
+           inversion H1.
+           exact H1'.
+       + exact H'.
+     - intros tau rho phi phi' G F WF I H' H0 H1 H2 T.
+       assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)).
+       + apply classic.
+       + destruct H3 as [H3 | H3].
+         * assert (H4 : forall phi1,
+                          In phi1 (SynDerML phi S) ->
+                          SatRL (Path_i tau 1) rho (phi1 => phi')).
+           {
+             intros phi1 H5.
+             apply H with (m := n) (G := G) (F := F).
+             - omega.
+             - apply wf_subpath.
+               exact WF.
+             - apply not_infinite_subpath.
+               exact I.
+             - apply first_step with (phi := phi);assumption.
+             - Check complete_subpath.
+               eapply complete_subpath.
+               exact WF.
+               assert (h : n + 1 = Datatypes.S n). omega.
+               rewrite h.
+               exact H0.
+             - exact H1.
+             - apply starts_first_step with (phi := phi).
+               + exact H2.
+               + exact H5.
+             - exact T.
+           }
+           apply G1_sat_G0_sat .
+           exact WF.
+           exact H2.
+           exact H4.
+         * generalize H1.
+           intros Step.
+           apply helper_2 with (g := (phi => phi')) in H1.
+           
+           destruct H1 as (G' & (F0 & H1)).
+           apply helper_1 in H1.
+           destruct H1 as (G'' & (H1 & H4)).
+           {
+             inversion H1; clear H4.
+             - simpl in H6.
+               unfold SatRL.
+               split.
+               + simpl.
+                 exact H2.
+               + right.
+                 unfold startsFrom in H2.
+                 destruct H2 as (gamma & (H2 & H8)).
+                 apply valid_impl with (phi' := phi') in H8.
+                 exists (Datatypes.S n), 0, gamma.
+                 simpl.
+                 split.
+                 * omega.
+                 * split.
+                   exact H0.
+                   split;assumption.
+                 * exact H6.
+             - simpl in H7.
+               unfold startsFrom in H2.
+               destruct H2 as (gamma & (H2 & H2')).
+               apply valid_impl with
+               (gamma := gamma) (phi' := (EClos (lhs c)))
+                                (phi := phi) (rho := rho) in H7.
+               + unfold EClos in H7.
+                 apply SatML_Exists in H7.
+                 destruct H7 as (rho' & (H7 & H7')).
+                 unfold total in T.
+                 generalize H7'.
+                 intros H7''.
+                 generalize H7'.
+                 intros SFC.
+                 apply T in H7'.
+                 destruct H7' as (gamma' & H7').
+                 apply cover_step with (gamma' := gamma') in H7''.
+                 destruct H7'' as (phic_1 & alpha & H9 & H10 & H11).
+                 
+                 assert (H12 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
+                 {
+                   apply H with (m := n) (G := G) (F := F).
+                   - omega.
+                   - apply wf_subpath.
+                     exact WF.
+                   - apply not_infinite_subpath.
+                     exact I.
+                   - apply first_step with (phi := (lhs c)).
+                     + destruct c.
+                       simpl.
+                       assumption.
+                     + apply alpha_to_S with (alpha := alpha).
+                       * exact H9.
+                       * exact H10.
+                   - apply complete_subpath.
+                     + exact WF.
+                     + assert (h : n + 1 = Datatypes.S n).
+                       omega.
+                       rewrite h.
+                       exact H0.
+                   - exact Step.
+                   - apply starts_first_step with (phi := (lhs c)).
+                     unfold startsFrom.
+                     exists gamma.
+                     split; trivial.
+                     apply alpha_to_S with (alpha := alpha).
+                     exact H9.
+                     exact H10.
+                   - exact T.
+                 }
+                 
+
+                 unfold SatRL in H12.
+                 simpl in H12.
+                 destruct H12 as (H12 & [H13 | (n0 & i & gamma_n & C & H13 & H14 & H15)]).
+                 * contradict H13.
+                   apply not_infinite_subpath.
+                   exact I.
+                 * rewrite shift_index in H14.
+                   assert (H16 : SatML gamma_n rho (SynDerML' phi c)).
+                   {
+                     unfold SynDerML'.
+                     rewrite SatML_Exists.
+                     exists rho'.
+                     split.
+                     - intros v H16.
+                       apply H7.
+                       rewrite <- rhs_vars_in_lhs.
+                       exact H16.
+                     - apply SatML_And.
+                       split.
+                       admit.
+                       exact H15.
+                   }
+
+                   assert (H17 : SatRL (Path_i tau i) rho
+                                       ((SynDerML' phi c) => phi')).
+                   {
+                     apply H with (m := n0) (G := G) (F := F).
+                     
+                     
+                     
+                   
+                 
+   Admitted.               
+
+
+   Lemma all_G0_in_F : forall g G F,
+                         In g G0 ->
+                         step_star G [] F ->
+                         In g F.
+   Admitted.
+
+   Lemma  len_finite_path :
+     forall tau,
+       ~isInfinite tau ->
+       (forall i j, i < j -> tau i = None -> tau j = None) ->
+       exists n, tau n <> None /\ tau (Datatypes.S n) = None.
+   Admitted.
+
+   
+   Lemma not_infinite : forall tau,
+                          wfPath tau ->
+                          ~ (isInfinite tau) ->
+                          exists n, complete tau n.
+   Proof.
+     intros tau H H'.
+     generalize H'.
+     intros H1.
+     apply len_finite_path in H'.
+     - destruct H' as (n & H2 & H3).
+       exists n.
+       unfold complete.
+       split; trivial.
+       unfold wfPath, wfGPath in H.
+       destruct H as (H & H4).
+       destruct H2 as (H2 & H5).
+       assert (H6 : exists gamma', tau n = Some gamma').
+       admit.
+       destruct H6 as (gamma & H6).
+       exists gamma.
+       split; trivial.
+       unfold terminating.
+       intros gamma' H7.
+   Admitted.
+       
+       
+   
+   Lemma sound : forall F,
+                   total ->
+                   step_star (Delta S G0) [] F ->
+                   SatTS_G G0.
+   Proof.
+     intros F T H g H0 tau rho WF H1.
+     assert (H' : isInfinite tau \/ ~ (isInfinite tau)).
+     { apply classic. }
+     destruct H' as [H' | H'].
+     - unfold SatRL.
+       split.
+       + exact H1.
+       + left.
+         exact H'.
+     - eapply finite_sound.
+       + exact WF.
+       + exact H'.
+       + instantiate (1 := F).
+         destruct g.
+         apply all_G0_in_F with (Delta S G0); trivial.
+       + unfold complete.
+   Admitted.
 
               
-(*              unfold startsFromSymPathV in H2.
-              destruct H2 as (phi0 & (H2 & H2')).
-              Check prop3.
-              apply prop3 with (phi := phi0)
-                                 (phi' := phi) (phi'' := (EClos (lhs c))) in H2'.
-              Check cover_finite_symb_path.
-              apply cover_finite_symb_path
-              with (mu' := mu) (n := Datatypes.S n) in H2'.
-                
-              destruct H2' as (mu_c & (H12 & (H10 & H11))).
-
-              Lemma cover_circ :
-                forall mu_c mu_C mu phic n,
-                  mu_c 0 = Some (EClos phic) ->
-                  scover mu_c mu ->
-                  completeSymPathFinite mu_c n ->
-                  mu_C 0 = Some phic ->
-                  scover mu_C mu /\
-                  completeSymPathFinite mu_C n.
-              Proof.
-                intros mu_c mu_C mu phic n H1 H2 H3 H4.
-                split.
-                - unfold scover.
-                  intros tau H.
-                  unfold cover.
-                  intros i.
-                  
-                
-              Admitted.
-
-              apply cover_circ with
-              (phic := (lhs c)) (n := Datatypes.S n) in H10.
-              destruct H10 as (mu_C & (H13 & (H14 & H15))).
-              clear H11 H12 mu_c.
-
-              Lemma one_step_Sn :
-                forall mu phi n,
-                  completeSymPathFinite mu (Datatypes.S n) ->
-                  mu 0 = Some phi ->
-                  exists phi1,
-                    phi =>Ss phi1.
-              Proof.
-              Admitted.
-
-              apply one_step_Sn with
-              (phi := (lhs c)) in H15.
-
-              destruct H15 as (phi1 & H15).
-              unfold TS_Symb in H15.
-
-              assert (SatV (SymPath_i mu 1) phi1 (rhs c)).
-              + apply H with (m := n) (F := F).
-                omega.
-                
-                Lemma complete_subpath :
-                  forall mu n,
-                    completeSymPathFinite mu (Datatypes.S n) ->
-                    wfSymPath mu ->
-                    completeSymPathFinite (SymPath_i mu 1) n.
-                  intros mu n H H'.
-                  unfold completeSymPathFinite in *.
-                  destruct H as (H0 & (phi & (H1 & (H2 & H3)))).
-                  split.
-                Admitted.
-
-                apply complete_subpath.
-                exact H0.
-                exact H1.
-
-                Lemma wf_subpath :
-                  forall mu j,
-                    wfSymPath mu ->
-                    wfSymPath (SymPath_i mu j).
-                Admitted.
-
-                apply wf_subpath.
-                exact H1.
-                Check startsFrom_i.
-                unfold startsFromSymPathV.
-
-                apply one_step_Sn with (n := n) in H2.
-                destruct H2 as (phi_1 & H2).
-                exists phi_1.
-                split.
-                rewrite index_shift.
-                simpl.
-                admit.
- *)
-              
-                        
-                           
-                
-              
-                
-              admit.
-
-            -
-                admit.
-                admit.
-              + 
-
-              assert (H10 :  exists mu' : nat -> option MLFormula,
-         mu' 0 = Some phi0 /\ scover mu' mu /\ completeSymPathFinite mu' n
-                     ).
-              
-              
-              apply SatV_trans with
-              (phi' := (SynDerML' phi c)).
-              + unfold SatV.
-                split.
-                * exact H2.
-                * right.
-                  Check step_back_1.
-                  apply step_back_1 with
-                  (c := c) (phi := phi).
-                  apply H with (m := n) (F := F).
-                  {
-                    omega.
-                  }
-                  {
-                    assert (H10: n = Datatypes.S n - 1).
-                    - omega.
-                    - rewrite H10.
-                      apply helper_3.
-              + admit.
-              
-              admit.
-              (*unfold SatV.
-              split.
-              + exact H2.
-              + right.
-                apply step_back_1 with
-                (c := c) (phi := phi).
-                apply H with (m := n - 1) (F := F).
-                * omega.
-                *)
-         
-          }
-          exact H4.
-          exact H3.
-          exact H7.
-  Qed.
-              
-
-
-
-
-
-
-
-
-
-
-              
-
-
-              apply SatV_trans with
-              (*phi' := (SynDerML' phi c)*)
-              (phi' := (rhs c)).
-              + 
-              
-
-                Lemma step_red :
-                  forall phi phi' phic mu,
-                    startsFromSymPathV mu phi->
-                    Valid (phi => phic) ->
-                    SatV mu phic phi' ->
-                    SatV mu phi phi'.
-                Proof.
-                  intros phi phi' phic mu H1 H2 H3.
-                  unfold SatV in *.
-                  split.
-                  - exact H1.
-                  - destruct H3 as (H3 & H4).
-                    destruct H4 as [H4 | H4].
-                    + left.
-                      exact H4.
-                    + right.
-                      exact H4.
-                Qed.
-                    
-
-
-               
-
-
-              simpl in H11.
-              unfold startsFromSymPathV in H2.
-              destruct H2 as (phi0 & (H2 & H2')).
-              apply cover_finite_symb_path with
-              (phi0 :=  EClos (lhs c)) (n := n) in H2.
-              + destruct H2 as (mu' & (H2 & (H13 & H14))).
-                unfold scover in H13.
-                assert (H15 : exists phi1 phi'0,
-                                mu' 1 = Some phi1 /\
-                                mu 1 = Some phi'0 /\
-                                Valid (phi'0 => phi1)).
-                * apply H13.
-                * destruct H15 as (phi1' & (phi1 & (H15 & (H16 & H17)))).
-                  assert (H18: SatV (SymPath_i mu' 1) phi1' (rhs c)).
-                  {
-                    apply H with (m := n-1) (F := F).
-                    - apply plus_lt_reg_l with (p := 1).
-                      rewrite le_plus_minus_r.
-                      omega.
-                      apply helper_4 with
-                      (mu := mu) (phi1 := phi1).
-                      + unfold completeSymPathFinite.
-                        split.
-                        * assumption.
-                        * simpl. exists phi_n.
-                          split.
-                          assumption.
-                          split; assumption.
-                      + assumption.
-                      + assumption.
-                    - apply helper_3.
-                      assumption.
-                      apply helper_4 with
-                      (mu := mu) (phi1 := phi1).
-                      + unfold completeSymPathFinite.
-                        split.
-                        * assumption.
-                        * simpl. exists phi_n.
-                          split.
-                          assumption.
-                          split; assumption.
-                      + assumption.
-                      + assumption.
-                      + apply wf_scover with (mu := mu).
-                        assumption.
-                        unfold scover.
-                        intros i.
-                        apply H13.
-                    - apply wf_subPath.
-                      apply wf_scover with (mu := mu).
-                      assumption.
-                      unfold scover.
-                      intros i.
-                      apply H13.
-                    - apply startsFrom_i.
-                      assumption.
-                    -
-
-                     (* 
-                      The problem is that phi1' => (rhs c) needs to be in
-                      F in order to apply the inductive hypothesis. 
-                     *)
-                      admit.
-                    - assumption.
-                  }
-                  admit.
-              + apply prop3 with
-                (phi := phi0) (phi' := phi) (phi'' := (EClos (lhs c)))
-                                   
-                  in H2'.
-                apply impl_V in H2'.
-                assumption.
-                assumption.
-              + unfold completeSymPathFinite.
-                split.
-                * assumption.
-                * auto. exists phi_n. split. assumption. split; assumption.
-
-
-              
-            - simpl in H10.
-              unfold wfSymPath in H1.
-              unfold wfGPath in H1.
-              destruct H1 as (H1 & H1').
-              
-              
-              admit.
-          }
-          assumption.
-        * assumption.
-        * assumption.
-  Qed.
-          
-              
-
-(*
-                      Lemma in_Delta : forall phi phi1 phi',
-                                         In phi1 (SynDerML phi S) ->
-                                         In (phi1 => phi') (Delta S G0).
-                      Admitted.
-
-                      apply in_Delta with (phi := phi).
-                      
-                      
-                      Lemma first_in_Delta : forall mu phi phi1,
-                                               wfSymPath mu ->
-                                               startsFromSymPathV mu phi ->
-                                               mu 1 = Some phi1 ->
-                                               In phi1 (SynDerML phi S).
-                      Admitted.
-
-                      apply first_in_Delta with (mu := mu).
-                      assumption.
-                      unfold startsFromSymPathV.
-                      exists 
-*)                
-
-                      
-  
 End Soundness.
        
