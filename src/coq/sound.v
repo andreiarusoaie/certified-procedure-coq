@@ -136,12 +136,6 @@ Module Type Soundness
       In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
   Admitted.
 
-  Lemma disjoint_domain_1 :
-    forall phi v c,
-      In c G0 ->
-      In v (FreeVars [lhs c]) ->
-      ~ In v (FreeVars [phi]).
-  Admitted.
   
   Lemma disjoint_domain_2 :
     forall phi v c,
@@ -150,19 +144,13 @@ Module Type Soundness
       ~ In v (FreeVars [lhs c]).
   Admitted.
 
-  
-  (* Consider elementary lemmas??? *)
-  Lemma disjoint_domain :
-    forall phi c gamma rho rho',
-      In c G0 ->
-      (forall v, ~ In v (FreeVars [(lhs c)]) -> rho v = rho' v) ->
-      (forall v, In v (FreeVars [phi]) -> ~ In v (FreeVars [(lhs c)])) ->
+  Lemma disjoint_vars :
+    forall gamma rho rho' phi,
       SatML gamma rho phi ->
+      (forall v : Var, In v (FreeVars [phi]) -> rho v = rho' v) ->
       SatML gamma rho' phi.
-   Admitted.
-   
-
-
+  Admitted.
+  
    (* End Section Valuations *)
   
 
@@ -583,11 +571,11 @@ Module Type Soundness
                    rewrite Proposition1.
                    exists gamma.
                    apply SatML_And.
-                   split.
-                   + exact H7'.
-                   + apply disjoint_domain with (c := c) (rho := rho); trivial.
-                     intros v.
-                     apply disjoint_domain_2; trivial.
+                   split; trivial.
+                   apply disjoint_vars with (rho := rho); trivial.
+                   intros v H19.
+                   apply disjoint_domain_2 with (c := c) in H19; trivial.
+                   apply H7 in H19; trivial.
                }
 
                clear H18 H13 H14 H7 H7' rho'.
@@ -701,7 +689,8 @@ Module Type Soundness
                  destruct H13 as (H13 & n0 & j & gamma_j & Hj & H14 & H15 & H16).
                  exists (Datatypes.S n), (j + 1), gamma_j.
                  split.
-                 rewrite one_step_less with (tau := tau) (n := n) in Hj; trivial.
+                 rewrite one_step_less with
+                 (tau := tau) (n := n) in Hj; trivial.
                  * omega.
                  * repeat split; trivial.
                    rewrite shift_index in H15; trivial.
