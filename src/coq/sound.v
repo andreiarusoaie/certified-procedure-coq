@@ -249,7 +249,20 @@ Module Type Soundness
        ValidML (ImpliesML phi phi') ->
        SatML gamma rho phi ->
        SatML gamma rho phi'.
-   Admitted.
+   Proof.
+     intros gamma rho phi phi' H H'.
+     unfold ValidML in H.
+     unfold ImpliesML in H.
+     assert (H0 : SatML gamma rho (NotML (AndML phi (NotML phi')))); trivial.
+     clear H.
+     rewrite SatML_Not in H0.
+     rewrite SatML_And in H0.
+     apply not_and_or in H0.
+     destruct H0 as [H0 | H0].
+     - contradiction.
+     - rewrite SatML_Not in H0.
+       apply NNPP; trivial.
+   Qed.
 
                    
    Lemma wf_subpath : forall tau j,
@@ -281,6 +294,7 @@ Module Type Soundness
        rewrite plus_assoc.
        trivial.
    Qed.
+
    
    Lemma first_step : forall phi phi' phi1 F,
                         step_star (Delta S G0) [] F ->
