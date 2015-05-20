@@ -254,8 +254,34 @@ Module Type Soundness
                    
    Lemma wf_subpath : forall tau j,
                         wfPath tau -> wfPath (Path_i tau j) .
-   Admitted.
-
+   Proof.
+     intros tau j H.
+     unfold wfPath, wfGPath in *.
+     destruct H as (H & H').
+     split.
+     - intros i j0 H0 H1.
+       rewrite shift_index in *.
+       apply H with (i := (i + j)); trivial.
+       omega.
+     - intros i H0.
+       rewrite shift_index in *.
+       rewrite shift_index in *.
+       destruct H0 as (H0 & H0').
+       rewrite plus_comm in H0'.
+       rewrite <- plus_permute in H0'.
+       rewrite plus_assoc in H0'.
+       assert (H1: tau (i + j) <> None /\ tau (i + j + 1) <> None).
+       split; trivial.
+       apply H' in H1.
+       destruct H1 as (e & e' & H1 & H1').
+       exists e, e'.
+       split; trivial.
+       rewrite plus_comm.
+       rewrite <- plus_permute.
+       rewrite plus_assoc.
+       trivial.
+   Qed.
+   
    Lemma first_step : forall phi phi' phi1 F,
                         step_star (Delta S G0) [] F ->
                         In (phi => phi') G0 ->
@@ -721,4 +747,3 @@ Module Type Soundness
    Qed.
               
 End Soundness.
-       
