@@ -22,6 +22,8 @@ Module Type Soundness
     forall phi phi',
       In (phi => phi') G0 -> SDerivable phi.
 
+
+  (* Section step *)
   
   Inductive step (G G': list RLFormula)
             (g : RLFormula) : Prop :=
@@ -48,7 +50,29 @@ Module Type Soundness
                 step_star G'' G' F ->
                 step_star G G' (g :: F).
 
+  (*
+  Inductive step_star' : list RLFormula -> list RLFormula ->
+                        list RLFormula -> Prop :=
+  | refl' : step_star [] [] G0
+  | tranz' : forall G G' g F,
+               step G' [] g ->
+               step_star' G G' F ->
+               step_star' G [] (F ++ [g]).
+  
 
+  Lemma helper :
+    forall G g F,
+      step_star G [] F ->
+      ~ In g G0 ->
+      exists G' G'' F0, step G' G'' g /\ step_star G'' [] F0 /\ incl F0 F.
+  Proof.
+    intros.
+    induction H.
+    - contradiction.
+    - simpl in H1.
+      destruct H1 as [H1 | H].
+      + subst g0.
+   *)            
   
   Lemma helper_1 : forall G g F0,
                      ~ In g G0 ->
@@ -101,6 +125,45 @@ Module Type Soundness
           assumption.
   Qed.
 
+  (* End Section step *)
+
+
+  (* Section Valuations *)
+
+  (* axiom ? *)
+  Lemma rhs_vars_in_lhs :
+    forall x F,
+      In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
+  Admitted.
+
+  Lemma disjoint_domain_1 :
+    forall phi v c,
+      In c G0 ->
+      In v (FreeVars [lhs c]) ->
+      ~ In v (FreeVars [phi]).
+  Admitted.
+  
+  Lemma disjoint_domain_2 :
+    forall phi v c,
+      In c G0 ->
+      In v (FreeVars [phi]) ->
+      ~ In v (FreeVars [lhs c]).
+  Admitted.
+
+  
+  (* Consider elementary lemmas??? *)
+  Lemma disjoint_domain :
+    forall phi c gamma rho rho',
+      In c G0 ->
+      (forall v, ~ In v (FreeVars [(lhs c)]) -> rho v = rho' v) ->
+      (forall v, In v (FreeVars [phi]) -> ~ In v (FreeVars [(lhs c)])) ->
+      SatML gamma rho phi ->
+      SatML gamma rho' phi.
+   Admitted.
+   
+
+
+   (* End Section Valuations *)
   
 
   Lemma cover_step :
@@ -114,7 +177,15 @@ Module Type Soundness
   Proof.
     admit.
   Qed.
-   
+
+  Lemma impl_sder : forall phi c,
+                      In c G0 ->
+                      ValidML (ImpliesML phi (EClos (lhs c))) ->
+                      SDerivable (lhs c) ->
+                      SDerivable phi.
+  Proof.
+  Admitted.
+
   
 
   Lemma impl_or_der :
@@ -142,7 +213,9 @@ Module Type Soundness
               exact H3.
             - simpl in H4.
               right.
-              admit.
+              apply impl_sder with (c := c); trivial.
+              apply all_G0_der with (phi' := (rhs c)).
+              destruct c; trivial.
             - right.
               exact H3.
           }
@@ -179,8 +252,7 @@ Module Type Soundness
    Proof.
      intros tau j k.
      unfold Path_i, GPath_i.
-     rewrite plus_comm.
-     reflexivity.
+     rewrite plus_comm; trivial.
    Qed.
                          
    
@@ -191,23 +263,13 @@ Module Type Soundness
        SatML gamma rho phi'.
    Admitted.
 
-   
-   
-
                    
-
-   (* axiom ? *)
-   Lemma rhs_vars_in_lhs :
-     forall x F,
-       In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
-   Admitted.
-
    Lemma wf_subpath : forall tau j,
                         wfPath tau -> wfPath (Path_i tau j) .
    Admitted.
 
-   Lemma first_step : forall phi phi' phi1 G F,
-                        step_star G [] F ->
+   Lemma first_step : forall phi phi' phi1 F,
+                        step_star (Delta S G0) [] F ->
                         In (phi => phi') G0 ->
                         In phi1 (SynDerML phi S) ->
                         In (phi1 => phi') F.
@@ -218,7 +280,14 @@ Module Type Soundness
        In alpha S ->
        phi1 = SynDerML' phi alpha ->
        In phi1 (SynDerML phi S).
-   Admitted.
+   Proof.
+     intros phi phi1 alpha H H'.
+     unfold SynDerML.
+     rewrite in_map_iff.
+     exists alpha.
+     split; trivial.
+     rewrite H'; trivial.
+   Qed.
 
 
    Lemma first_step_gamma :
@@ -351,43 +420,19 @@ Module Type Soundness
    Qed.
 
 
-   (* Are these axioms ? *)
-   Lemma disjoint_domain :
-     forall phi c gamma rho rho',
-       In c G0 ->
-       (forall v, ~ In v (FreeVars [(lhs c)]) -> rho v = rho' v) ->
-       (forall v, In v (FreeVars [phi]) -> ~ In v (FreeVars [(lhs c)])) ->
-       SatML gamma rho phi ->
-       SatML gamma rho' phi.
-   Admitted.
-   
-   Lemma disjoint_domain_1 :
-     forall phi v c,
-       In c G0 ->
-       In v (FreeVars [lhs c]) ->
-       ~ In v (FreeVars [phi]).
-   Admitted.
-   
-   Lemma disjoint_domain_2 :
-     forall phi v c,
-       In c G0 ->
-       In v (FreeVars [phi]) ->
-       ~ In v (FreeVars [lhs c]).
-   Admitted.
-
    
    Lemma finite_sound :
-     forall n tau rho phi phi' G F,
+     forall n tau rho phi phi' F,
        wfPath tau ->
        In (phi => phi') F ->
        complete tau n ->
-       step_star G [] F ->
+       step_star (Delta S G0) [] F ->
        startsFrom tau rho phi ->
        total ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' G F WF H' H0 H H1 T.
+     - intros tau rho phi phi' F WF H' H0 H H1 T.
        apply impl_or_der with
        (phi := phi) (phi' := phi') in H.
        + destruct H as [H | H].
@@ -429,7 +474,7 @@ Module Type Soundness
            inversion H1.
            exact H1'.
        + exact H'.
-     - intros tau rho phi phi' G F WF H' H0 H1 H2 T.
+     - intros tau rho phi phi' F WF H' H0 H1 H2 T.
        assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)); trivial.
        + apply classic.
        + destruct H3 as [H3 | H3].
@@ -508,9 +553,9 @@ Module Type Soundness
                  
                assert (H14 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
                {
-                 apply H with (m := n) (G := G) (F := F); trivial.
+                 apply H with (m := n)  (F := F); trivial.
                  - apply wf_subpath; trivial.
-                 - apply first_step with (phi := (lhs c)) (G := G); trivial.
+                 - apply first_step with (phi := (lhs c)); trivial.
                    + destruct c.
                      simpl; trivial.
                    + apply alpha_to_S with (alpha := alpha); trivial.
@@ -552,8 +597,7 @@ Module Type Soundness
                  assert (H21 : n0 = n).
                  apply one_step_less with (tau := tau); trivial.
                  subst n0.
-                 apply H with (m := n - i)
-                                (G := G) (F := F); trivial.
+                 apply H with (m := n - i)(F := F); trivial.
                  - omega.
                  - apply wf_subpath; trivial.
                  - admit.
@@ -638,7 +682,7 @@ Module Type Soundness
 
                assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
                {
-                 apply H with (m := n) (G := G) (F := F); trivial.
+                 apply H with (m := n)(F := F); trivial.
                  - apply wf_subpath; trivial.
                  - admit.
                  - unfold startsFrom.
@@ -673,9 +717,7 @@ Module Type Soundness
        In g F.
    Proof.
      intros g G F H H'.
-     induction H'; trivial.
-     simpl.
-     tauto.
+     induction H'; trivial; simpl; tauto.
    Qed.
    
    Lemma sound : forall F,
@@ -684,7 +726,7 @@ Module Type Soundness
                    SatTS_G G0.
    Proof.
      intros F T H g H0 tau rho n H1 H2 H3.
-     apply finite_sound with (n := n) (G := (Delta S G0)) (F := F); trivial.
+     apply finite_sound with (n := n) (F := F); trivial.
      destruct g.
      apply all_G0_in_F with (G := (Delta S G0)); trivial.
    Qed.

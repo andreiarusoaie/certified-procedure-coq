@@ -56,6 +56,10 @@ Module Type Formulas.
     forall gamma rho phi phi',
       SatML gamma rho (AndML phi phi') <->
       SatML gamma rho phi /\ SatML gamma rho phi'.
+
+  Axiom SatML_Not :
+    forall gamma rho phi,
+      SatML gamma rho (NotML phi) <-> ~ SatML gamma rho phi.
   
   Definition ValidML (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
