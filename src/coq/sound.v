@@ -50,7 +50,31 @@ Module Type Soundness
                 step_star G'' G' F ->
                 step_star G G' (g :: F).
 
-  (*
+
+    
+(*
+  Check step_star_ind.
+
+  Check le_ind.
+
+  Inductive step_lt  (G G' : list RLFormula) : Prop :=
+  | step_lt_base: forall g, step G G' g -> step_lt G G'
+  | step_lt_step: forall g G'', step G G'' g -> step_lt G'' G' -> step_lt G G'.
+  
+  Lemma step_star_reverse_ind :
+    forall P : list RLFormula -> list RLFormula -> list RLFormula -> Prop,
+    forall G G' F,
+      P G G' F ->
+      (forall G'' G' F' g,
+         F = g :: F' ->
+         step G G'' g -> step_star G G' F -> P G G' F -> P G'' G' F' )
+      ->
+      forall G'', step_lt G'' G -> P G'' [] G0.
+ 
+  Comment: this is not enough; I need a relation between "step_star"s , 
+   themselves to write the conclusion of the induction principle. 
+  Still thinking.
+  
   Inductive step_star' : list RLFormula -> list RLFormula ->
                         list RLFormula -> Prop :=
   | refl' : step_star [] [] G0
@@ -130,13 +154,13 @@ Module Type Soundness
 
   (* Section Valuations *)
 
-  (* axiom ? *)
+  (* TODO: wfFormula *)
   Lemma rhs_vars_in_lhs :
     forall x F,
       In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
   Admitted.
 
-  
+  (* TODO: alpha equivalence *)
   Lemma disjoint_domain_2 :
     forall phi v c,
       In c G0 ->
@@ -144,12 +168,11 @@ Module Type Soundness
       ~ In v (FreeVars [lhs c]).
   Admitted.
 
-  Lemma disjoint_vars :
+  Axiom disjoint_vars :
     forall gamma rho rho' phi,
       SatML gamma rho phi ->
       (forall v : Var, In v (FreeVars [phi]) -> rho v = rho' v) ->
       SatML gamma rho' phi.
-  Admitted.
   
    (* End Section Valuations *)
   
@@ -187,29 +210,21 @@ Module Type Soundness
     - apply classic.
     - destruct H1 as [H1 | H1].
       + right.
-        apply all_G0_der with (phi' := phi').
-        exact H1.
-      + apply helper_2 with (g := (phi => phi')) in H.
-        * destruct H as (G' & (F0 & H)).
-          apply helper_1 in H.
-          clear G.
-          destruct H as (G & (H & H')).
-          {
-            clear H'.
-            inversion H; simpl in H3.
-            - left.
-              exact H3.
-            - simpl in H4.
-              right.
-              apply impl_sder with (c := c); trivial.
-              apply all_G0_der with (phi' := (rhs c)).
-              destruct c; trivial.
-            - right.
-              exact H3.
-          }
-          exact H1.
-        * exact H0.
-        * exact H1.
+        apply all_G0_der with (phi' := phi'); trivial.
+      + apply helper_2 with (g := (phi => phi')) in H; trivial.
+        destruct H as (G' & (F0 & H)).
+        apply helper_1 in H; trivial.
+        clear G.
+        destruct H as (G & (H & H')).
+        clear H'.
+        inversion H; simpl in H3.
+        * left; trivial.
+        * simpl in H4.
+          right.
+          apply impl_sder with (c := c); trivial.
+          apply all_G0_der with (phi' := (rhs c)).
+          destruct c; trivial.
+        * right; trivial.
   Qed.
 
   (* custom induction principle *)
@@ -224,13 +239,11 @@ Module Type Soundness
      intros P H1 H2 n.
      apply lt_wf_ind.
      intros n0 H3.
-     induction n0.
-     - exact H1.
-     - apply H2.
-       intros m H.
-       apply H3.
-       apply le_lt_n_Sm in H.
-       exact H.
+     induction n0; trivial.
+     apply H2.
+     intros m H.
+     apply H3.
+     apply le_lt_n_Sm in H; trivial.
    Qed.
 
 
@@ -277,31 +290,12 @@ Module Type Soundness
        apply H with (i := (i + j)); trivial.
        omega.
      - intros i H0.
-       rewrite shift_index in *.
-       rewrite shift_index in *.
-       destruct H0 as (H0 & H0').
-       rewrite plus_comm in H0'.
-       rewrite <- plus_permute in H0'.
-       rewrite plus_assoc in H0'.
-       assert (H1: tau (i + j) <> None /\ tau (i + j + 1) <> None).
-       split; trivial.
-       apply H' in H1.
-       destruct H1 as (e & e' & H1 & H1').
-       exists e, e'.
-       split; trivial.
-       rewrite plus_comm.
-       rewrite <- plus_permute.
-       rewrite plus_assoc.
-       trivial.
+       do 2 rewrite shift_index in *.
+       rewrite <- plus_assoc, (plus_comm 1), plus_assoc in *.
+       apply H'; trivial.
    Qed.
 
    
-   Lemma first_step : forall phi phi' phi1 F,
-                        step_star (Delta S G0) [] F ->
-                        In (phi => phi') G0 ->
-                        In phi1 (SynDerML phi S) ->
-                        In (phi1 => phi') F.
-   Admitted.
 
    Lemma alpha_to_S :
      forall phi phi1 alpha,
@@ -431,6 +425,37 @@ Module Type Soundness
            rewrite H2 in H0'.
            inversion H0'.
    Qed.
+
+   Lemma one_step :
+     forall tau rho phi phi',
+       startsFrom tau rho phi ->
+       (exists phi1,
+          In phi1 (SynDerML phi S) /\
+          SatRL (Path_i tau 1) rho (phi1 => phi')) ->
+       SatRL tau rho (phi => phi').
+   Proof.
+     intros tau rho phi phi' H H'.
+     destruct H' as (phi1 & H' & H'').
+     unfold SatRL.
+     split; trivial.
+     unfold SatRL in H''.
+     destruct H'' as (H0 & H1).
+     simpl in *.
+     destruct H1 as (n & i & gamma & H1 & H2 & H3 & H4).
+     exists (n + 1), (i + 1), gamma.
+     split; trivial.
+     - omega.
+     - split.
+       + unfold complete in *.
+         destruct H2 as (gamma_n & H5 & H6).
+         exists gamma_n.
+         split; trivial.
+         rewrite <- shift_index; trivial.
+       + split; trivial.
+         rewrite <- shift_index; trivial.
+   Qed.
+   
+
    
    Lemma complete_shift :
      forall tau i n',
@@ -443,10 +468,16 @@ Module Type Soundness
      exists gamma.
      split; trivial.
      rewrite shift_index in *.
-     rewrite plus_assoc in H.
-     exact H.
+     rewrite plus_assoc in H; trivial.
    Qed.
 
+
+   Lemma first_step : forall phi phi' phi1 F,
+                        step_star (Delta S G0) [] F ->
+                        In (phi => phi') G0 ->
+                        In phi1 (SynDerML phi S) ->
+                        In (phi1 => phi') F.
+   Admitted.
 
    
    Lemma finite_sound :
@@ -506,7 +537,54 @@ Module Type Soundness
        assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)); trivial.
        + apply classic.
        + destruct H3 as [H3 | H3].
-         * admit.
+         * apply one_step; trivial.
+           unfold startsFrom in H2.
+           destruct H2 as (gamma & H2 & H4).
+           assert (H5 : exists gamma', tau 1 = Some gamma').
+           { apply first_step_gamma with (n := n) (gamma := gamma); trivial. }
+           destruct H5 as (gamma' & H5).
+
+           assert (H10 : gamma =>S gamma').
+           {
+             unfold wfPath, wfGPath in WF.
+             destruct WF as (WF & WF').
+             assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+             {
+               split; unfold not; intros H10.
+               - rewrite H10 in *.
+                 inversion H2.
+               - simpl in H10.
+                 rewrite H10 in *.
+                 inversion H5.
+             }
+             apply WF' in H10.
+             destruct H10 as (e & e' & H10 & H11 & H12).
+             simpl in H11.
+             rewrite H10 in H2.
+             rewrite H11 in H5.
+             inversion H2.
+             inversion H5.
+             subst e e'.
+             assumption.
+           }
+           assert (H6 : exists (alpha : RLFormula) (phi1 : MLFormula),
+                          In alpha S /\ phi1 = SynDerML' phi alpha /\ SatML gamma' rho phi1).
+           { apply cover_step with (gamma := gamma); trivial. }
+           destruct H6 as (alpha & phi1 & H6 & H7 & H8).
+           exists phi1.
+           split.
+           apply alpha_to_S with (alpha := alpha); trivial.
+           apply H with (tau := (Path_i tau 1)) (m := n) (F := F); trivial.
+           apply wf_subpath; trivial.
+           apply first_step with (phi := phi); trivial.
+           subst phi1.
+           unfold SynDerML.
+           rewrite in_map_iff.
+           exists alpha; split; trivial.
+           unfold startsFrom.
+           exists gamma'.
+           split; trivial.
+
          * generalize H1.
            intros Step.
            apply helper_2 with (g := (phi => phi')) in H1; trivial.
