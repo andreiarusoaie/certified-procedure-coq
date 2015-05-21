@@ -175,6 +175,8 @@ Module Type Soundness
       SatML gamma rho' phi.
   
    (* End Section Valuations *)
+
+
   
 
   Lemma cover_step :
@@ -186,7 +188,35 @@ Module Type Soundness
         phi' = SynDerML' phi alpha /\
         SatML gamma' rho phi' .
   Proof.
-    admit.
+    intros gamma gamma' rho phi H H'.
+    unfold TS in H.
+    destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
+    exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
+    split; trivial.
+    split.
+    - reflexivity.
+    - unfold SynDerML'.
+      simpl.
+      apply SatML_Exists.
+      exists (modify_val_on_set rho rho' (FreeVars [phi_l; phi_r])) .
+      split.
+      + intros v V.
+        rewrite modify_2; trivial.
+      + apply SatML_And.
+        split.
+        * apply Proposition1.
+          exists gamma.
+          apply SatML_And.
+          split.
+          apply modify_Sat1; trivial.
+          intros x V.
+          simpl.
+
+
+          
+          
+          rewrite <- modify_1.
+    
   Qed.
 
   Lemma impl_sder : forall phi c,
@@ -795,7 +825,6 @@ Module Type Soundness
                    exists gamma'.
                    split; trivial.
                }
-
                unfold SatRL.
                split.
                + simpl.
