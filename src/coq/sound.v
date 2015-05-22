@@ -14,7 +14,9 @@ Module Type Soundness
   Import U F R Def.
   Import ListNotations.
   Import Wf_nat.
-  
+
+  Section Sound.
+    
   (* G0 *)
   Variable G0 : list RLFormula .
 
@@ -51,53 +53,110 @@ Module Type Soundness
                 step_star G G' (g :: F).
 
 
-    
-(*
-  Check step_star_ind.
-
-  Check le_ind.
-
-  Inductive step_lt  (G G' : list RLFormula) : Prop :=
-  | step_lt_base: forall g, step G G' g -> step_lt G G'
-  | step_lt_step: forall g G'', step G G'' g -> step_lt G'' G' -> step_lt G G'.
-  
-  Lemma step_star_reverse_ind :
-    forall P : list RLFormula -> list RLFormula -> list RLFormula -> Prop,
-    forall G G' F,
-      P G G' F ->
-      (forall G'' G' F' g,
-         F = g :: F' ->
-         step G G'' g -> step_star G G' F -> P G G' F -> P G'' G' F' )
-      ->
-      forall G'', step_lt G'' G -> P G'' [] G0.
- 
-  Comment: this is not enough; I need a relation between "step_star"s , 
-   themselves to write the conclusion of the induction principle. 
-  Still thinking.
-  
-  Inductive step_star' : list RLFormula -> list RLFormula ->
+  Inductive star_step : list RLFormula -> list RLFormula ->
                         list RLFormula -> Prop :=
-  | refl' : step_star [] [] G0
-  | tranz' : forall G G' g F,
-               step G' [] g ->
-               step_star' G G' F ->
-               step_star' G [] (F ++ [g]).
+  | refl' : star_step [] [] G0
+  | tranz' : forall G G' G'' g F,
+               star_step G G'' F ->
+               step G'' G' g ->
+               star_step G G' (F ++ [g]).
+
   
+  Inductive star_step_star : list RLFormula -> list RLFormula ->
+                        list RLFormula -> Prop :=
+  | refl_ : star_step_star [] [] G0
+  | tranz_ : forall G1 G2 G3 G4 g F1 F2,
+               star_step_star G1 G2 F1 ->
+               step G2 G3 g ->
+               star_step_star G3 G4 F2 ->
+               star_step_star G1 G4 (F1 ++ g :: F2).
+
+  End Sound.
+
+
+  Lemma star_step_cons :
+    forall G0 G1 G2 G3 g F,
+      step G0 G1 G2 g ->
+      step_star G0 G2 G3 F ->
+      star_step G0 G1 G3 (g :: F).
+  Admitted.
+  
+  Lemma step_equiv_1 :
+    forall F G0 G G',
+      (star_step_star G0 G G' F <-> star_step G0 G G' F).
+  Proof.
+  Admitted.
+
+  Lemma step_equiv_2 :
+    forall F G0 G G',
+      (star_step_star G0 G G' F <-> step_star G0 G G' F).
+  Proof.
+  Admitted.
+
+    
+  Lemma all_G_in_F :
+    forall G0 G F Gf,
+      star_step G0 G Gf F ->
+      incl G F.
+  Proof.
+    intros G0 G F Gf H.
+    induction H.
+    - unfold incl.
+      intros a H.
+      contradict H.
+    - unfold incl.
+      intros a H'.
+      rewrite in_app_iff.
+      unfold incl in IHstar_step.
+      left.
+      apply IHstar_step; trivial.
+  Qed.
+
 
   Lemma helper :
-    forall G g F,
-      step_star G [] F ->
+    forall G0 F G g,
+      star_step_star G0 G [] F ->
+      In g F ->
       ~ In g G0 ->
-      exists G' G'' F0, step G' G'' g /\ step_star G'' [] F0 /\ incl F0 F.
+      exists G' G'',
+        step G0 G' G'' g /\
+        incl G'' F.
   Proof.
-    intros.
+    intros G0 F G g H.
+    revert g.
     induction H.
-    - contradiction.
-    - simpl in H1.
-      destruct H1 as [H1 | H].
-      + subst g0.
-   *)            
+    - intros.
+      contradiction.
+    - intros g' H2 H3.
+      rewrite in_app_iff in H2.
+      simpl in H2.
+      destruct H2 as [H2 | [H2 | H2]].
+      + apply IHstar_step_star1 in H3; trivial.
+        admit.
+      + subst.
+        exists G2, G3.
+        split; trivial.
+        rewrite step_equiv_1 in H1.
+        apply all_G_in_F in H1.
+        apply incl_appr.
+        apply incl_tl.
+        trivial.
+      + apply IHstar_step_star2 in H3; trivial.
+        admit.
+  Qed.
+        
+        
+
   
+
+  Lemma F_not_nil :
+    forall G0 G F,
+      G0 <> [] -> 
+      step_star G0 G [] F ->
+      F <> [] .
+  Admitted.
+            
+  (*   
   Lemma helper_1 : forall G g F0,
                      ~ In g G0 ->
                      step_star G [] (g::F0) ->
@@ -148,7 +207,7 @@ Module Type Soundness
         * apply IHF with (G := G'');
           assumption.
   Qed.
-
+*)
   (* End Section step *)
 
 
@@ -162,7 +221,7 @@ Module Type Soundness
 
   (* TODO: alpha equivalence *)
   Lemma disjoint_domain_2 :
-    forall phi v c,
+    forall phi v c (G0 : list RLFormula) ,
       In c G0 ->
       In v (FreeVars [phi]) ->
       ~ In v (FreeVars [lhs c]).
@@ -211,15 +270,18 @@ Module Type Soundness
           apply modify_Sat1; trivial.
           intros x V.
           simpl.
-
-
-          
-          
-          rewrite <- modify_1.
-    
+          rewrite in_FreeVars_iff.
+          tauto.
+          apply modify_Sat2; trivial.
+          intros x V.
+          admit.
+        * apply modify_Sat1; trivial.
+          intros x V.
+          rewrite in_FreeVars_iff.
+          tauto.
   Qed.
-
-  Lemma impl_sder : forall phi c,
+          
+  Lemma impl_sder : forall phi c (G0 : list RLFormula),
                       In c G0 ->
                       ValidML (ImpliesML phi (EClos (lhs c))) ->
                       SDerivable (lhs c) ->
@@ -230,29 +292,26 @@ Module Type Soundness
   
 
   Lemma impl_or_der :
-    forall F G phi phi',
-      step_star G [] F ->
+    forall G0 F G phi phi',
+      step_star G0 G [] F ->
       In (phi => phi') F ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros F G phi phi' H H0.
+    intros G0 F G phi phi' H H0.
     assert (In (phi => phi') G0 \/ ~(In (phi => phi') G0)).
     - apply classic.
     - destruct H1 as [H1 | H1].
       + right.
-        apply all_G0_der with (phi' := phi'); trivial.
-      + apply helper_2 with (g := (phi => phi')) in H; trivial.
-        destruct H as (G' & (F0 & H)).
-        apply helper_1 in H; trivial.
-        clear G.
-        destruct H as (G & (H & H')).
-        clear H'.
+        apply all_G0_der with (phi' := phi') (G0 := G0); trivial.
+      + rewrite <- step_equiv_2 in H.
+        apply helper with (g := (phi => phi')) in H; trivial.
+        destruct H as (G' & F0 & H & H').
         inversion H; simpl in H3.
         * left; trivial.
         * simpl in H4.
           right.
-          apply impl_sder with (c := c); trivial.
-          apply all_G0_der with (phi' := (rhs c)).
+          apply impl_sder with (c := c) (G0 := G0); trivial.
+          apply all_G0_der with (phi' := (rhs c)) (G0 := G0).
           destruct c; trivial.
         * right; trivial.
   Qed.
@@ -502,26 +561,42 @@ Module Type Soundness
    Qed.
 
 
-   Lemma first_step : forall phi phi' phi1 F,
-                        step_star (Delta S G0) [] F ->
+   Lemma first_step : forall G0 F G phi phi' phi1,
+                        G <> [] ->
+                        step_star G0 G [] F ->
                         In (phi => phi') G0 ->
                         In phi1 (SynDerML phi S) ->
+                        In (phi1 => phi') G ->
                         In (phi1 => phi') F.
+   Proof.
+   Admitted.       
+
+   Lemma Delta_S_not_empty :
+     forall G0, G0 <> [] -> Delta S G0 <> [].
    Admitted.
+
+   Lemma der_in_Delta :
+     forall phi phi' alpha G0,
+       In alpha S ->
+       In (phi => phi') G0 ->
+       In (SynDerML' phi alpha => phi') (Delta S G0).
+   Admitted.
+   
 
    
    Lemma finite_sound :
-     forall n tau rho phi phi' F,
+     forall n tau rho phi phi' F G0,
+       G0 <> [] -> 
        wfPath tau ->
        In (phi => phi') F ->
        complete tau n ->
-       step_star (Delta S G0) [] F ->
+       step_star G0 (Delta S G0) [] F ->
        startsFrom tau rho phi ->
        total ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' F WF H' H0 H H1 T.
+     - intros tau rho phi phi' F G0 NE WF H' H0 H H1 T.
        apply impl_or_der with
        (phi := phi) (phi' := phi') in H.
        + destruct H as [H | H].
@@ -563,7 +638,7 @@ Module Type Soundness
            inversion H1.
            exact H1'.
        + exact H'.
-     - intros tau rho phi phi' F WF H' H0 H1 H2 T.
+     - intros tau rho phi phi' F G0 NE WF H' H0 H1 H2 T.
        assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)); trivial.
        + apply classic.
        + destruct H3 as [H3 | H3].
@@ -604,24 +679,27 @@ Module Type Soundness
            exists phi1.
            split.
            apply alpha_to_S with (alpha := alpha); trivial.
-           apply H with (tau := (Path_i tau 1)) (m := n) (F := F); trivial.
+           apply H with (tau := (Path_i tau 1))
+                          (m := n) (F := F) (G0 := G0); trivial.
            apply wf_subpath; trivial.
-           apply first_step with (phi := phi); trivial.
+           apply first_step with (phi := phi) (G0 := G0) (G := (Delta S G0)); trivial.
+           apply Delta_S_not_empty; trivial.
            subst phi1.
            unfold SynDerML.
            rewrite in_map_iff.
            exists alpha; split; trivial.
+           rewrite H7.
+           apply der_in_Delta; trivial.
            unfold startsFrom.
            exists gamma'.
            split; trivial.
-
          * generalize H1.
            intros Step.
-           apply helper_2 with (g := (phi => phi')) in H1; trivial.
+
+           rewrite <- step_equiv_2 in H1.
+           apply helper with (g := (phi => phi')) in H1; trivial.
            
-           destruct H1 as (G' & (F0 & H1)).
-           apply helper_1 in H1; trivial.
-           destruct H1 as (G'' & (H1 & H4)).
+           destruct H1 as (G' & G'' & H1 & H4).
            {
              inversion H1. 
              - simpl in H6.
@@ -689,12 +767,18 @@ Module Type Soundness
                  
                assert (H14 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
                {
-                 apply H with (m := n)  (F := F); trivial.
+                 apply H with (m := n)  (F := F) (G0 := G0); trivial.
                  - apply wf_subpath; trivial.
-                 - apply first_step with (phi := (lhs c)); trivial.
+                 - apply first_step with
+                   (phi := (lhs c)) (G0 := G0) (G := (Delta S G0)); trivial.
                    + destruct c.
                      simpl; trivial.
+                     apply Delta_S_not_empty; trivial.
+                   + destruct c; trivial.
                    + apply alpha_to_S with (alpha := alpha); trivial.
+                   + rewrite H12.
+                     apply der_in_Delta; trivial.
+                     destruct c; trivial.
                  - unfold startsFrom.
                    exists gamma'.
                    rewrite shift_index.
@@ -722,7 +806,7 @@ Module Type Soundness
                    split; trivial.
                    apply disjoint_vars with (rho := rho); trivial.
                    intros v H19.
-                   apply disjoint_domain_2 with (c := c) in H19; trivial.
+                   apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
                    apply H7 in H19; trivial.
                }
 
@@ -733,7 +817,7 @@ Module Type Soundness
                  assert (H21 : n0 = n).
                  apply one_step_less with (tau := tau); trivial.
                  subst n0.
-                 apply H with (m := n - i)(F := F); trivial.
+                 apply H with (m := n - i)(F := F) (G0 := G0); trivial.
                  - omega.
                  - apply wf_subpath; trivial.
                  - admit.
@@ -818,7 +902,7 @@ Module Type Soundness
 
                assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
                {
-                 apply H with (m := n)(F := F); trivial.
+                 apply H with (m := n)(F := F)(G0 := G0); trivial.
                  - apply wf_subpath; trivial.
                  - admit.
                  - unfold startsFrom.
@@ -847,24 +931,32 @@ Module Type Soundness
    
 
    Lemma all_G0_in_F:
-     forall g G F,
+     forall g G F G0,
        In g G0 ->
-       step_star G [] F ->
+       step_star G0 G [] F ->
        In g F.
    Proof.
-     intros g G F H H'.
+     intros g G F G0 H H'.
      induction H'; trivial; simpl; tauto.
    Qed.
    
-   Lemma sound : forall F,
+   Lemma sound : forall F G0,
                    total ->
-                   step_star (Delta S G0) [] F ->
+                   step_star G0 (Delta S G0) [] F ->
                    SatTS_G G0.
    Proof.
-     intros F T H g H0 tau rho n H1 H2 H3.
-     apply finite_sound with (n := n) (F := F); trivial.
-     destruct g.
-     apply all_G0_in_F with (G := (Delta S G0)); trivial.
+     intros F G0 T H g H0 tau rho n H1 H2 H3.
+     case_eq G0.
+     - intros H'.
+       rewrite H' in H0.
+       contradict H0.
+     - intros r l NE.
+       apply finite_sound with (n := n) (F := F)(G0 := G0); trivial.
+       + intros H'.
+         rewrite H' in NE.
+         inversion NE.
+       + destruct g.
+         apply all_G0_in_F with (G := (Delta S G0)) (G0 := G0); trivial.
    Qed.
               
 End Soundness.
