@@ -22,6 +22,7 @@ Module Type Soundness
     forall phi phi',
       In (phi => phi') G0 -> SDerivable phi.
 
+  Axiom S_not_nil : S <> [] .
 
   (* Section step *)
   
@@ -404,21 +405,79 @@ Module Type Soundness
      rewrite plus_assoc in H; trivial.
    Qed.
 
+   Lemma Delta_S_not_empty :
+     forall G0, G0 <> [] -> Delta S G0 <> [].
+   Proof.
+     intros G0 H.
+     unfold Delta.
+     case_eq G0.
+     - intros H'.
+       contradiction.
+     - intros r l H'.
+       unfold not.
+       intros H0.
+       fold Delta in H0.
+       apply app_eq_nil in H0.
+       destruct H0 as (H0 & _).
+       unfold SynDerRL, SynDerRL', SynDerML in H0.
+       apply map_eq_nil in H0.
+       apply map_eq_nil in H0.
+       contradict H0.
+       apply S_not_nil.
+   Admitted.
 
-   Lemma first_step : forall G phi phi' phi1,
-                        G <> [] ->
+   Lemma remove_other :
+     forall g g' G,
+       In g G ->
+       g' <> g ->
+       In g (remove RLFormula_eq_dec g' G).
+   Admitted.
+   
+   Lemma G_in_F :
+     forall g G,
+       steps G [] ->
+       In g G ->
+       inF g.
+   Proof.
+     intros g G H H'.
+     revert g H'.
+     induction H; intros.
+     - contradict H'.
+     - assert (H2 : (g = g0) \/ ~(g = g0)).
+       + apply classic.
+       + destruct H2 as [H2 | H2].
+         * subst.
+           apply in_step.
+           exists G, G''.
+           split; trivial.
+         * apply IHsteps.
+           {
+             inversion H.
+             - subst.
+               apply remove_other; trivial.
+             - subst.
+               apply in_app_iff.
+               left.
+               apply remove_other; trivial.
+             - subst.
+               apply in_app_iff.
+               left.
+               apply remove_other; trivial.
+           }
+   Qed.
+   
+   Lemma first_step : forall phi phi' phi1 G,
+                        G0 <> [] ->
                         steps G [] ->
                         In (phi => phi') G0 ->
                         In phi1 (SynDerML phi S) ->
-                        In (phi1 => phi') G ->
+                        In (phi1 => phi') G -> 
                         inF (phi1 => phi').
    Proof.
-   Admitted.       
+     intros phi phi' phi1 G H0 H1 H2 H3 H4.
+     apply G_in_F with (G := G);trivial.
+   Qed.
 
-
-   Lemma Delta_S_not_empty :
-     forall G0, G0 <> [] -> Delta S G0 <> [].
-   Admitted.
 
    Lemma der_in_Delta :
      forall phi phi' alpha,
@@ -551,13 +610,7 @@ Module Type Soundness
          apply H with (tau := (Path_i tau 1))
                         (m := n); trivial.
          apply wf_subpath; trivial.
-         apply first_step with
-         (phi := phi) (G := (Delta S G0)); trivial.
-         apply Delta_S_not_empty; trivial.
-         subst phi1.
-         unfold SynDerML.
-         rewrite in_map_iff.
-         exists alpha; split; trivial.
+         apply G_in_F with (G := (Delta S G0));trivial.
          rewrite H7.
          apply der_in_Delta; trivial.
          unfold startsFrom.
@@ -634,16 +687,11 @@ Module Type Soundness
            {
              apply H with (m := n); trivial.
              - apply wf_subpath; trivial.
-             - apply first_step with
-               (phi := (lhs c)) (G := (Delta S G0)); trivial.
-               + destruct c.
-                 simpl; trivial.
-                 apply Delta_S_not_empty; trivial.
-               + destruct c; trivial.
-               + apply alpha_to_S with (alpha := alpha); trivial.
-               + rewrite H12.
-                 apply der_in_Delta; trivial.
-                 destruct c; trivial.
+             -
+               apply G_in_F with (G := (Delta S G0));trivial.
+               rewrite H12.
+               apply der_in_Delta; trivial.
+               destruct c; simpl; trivial.
              - unfold startsFrom.
                exists gamma'.
                rewrite shift_index.
