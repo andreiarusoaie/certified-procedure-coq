@@ -24,6 +24,7 @@ Module Type Soundness
 
   Axiom S_not_nil : S <> [] .
 
+
   (* Section step *)
   
   Inductive step (G G': list RLFormula)
@@ -58,9 +59,12 @@ Module Type Soundness
                 step G G' g /\
                 forall g', In g' G' -> inF g') ->
               inF g.
+
+  (* End step *)
+
+
+
   
-
-
   (* Section Valuations *)
 
   (* TODO: wfFormula *)
@@ -85,6 +89,8 @@ Module Type Soundness
   
    (* End Section Valuations *)
 
+
+  
   Lemma cover_step :
     forall gamma gamma' rho phi,
       (gamma =>S gamma') ->
@@ -419,19 +425,36 @@ Module Type Soundness
        fold Delta in H0.
        apply app_eq_nil in H0.
        destruct H0 as (H0 & _).
-       unfold SynDerRL, SynDerRL', SynDerML in H0.
+       unfold SynDerRL in H0.
        apply map_eq_nil in H0.
+       unfold SynDerML in H0.
        apply map_eq_nil in H0.
        contradict H0.
        apply S_not_nil.
-   Admitted.
+   Qed.
 
    Lemma remove_other :
-     forall g g' G,
+     forall G g g',
        In g G ->
        g' <> g ->
        In g (remove RLFormula_eq_dec g' G).
-   Admitted.
+   Proof.
+     induction G; intros.
+     - contradict H.
+     - simpl in H.
+       destruct H as [H | H].
+       + subst.
+         simpl.
+         case_eq (RLFormula_eq_dec g' g); intros.
+         * contradiction.
+         * simpl; left; trivial.
+       + simpl.
+         case_eq (RLFormula_eq_dec g' a); intros.
+         subst.
+         apply IHG; trivial.
+         simpl.right.
+         apply IHG; trivial.
+   Qed.
    
    Lemma G_in_F :
      forall g G,
@@ -466,18 +489,6 @@ Module Type Soundness
            }
    Qed.
    
-   Lemma first_step : forall phi phi' phi1 G,
-                        G0 <> [] ->
-                        steps G [] ->
-                        In (phi => phi') G0 ->
-                        In phi1 (SynDerML phi S) ->
-                        In (phi1 => phi') G -> 
-                        inF (phi1 => phi').
-   Proof.
-     intros phi phi' phi1 G H0 H1 H2 H3 H4.
-     apply G_in_F with (G := G);trivial.
-   Qed.
-
 
    Lemma der_in_Delta :
      forall phi phi' alpha,
