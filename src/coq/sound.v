@@ -15,8 +15,6 @@ Module Type Soundness
   Import ListNotations.
   Import Wf_nat.
 
-  Section Sound.
-    
   (* G0 *)
   Variable G0 : list RLFormula .
 
@@ -44,171 +42,22 @@ Module Type Soundness
                        ++ (SynDerRL S g) ->
                 step G G' g.
   
-  Inductive step_star : list RLFormula -> list RLFormula ->
-                        list RLFormula -> Prop :=
-    | refl : step_star [] [] G0
-    | tranz : forall G G' G'' g F,
+  Inductive steps : list RLFormula -> list RLFormula ->
+                         Prop :=
+    | base : steps [] []
+    | tranz : forall G G' G'' g,
                 step G G'' g ->
-                step_star G'' G' F ->
-                step_star G G' (g :: F).
+                steps G'' G' ->
+                steps G G'.
 
 
-  Inductive star_step : list RLFormula -> list RLFormula ->
-                        list RLFormula -> Prop :=
-  | refl' : star_step [] [] G0
-  | tranz' : forall G G' G'' g F,
-               star_step G G'' F ->
-               step G'' G' g ->
-               star_step G G' (F ++ [g]).
-
+  Inductive inF (g : RLFormula) : Prop :=
+  | init : In g G0 -> inF g
+  | in_step : (exists G G',
+                step G G' g /\
+                forall g', In g' G' -> inF g') ->
+              inF g.
   
-  Inductive star_step_star : list RLFormula -> list RLFormula ->
-                        list RLFormula -> Prop :=
-  | refl_ : star_step_star [] [] G0
-  | tranz_ : forall G1 G2 G3 G4 g F1 F2,
-               star_step_star G1 G2 F1 ->
-               step G2 G3 g ->
-               star_step_star G3 G4 F2 ->
-               star_step_star G1 G4 (F1 ++ g :: F2).
-
-  End Sound.
-
-
-  Lemma star_step_cons :
-    forall G0 G1 G2 G3 g F,
-      step G0 G1 G2 g ->
-      step_star G0 G2 G3 F ->
-      star_step G0 G1 G3 (g :: F).
-  Admitted.
-  
-  Lemma step_equiv_1 :
-    forall F G0 G G',
-      (star_step_star G0 G G' F <-> star_step G0 G G' F).
-  Proof.
-  Admitted.
-
-  Lemma step_equiv_2 :
-    forall F G0 G G',
-      (star_step_star G0 G G' F <-> step_star G0 G G' F).
-  Proof.
-  Admitted.
-
-    
-  Lemma all_G_in_F :
-    forall G0 G F Gf,
-      star_step G0 G Gf F ->
-      incl G F.
-  Proof.
-    intros G0 G F Gf H.
-    induction H.
-    - unfold incl.
-      intros a H.
-      contradict H.
-    - unfold incl.
-      intros a H'.
-      rewrite in_app_iff.
-      unfold incl in IHstar_step.
-      left.
-      apply IHstar_step; trivial.
-  Qed.
-
-
-  Lemma helper :
-    forall G0 F G g,
-      star_step_star G0 G [] F ->
-      In g F ->
-      ~ In g G0 ->
-      exists G' G'',
-        step G0 G' G'' g /\
-        incl G'' F.
-  Proof.
-    intros G0 F G g H.
-    revert g.
-    induction H.
-    - intros.
-      contradiction.
-    - intros g' H2 H3.
-      rewrite in_app_iff in H2.
-      simpl in H2.
-      destruct H2 as [H2 | [H2 | H2]].
-      + apply IHstar_step_star1 in H3; trivial.
-        admit.
-      + subst.
-        exists G2, G3.
-        split; trivial.
-        rewrite step_equiv_1 in H1.
-        apply all_G_in_F in H1.
-        apply incl_appr.
-        apply incl_tl.
-        trivial.
-      + apply IHstar_step_star2 in H3; trivial.
-        admit.
-  Qed.
-        
-        
-
-  
-
-  Lemma F_not_nil :
-    forall G0 G F,
-      G0 <> [] -> 
-      step_star G0 G [] F ->
-      F <> [] .
-  Admitted.
-            
-  (*   
-  Lemma helper_1 : forall G g F0,
-                     ~ In g G0 ->
-                     step_star G [] (g::F0) ->
-                     exists G',
-                       step G G' g /\ step_star G' [] F0 .
-  Proof.
-    intros G g F0 H H0.
-    inversion H0.
-    - rewrite H2 in H.
-      simpl in H.
-      contradict H.
-      left.
-      reflexivity.
-    - subst g G1 G' F.
-      exists G''.
-      split; assumption.
-  Qed.
-
-  Lemma helper_2 : forall F G g,
-                     step_star G [] F ->
-                     In g F ->
-                     ~ In g G0 ->
-                     exists G' F0, step_star G' [] (g::F0).
-  Proof.
-    induction F; intros.
-    - contradict H0.
-    - simpl in H0.
-      destruct H0 as [H0 | H0].
-      + subst a.
-        exists G, F.
-        assumption.
-      + inversion H.
-        * rewrite H3 in H1.
-          simpl in H1.
-          assert (a = g \/ ~(a = g)).
-          apply classic.
-          destruct H4 as [H4 | H4].
-          {
-            exists G, F.
-            rewrite H4 in *.
-            assumption.
-          }
-          {
-            contradict H1.
-            right.
-            assumption.
-          }
-        * apply IHF with (G := G'');
-          assumption.
-  Qed.
-*)
-  (* End Section step *)
 
 
   (* Section Valuations *)
@@ -234,9 +83,6 @@ Module Type Soundness
       SatML gamma rho' phi.
   
    (* End Section Valuations *)
-
-
-  
 
   Lemma cover_step :
     forall gamma gamma' rho phi,
@@ -281,41 +127,39 @@ Module Type Soundness
           tauto.
   Qed.
           
-  Lemma impl_sder : forall phi c (G0 : list RLFormula),
+  Lemma impl_sder : forall phi c,
                       In c G0 ->
                       ValidML (ImpliesML phi (EClos (lhs c))) ->
                       SDerivable (lhs c) ->
                       SDerivable phi.
   Proof.
+    intros phi c H0 H1 H2.
   Admitted.
 
   
 
   Lemma impl_or_der :
-    forall G0 F G phi phi',
-      step_star G0 G [] F ->
-      In (phi => phi') F ->
+    forall G phi phi',
+      steps G [] ->
+      inF (phi => phi') ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros G0 F G phi phi' H H0.
-    assert (In (phi => phi') G0 \/ ~(In (phi => phi') G0)).
-    - apply classic.
-    - destruct H1 as [H1 | H1].
-      + right.
-        apply all_G0_der with (phi' := phi') (G0 := G0); trivial.
-      + rewrite <- step_equiv_2 in H.
-        apply helper with (g := (phi => phi')) in H; trivial.
-        destruct H as (G' & F0 & H & H').
-        inversion H; simpl in H3.
-        * left; trivial.
-        * simpl in H4.
-          right.
-          apply impl_sder with (c := c) (G0 := G0); trivial.
-          apply all_G0_der with (phi' := (rhs c)) (G0 := G0).
-          destruct c; trivial.
-        * right; trivial.
+    intros G phi phi' H H0.
+    inversion H0.
+    - right.
+      apply all_G0_der with (phi' := phi'); trivial.
+    - destruct H1 as (G' & G'' & H1 & H1').
+      inversion H1; simpl in H3.
+      + left; trivial.
+      + simpl in H4.
+        right.
+        apply impl_sder with (c := c); trivial.
+        apply all_G0_der with (phi' := (rhs c)).
+        destruct c; trivial.
+      + right; trivial.
   Qed.
 
+  
   (* custom induction principle *)
    Lemma custom_lt_wf_ind :
      forall (P:nat -> Prop),
@@ -561,42 +405,69 @@ Module Type Soundness
    Qed.
 
 
-   Lemma first_step : forall G0 F G phi phi' phi1,
+   Lemma first_step : forall G phi phi' phi1,
                         G <> [] ->
-                        step_star G0 G [] F ->
+                        steps G [] ->
                         In (phi => phi') G0 ->
                         In phi1 (SynDerML phi S) ->
                         In (phi1 => phi') G ->
-                        In (phi1 => phi') F.
+                        inF (phi1 => phi').
    Proof.
    Admitted.       
+
 
    Lemma Delta_S_not_empty :
      forall G0, G0 <> [] -> Delta S G0 <> [].
    Admitted.
 
    Lemma der_in_Delta :
-     forall phi phi' alpha G0,
+     forall phi phi' alpha,
        In alpha S ->
        In (phi => phi') G0 ->
        In (SynDerML' phi alpha => phi') (Delta S G0).
-   Admitted.
+   Proof.
+     intros phi phi' alpha H0 H1.
+     induction G0.
+     - contradict H1.
+     - unfold Delta.
+       simpl in H1.
+       destruct H1 as [H1 | H1].
+       + subst.
+         rewrite in_app_iff.
+         left.
+         unfold SynDerRL, SynDerRL'.
+         rewrite in_map_iff.
+         exists (SynDerML' phi alpha).
+         split.
+         * simpl.
+           reflexivity.
+         * unfold SynDerML.
+           rewrite in_map_iff.
+           exists alpha.
+           simpl.
+           split; trivial.
+       + fold Delta.
+         rewrite in_app_iff.
+         right.
+         apply IHl; trivial.
+   Qed.
+          
    
 
    
    Lemma finite_sound :
-     forall n tau rho phi phi' F G0,
+     forall n tau rho phi phi',
        G0 <> [] -> 
        wfPath tau ->
-       In (phi => phi') F ->
+       inF (phi => phi') ->
        complete tau n ->
-       step_star G0 (Delta S G0) [] F ->
+       steps (Delta S G0) [] ->
        startsFrom tau rho phi ->
        total ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' F G0 NE WF H' H0 H H1 T.
+     - intros tau rho phi phi' NE WF H' H0 H H1 T.
        apply impl_or_der with
        (phi := phi) (phi' := phi') in H.
        + destruct H as [H | H].
@@ -638,17 +509,98 @@ Module Type Soundness
            inversion H1.
            exact H1'.
        + exact H'.
-     - intros tau rho phi phi' F G0 NE WF H' H0 H1 H2 T.
-       assert (In (phi => phi') G0 \/ ~ (In (phi => phi') G0)); trivial.
-       + apply classic.
-       + destruct H3 as [H3 | H3].
-         * apply one_step; trivial.
+     - intros tau rho phi phi' NE WF H' H0 H1 H2 T.
+       inversion H'.
+       + apply one_step; trivial.
+         unfold startsFrom in H2.
+         destruct H2 as (gamma & H2 & H4).
+         assert (H5 : exists gamma', tau 1 = Some gamma').
+         { apply first_step_gamma with (n := n) (gamma := gamma); trivial. }
+         destruct H5 as (gamma' & H5).
+         
+         assert (H10 : gamma =>S gamma').
+         {
+           unfold wfPath, wfGPath in WF.
+           destruct WF as (WF & WF').
+           assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+           {
+             split; unfold not; intros H10.
+             - rewrite H10 in *.
+               inversion H2.
+             - simpl in H10.
+               rewrite H10 in *.
+               inversion H5.
+           }
+           apply WF' in H10.
+           destruct H10 as (e & e' & H10 & H11 & H12).
+           simpl in H11.
+           rewrite H10 in H2.
+           rewrite H11 in H5.
+           inversion H2.
+           inversion H5.
+           subst e e'.
+           assumption.
+         }
+         assert (H6 : exists (alpha : RLFormula) (phi1 : MLFormula),
+                        In alpha S /\ phi1 = SynDerML' phi alpha /\ SatML gamma' rho phi1).
+         { apply cover_step with (gamma := gamma); trivial. }
+         destruct H6 as (alpha & phi1 & H6 & H7 & H8).
+         exists phi1.
+         split.
+         apply alpha_to_S with (alpha := alpha); trivial.
+         apply H with (tau := (Path_i tau 1))
+                        (m := n); trivial.
+         apply wf_subpath; trivial.
+         apply first_step with
+         (phi := phi) (G := (Delta S G0)); trivial.
+         apply Delta_S_not_empty; trivial.
+         subst phi1.
+         unfold SynDerML.
+         rewrite in_map_iff.
+         exists alpha; split; trivial.
+         rewrite H7.
+         apply der_in_Delta; trivial.
+         unfold startsFrom.
+         exists gamma'.
+         split; trivial.
+       + generalize H1.
+         intros Step.
+         clear H1.
+         destruct H3 as (G' & G'' & H1 & H4).
+         inversion H1. 
+         * simpl in H6.
+           unfold SatRL.
+           split.
+           { simpl. exact H2. }
+           {
+             unfold startsFrom in H2.
+             destruct H2 as (gamma & H2 & H8).
+             apply valid_impl with
+             (gamma := gamma) (rho := rho) (phi' := phi') in H8; trivial.
+             exists (Datatypes.S n), 0, gamma.
+             simpl.
+             split; trivial.
+             omega.
+             repeat split; trivial.
+           }
+         * simpl in H7.
            unfold startsFrom in H2.
-           destruct H2 as (gamma & H2 & H4).
-           assert (H5 : exists gamma', tau 1 = Some gamma').
-           { apply first_step_gamma with (n := n) (gamma := gamma); trivial. }
-           destruct H5 as (gamma' & H5).
-
+           destruct H2 as (gamma & (H2 & H2')).
+           apply valid_impl with
+           (gamma := gamma) (phi' := (EClos (lhs c)))
+                            (phi := phi) (rho := rho) in H6; trivial.
+           unfold EClos in H6.
+           apply SatML_Exists in H6.
+           destruct H6 as (rho' & (H6 & H6')).
+           
+           (* first part *)
+           assert (H9 : exists gamma', tau 1 = Some gamma').
+           {
+             apply first_step_gamma with
+             (n := n) (gamma := gamma); trivial.
+           }
+           destruct H9 as (gamma' & H9).
+           
            assert (H10 : gamma =>S gamma').
            {
              unfold wfPath, wfGPath in WF.
@@ -660,303 +612,228 @@ Module Type Soundness
                  inversion H2.
                - simpl in H10.
                  rewrite H10 in *.
-                 inversion H5.
+                 inversion H9.
              }
              apply WF' in H10.
              destruct H10 as (e & e' & H10 & H11 & H12).
              simpl in H11.
              rewrite H10 in H2.
-             rewrite H11 in H5.
+             rewrite H11 in H9.
              inversion H2.
-             inversion H5.
+             inversion H9.
              subst e e'.
              assumption.
            }
-           assert (H6 : exists (alpha : RLFormula) (phi1 : MLFormula),
-                          In alpha S /\ phi1 = SynDerML' phi alpha /\ SatML gamma' rho phi1).
-           { apply cover_step with (gamma := gamma); trivial. }
-           destruct H6 as (alpha & phi1 & H6 & H7 & H8).
-           exists phi1.
-           split.
-           apply alpha_to_S with (alpha := alpha); trivial.
-           apply H with (tau := (Path_i tau 1))
-                          (m := n) (F := F) (G0 := G0); trivial.
-           apply wf_subpath; trivial.
-           apply first_step with (phi := phi) (G0 := G0) (G := (Delta S G0)); trivial.
-           apply Delta_S_not_empty; trivial.
-           subst phi1.
-           unfold SynDerML.
-           rewrite in_map_iff.
-           exists alpha; split; trivial.
-           rewrite H7.
-           apply der_in_Delta; trivial.
-           unfold startsFrom.
-           exists gamma'.
-           split; trivial.
-         * generalize H1.
-           intros Step.
 
-           rewrite <- step_equiv_2 in H1.
-           apply helper with (g := (phi => phi')) in H1; trivial.
+           apply cover_step with
+           (rho := rho') (phi := (lhs c)) in H10; trivial.
            
-           destruct H1 as (G' & G'' & H1 & H4).
+           destruct H10 as (alpha & phic_1 & H11 & H12 & H13).
+           
+           assert (H14 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
            {
-             inversion H1. 
-             - simpl in H6.
-               unfold SatRL.
-               split.
-               + simpl.
-                 exact H2.
-               + unfold startsFrom in H2.
-                 destruct H2 as (gamma & H2 & H8).
-                 apply valid_impl with
-                 (gamma := gamma) (rho := rho) (phi' := phi') in H8.
-                 exists (Datatypes.S n), 0, gamma.
-                 simpl.
-                 split; trivial.
-                 omega.
-                 split; trivial.
-                 split; trivial.
-                 * exact H6.
-             - simpl in H7.
-               unfold startsFrom in H2.
-               destruct H2 as (gamma & (H2 & H2')).
-               apply valid_impl with
-               (gamma := gamma) (phi' := (EClos (lhs c)))
-                                (phi := phi) (rho := rho) in H7; trivial.
-               unfold EClos in H7.
-               apply SatML_Exists in H7.
-               destruct H7 as (rho' & (H7 & H7')).
-
-               (* first part *)
-               assert (H9 : exists gamma', tau 1 = Some gamma').
-               {
-                 apply first_step_gamma with
-                 (n := n) (gamma := gamma); trivial.
-               }
-               destruct H9 as (gamma' & H9).
-
-               assert (H10 : gamma =>S gamma').
-               {
-                 unfold wfPath, wfGPath in WF.
-                 destruct WF as (WF & WF').
-                 assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
-                 {
-                   split; unfold not; intros H10.
-                   - rewrite H10 in *.
-                     inversion H2.
-                   - simpl in H10.
-                     rewrite H10 in *.
-                     inversion H9.
-                 }
-                 apply WF' in H10.
-                 destruct H10 as (e & e' & H10 & H11 & H12).
-                 simpl in H11.
-                 rewrite H10 in H2.
-                 rewrite H11 in H9.
-                 inversion H2.
-                 inversion H9.
-                 subst e e'.
-                 assumption.
-               }
-
-               apply cover_step with
-               (rho := rho') (phi := (lhs c)) in H10; trivial.
-               
-               destruct H10 as (alpha & phic_1 & H11 & H12 & H13).
-                 
-               assert (H14 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
-               {
-                 apply H with (m := n)  (F := F) (G0 := G0); trivial.
-                 - apply wf_subpath; trivial.
-                 - apply first_step with
-                   (phi := (lhs c)) (G0 := G0) (G := (Delta S G0)); trivial.
-                   + destruct c.
-                     simpl; trivial.
-                     apply Delta_S_not_empty; trivial.
-                   + destruct c; trivial.
-                   + apply alpha_to_S with (alpha := alpha); trivial.
-                   + rewrite H12.
-                     apply der_in_Delta; trivial.
-                     destruct c; trivial.
-                 - unfold startsFrom.
-                   exists gamma'.
-                   rewrite shift_index.
-                   simpl.
-                   split; trivial.
-               }
-               unfold SatRL in H14.
-               simpl in H14.
-               destruct H14 as (H14 & n0 & i & gamma_i & H15 & H16 & H17 & H18).
-               
-               assert (H19 : SatML gamma_i rho (SynDerML' phi c)).
-               {
-                 unfold SynDerML'.
-                 rewrite SatML_Exists.
-                 exists rho'.
-                 split.
-                 - intros v H20.
-                   apply H7.
-                   rewrite <- rhs_vars_in_lhs; trivial.
-                 - apply SatML_And.
-                   split; trivial.
-                   rewrite Proposition1.
-                   exists gamma.
-                   apply SatML_And.
-                   split; trivial.
-                   apply disjoint_vars with (rho := rho); trivial.
-                   intros v H19.
-                   apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
-                   apply H7 in H19; trivial.
-               }
-
-               clear H18 H13 H14 H7 H7' rho'.
-               assert (H20 : SatRL (Path_i tau (i + 1)) rho
-                                       ((SynDerML' phi c) => phi')).
-               {
-                 assert (H21 : n0 = n).
-                 apply one_step_less with (tau := tau); trivial.
-                 subst n0.
-                 apply H with (m := n - i)(F := F) (G0 := G0); trivial.
-                 - omega.
-                 - apply wf_subpath; trivial.
-                 - admit.
-                 - unfold complete.
-                   unfold complete in H0.
-                   destruct H0 as (gamma0 & H0 & H1').
-                   exists gamma0.
-                   split.
-                   + rewrite shift_index.
-                     assert (H22: (n - i + (i + 1)) = Datatypes.S n).
-                     * omega.
-                     * rewrite H22.
-                       exact H0.
-                   + exact H1'.
-                 - unfold startsFrom.
-                   exists gamma_i.
-                   split.
-                   + rewrite <- H17.
-                     rewrite shift_index.
-                     rewrite shift_index.
-                     simpl.
-                     reflexivity.
-                   + exact H19.
-               }
-
-               unfold SatRL in H20.
-               simpl in H20.
-               destruct H20 as (H20 & n1 & j & gamma_j & H21 & H22 & H23 & H24).
-               unfold SatRL.
-               split.
-               + simpl.
-                 unfold startsFrom.
-                 exists gamma.
-                 split; trivial.
-               + auto. exists (Datatypes.S n), (j + (i + 1)), gamma_j.
-                 split; trivial.
-                 apply complete_shift in H22.
-                 apply one_step_less with (n := n) in H22; trivial.
-                 apply plus_le_compat_r with (p := i) in H21.
-                 rewrite H22 in H21.
-                 rewrite plus_assoc.
-                 omega.
-                 split; trivial.
-                 split.
-                 * rewrite shift_index in H23.
-                   exact H23.
-                 * simpl. exact H24.
-             - simpl in H6.
-               unfold startsFrom in H2.
-               destruct H2 as (gamma & H2 & H8).
-
-               assert (H9 : exists gamma', tau 1 = Some gamma').
-               { apply first_step_gamma with (n := n) in H2; trivial. }
-               destruct H9 as (gamma' & H9).
-
-               assert (H10 : gamma =>S gamma').
-               {
-                 unfold wfPath, wfGPath in WF.
-                 destruct WF as (WF & WF').
-                 assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
-                 {
-                   split; unfold not; intros H10.
-                   - rewrite H10 in *.
-                     inversion H2.
-                   - simpl in H10.
-                     rewrite H10 in *.
-                     inversion H9.
-                 }
-                 apply WF' in H10.
-                 destruct H10 as (e & e' & H10 & H11 & H12).
-                 simpl in H11.
-                 rewrite H10 in H2.
-                 rewrite H11 in H9.
-                 inversion H2.
-                 inversion H9.
-                 subst e e'.
-                 assumption.
-               }
-
-               apply cover_step with (rho := rho) (phi := phi) in H10.
-               destruct H10 as (alpha & phi1 & H10 & H11 & H12).
-
-               assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
-               {
-                 apply H with (m := n)(F := F)(G0 := G0); trivial.
-                 - apply wf_subpath; trivial.
-                 - admit.
-                 - unfold startsFrom.
-                   exists gamma'.
-                   split; trivial.
-               }
-               unfold SatRL.
-               split.
-               + simpl.
-                 unfold startsFrom.
-                 exists gamma.
-                 split; trivial.
-               + unfold SatRL in H13.
-                 simpl in H13.
-                 destruct H13 as (H13 & n0 & j & gamma_j & Hj & H14 & H15 & H16).
-                 exists (Datatypes.S n), (j + 1), gamma_j.
-                 split.
-                 rewrite one_step_less with
-                 (tau := tau) (n := n) in Hj; trivial.
-                 * omega.
-                 * repeat split; trivial.
-                   rewrite shift_index in H15; trivial.
-               + assumption.
+             apply H with (m := n); trivial.
+             - apply wf_subpath; trivial.
+             - apply first_step with
+               (phi := (lhs c)) (G := (Delta S G0)); trivial.
+               + destruct c.
+                 simpl; trivial.
+                 apply Delta_S_not_empty; trivial.
+               + destruct c; trivial.
+               + apply alpha_to_S with (alpha := alpha); trivial.
+               + rewrite H12.
+                 apply der_in_Delta; trivial.
+                 destruct c; trivial.
+             - unfold startsFrom.
+               exists gamma'.
+               rewrite shift_index.
+               simpl.
+               split; trivial.
            }
+           unfold SatRL in H14.
+           simpl in H14.
+           destruct H14 as (H14 & n0 & i & gamma_i & H15 & H16 & H17 & H18).
+           
+           assert (H19 : SatML gamma_i rho (SynDerML' phi c)).
+           {
+             unfold SynDerML'.
+             rewrite SatML_Exists.
+             exists rho'.
+             split.
+             - intros v H20.
+               apply H6.
+               rewrite <- rhs_vars_in_lhs; trivial.
+             - apply SatML_And.
+               split; trivial.
+               rewrite Proposition1.
+               exists gamma.
+               apply SatML_And.
+               split; trivial.
+               apply disjoint_vars with (rho := rho); trivial.
+               intros v H19.
+               apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
+               apply H6 in H19; trivial.
+           }
+
+           clear H18 H13 H14 H6 H6' rho'.
+           assert (H20 : SatRL (Path_i tau (i + 1)) rho
+                               ((SynDerML' phi c) => phi')).
+           {
+             assert (H21 : n0 = n).
+             apply one_step_less with (tau := tau); trivial.
+             subst n0.
+             apply H with (m := n - i); trivial.
+             - omega.
+             - apply wf_subpath; trivial.
+             - apply H4.
+               rewrite H7.
+               apply in_app_iff.
+               right.
+               unfold SynDerRL.
+               simpl.
+               left.
+               unfold SynDerRL'.
+               simpl.
+               reflexivity.
+             - unfold complete.
+               unfold complete in H0.
+               destruct H0 as (gamma0 & H0 & H1').
+               exists gamma0.
+               split;trivial.
+               + rewrite shift_index.
+                 assert (H22: (n - i + (i + 1)) = Datatypes.S n).
+                 * omega.
+                 * rewrite H22.
+                   exact H0.
+             - unfold startsFrom.
+               exists gamma_i.
+               split; trivial.
+               rewrite <- H17.
+               repeat rewrite shift_index.
+               simpl.
+               reflexivity.
+           }
+
+           unfold SatRL in H20.
+           simpl in H20.
+           destruct H20 as (H20 & n1 & j & gamma_j & H21 & H22 & H23 & H24).
+           unfold SatRL.
+           split.
+           { simpl.
+             unfold startsFrom.
+             exists gamma.
+             split; trivial. }
+           { exists (Datatypes.S n), (j + (i + 1)), gamma_j.
+             split; trivial.
+             apply complete_shift in H22.
+             apply one_step_less with (n := n) in H22; trivial.
+             apply plus_le_compat_r with (p := i) in H21.
+             rewrite H22 in H21.
+             rewrite plus_assoc.
+             omega.
+             split; trivial.
+             split.
+             - rewrite shift_index in H23.
+               exact H23.
+             - simpl. exact H24.
+           }
+           (* third case *)
+         * simpl in H6.
+           unfold startsFrom in H2.
+           destruct H2 as (gamma & H2 & H8).
+       
+           assert (H9 : exists gamma', tau 1 = Some gamma').
+           { apply first_step_gamma with (n := n) in H2; trivial. }
+           destruct H9 as (gamma' & H9).
+           
+           assert (H10 : gamma =>S gamma').
+           {
+             unfold wfPath, wfGPath in WF.
+             destruct WF as (WF & WF').
+             assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+             {
+               split; unfold not; intros H10.
+               - rewrite H10 in *.
+                 inversion H2.
+               - simpl in H10.
+                 rewrite H10 in *.
+                 inversion H9.
+             }
+             apply WF' in H10.
+             destruct H10 as (e & e' & H10 & H11 & H12).
+             simpl in H11.
+             rewrite H10 in H2.
+             rewrite H11 in H9.
+             inversion H2.
+             inversion H9.
+             subst e e'.
+             assumption.
+           }
+           
+           apply cover_step with (rho := rho) (phi := phi) in H10.
+           destruct H10 as (alpha & phi1 & H10 & H11 & H12).
+           
+           assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
+           {
+             apply H with (m := n); trivial.
+             - apply wf_subpath; trivial.
+             - apply H4.
+               rewrite H6.
+               apply in_app_iff.
+               right.
+               unfold SynDerRL.
+               simpl.
+               unfold SynDerRL', SynDerML.
+               rewrite in_map_iff.
+               simpl.
+               exists phi1.
+               split; trivial.
+               rewrite in_map_iff.
+               exists alpha.
+               split; trivial.
+               subst phi1.
+               reflexivity.
+             - unfold startsFrom.
+               exists gamma'.
+               split; trivial.
+           }
+           unfold SatRL.
+           split.
+           { simpl.
+             unfold startsFrom.
+             exists gamma.
+             split; trivial. }
+           { unfold SatRL in H13.
+             simpl in H13.
+             destruct H13 as (H13 & n0 & j & gamma_j & Hj & H14 & H15 & H16).
+             exists (Datatypes.S n), (j + 1), gamma_j.
+             split.
+             rewrite one_step_less with
+             (tau := tau) (n := n) in Hj; trivial.
+             * omega.
+             * repeat split; trivial.
+               rewrite shift_index in H15; trivial.
+           }
+           assumption.
    Qed.
    
 
-   Lemma all_G0_in_F:
-     forall g G F G0,
-       In g G0 ->
-       step_star G0 G [] F ->
-       In g F.
+   Lemma sound : total ->
+                 steps (Delta S G0) [] ->
+                 SatTS_G G0.
    Proof.
-     intros g G F G0 H H'.
-     induction H'; trivial; simpl; tauto.
-   Qed.
-   
-   Lemma sound : forall F G0,
-                   total ->
-                   step_star G0 (Delta S G0) [] F ->
-                   SatTS_G G0.
-   Proof.
-     intros F G0 T H g H0 tau rho n H1 H2 H3.
+     intros T H g H0 tau rho n H1 H2 H3.
      case_eq G0.
      - intros H'.
        rewrite H' in H0.
        contradict H0.
      - intros r l NE.
-       apply finite_sound with (n := n) (F := F)(G0 := G0); trivial.
+       apply finite_sound with (n := n); trivial.
        + intros H'.
          rewrite H' in NE.
          inversion NE.
        + destruct g.
-         apply all_G0_in_F with (G := (Delta S G0)) (G0 := G0); trivial.
+         apply init; assumption.
    Qed.
               
 End Soundness.
