@@ -34,7 +34,7 @@ Module Type Soundness
                 G' = remove RLFormula_eq_dec g G ->
                 step G G' g
   | circ_case : forall c, 
-                  In g G -> In c G0 ->
+                  In g G -> In c G0 -> SDerivable (lhs g) ->
                   ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
                   G' = (remove RLFormula_eq_dec g G)
                          ++ (SynDerRL [c] g) ->
@@ -51,8 +51,7 @@ Module Type Soundness
                 step G G'' g ->
                 steps G'' G' ->
                 steps G G'.
-
-
+  
   Inductive inF (g : RLFormula) : Prop :=
   | init : In g G0 -> inF g
   | in_step : (exists G G',
@@ -60,6 +59,7 @@ Module Type Soundness
                 forall g', In g' G' -> inF g') ->
               inF g.
 
+  
   (* End step *)
 
 
@@ -80,6 +80,15 @@ Module Type Soundness
       In v (FreeVars [phi]) ->
       ~ In v (FreeVars [lhs c]).
   Admitted.
+
+  Lemma disjoint_vars' :
+    forall phi phi_l phi_r x,
+      In (phi_l => phi_r) S ->
+      In x (FreeVars [phi]) ->
+      ~ In x (FreeVars [phi_l; phi_r]).
+  Admitted.
+  
+  
 
   Axiom disjoint_vars :
     forall gamma rho rho' phi,
@@ -127,31 +136,21 @@ Module Type Soundness
           tauto.
           apply modify_Sat2; trivial.
           intros x V.
-          admit.
+          apply disjoint_vars' with (phi := phi); trivial.
         * apply modify_Sat1; trivial.
           intros x V.
           rewrite in_FreeVars_iff.
           tauto.
   Qed.
-          
-  Lemma impl_sder : forall phi c,
-                      In c G0 ->
-                      ValidML (ImpliesML phi (EClos (lhs c))) ->
-                      SDerivable (lhs c) ->
-                      SDerivable phi.
-  Proof.
-    intros phi c H0 H1 H2.
-  Admitted.
-
-  
-
+       
   Lemma impl_or_der :
     forall G phi phi',
+      total -> 
       steps G [] ->
       inF (phi => phi') ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros G phi phi' H H0.
+    intros G phi phi' T H H0.
     inversion H0.
     - right.
       apply all_G0_der with (phi' := phi'); trivial.
@@ -160,9 +159,7 @@ Module Type Soundness
       + left; trivial.
       + simpl in H4.
         right.
-        apply impl_sder with (c := c); trivial.
-        apply all_G0_der with (phi' := (rhs c)).
-        destruct c; trivial.
+        trivial.
       + right; trivial.
   Qed.
 
@@ -452,7 +449,7 @@ Module Type Soundness
          case_eq (RLFormula_eq_dec g' a); intros.
          subst.
          apply IHG; trivial.
-         simpl.right.
+         simpl. right.
          apply IHG; trivial.
    Qed.
    
@@ -539,7 +536,7 @@ Module Type Soundness
      induction n using custom_lt_wf_ind.
      - intros tau rho phi phi' NE WF H' H0 H H1 T.
        apply impl_or_der with
-       (phi := phi) (phi' := phi') in H.
+       (phi := phi) (phi' := phi') in H; trivial.
        + destruct H as [H | H].
          * unfold SatRL.
            split.
@@ -563,22 +560,21 @@ Module Type Soundness
            split; trivial.
            split; trivial.
            simpl.
-           apply valid_impl with (phi := phi);assumption.
+           apply valid_impl with (phi := phi);trivial.
          * unfold complete in H0.
            destruct H0 as (gamma & H2 & H3).
            unfold total in T.
            apply T with
-           (gamma := gamma) (rho := rho) in H.
+           (gamma := gamma) (rho := rho) in H; trivial.
            destruct H as (gamma' & H).
            unfold terminating in H3.
            contradict H.
-           apply H3.
+           apply H3; trivial.
            unfold startsFrom in H1.
            destruct H1 as (gamma0 & (H1 & H1')).
            rewrite H2 in H1.
            inversion H1.
            exact H1'.
-       + exact H'.
      - intros tau rho phi phi' NE WF H' H0 H1 H2 T.
        inversion H'.
        + apply one_step; trivial.
@@ -652,10 +648,10 @@ Module Type Soundness
            destruct H2 as (gamma & (H2 & H2')).
            apply valid_impl with
            (gamma := gamma) (phi' := (EClos (lhs c)))
-                            (phi := phi) (rho := rho) in H6; trivial.
-           unfold EClos in H6.
-           apply SatML_Exists in H6.
-           destruct H6 as (rho' & (H6 & H6')).
+                            (phi := phi) (rho := rho) in H7; trivial.
+           unfold EClos in H7.
+           apply SatML_Exists in H7.
+           destruct H7 as (rho' & (H7 & H7')).
            
            (* first part *)
            assert (H9 : exists gamma', tau 1 = Some gamma').
@@ -720,7 +716,7 @@ Module Type Soundness
              exists rho'.
              split.
              - intros v H20.
-               apply H6.
+               apply H7.
                rewrite <- rhs_vars_in_lhs; trivial.
              - apply SatML_And.
                split; trivial.
@@ -731,10 +727,10 @@ Module Type Soundness
                apply disjoint_vars with (rho := rho); trivial.
                intros v H19.
                apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
-               apply H6 in H19; trivial.
+               apply H7 in H19; trivial.
            }
 
-           clear H18 H13 H14 H6 H6' rho'.
+           clear H18 H13 H14 H7 H7' rho'.
            assert (H20 : SatRL (Path_i tau (i + 1)) rho
                                ((SynDerML' phi c) => phi')).
            {
@@ -745,7 +741,7 @@ Module Type Soundness
              - omega.
              - apply wf_subpath; trivial.
              - apply H4.
-               rewrite H7.
+               rewrite H8.
                apply in_app_iff.
                right.
                unfold SynDerRL.

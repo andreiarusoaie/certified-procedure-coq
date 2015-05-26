@@ -70,6 +70,7 @@ Module Type Formulas.
   (* Free variables *)
   Parameter FreeVars : list MLFormula -> list Var .
 
+  
   Definition modify_val_on_set :
     Valuation -> Valuation -> list Var -> Valuation .
   Admitted.
