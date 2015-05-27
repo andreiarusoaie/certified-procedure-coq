@@ -54,11 +54,10 @@ Module Type Soundness
   
   Inductive inF (g : RLFormula) : Prop :=
   | init : In g G0 -> inF g
-  | in_step : (exists G G',
-                step G G' g /\
-                forall g', In g' G' -> inF g') ->
+  | in_step : forall G G',
+                step G G' g ->
+                (forall g', In g' G' -> inF g') ->
               inF g.
-
   
   (* End step *)
 
@@ -144,26 +143,26 @@ Module Type Soundness
   Qed.
        
   Lemma impl_or_der :
-    forall G phi phi',
+    forall phi phi',
       total -> 
-      steps G [] ->
       inF (phi => phi') ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros G phi phi' T H H0.
+    intros phi phi' T H0.
     inversion H0.
     - right.
       apply all_G0_der with (phi' := phi'); trivial.
-    - destruct H1 as (G' & G'' & H1 & H1').
-      inversion H1; simpl in H3.
+    - rename G' into G''.
+      rename G into G'.
+      rename H1 into H1'.
+      inversion H; simpl in H3.
       + left; trivial.
       + simpl in H4.
         right.
         trivial.
       + right; trivial.
   Qed.
-
-  
+ 
   (* custom induction principle *)
    Lemma custom_lt_wf_ind :
      forall (P:nat -> Prop),
@@ -467,9 +466,7 @@ Module Type Soundness
        + apply classic.
        + destruct H2 as [H2 | H2].
          * subst.
-           apply in_step.
-           exists G, G''.
-           split; trivial.
+           apply in_step with (G := G) (G' := G''); trivial.
          * apply IHsteps.
            {
              inversion H.
@@ -535,9 +532,8 @@ Module Type Soundness
    Proof.
      induction n using custom_lt_wf_ind.
      - intros tau rho phi phi' NE WF H' H0 H H1 T.
-       apply impl_or_der with
-       (phi := phi) (phi' := phi') in H; trivial.
-       + destruct H as [H | H].
+       apply impl_or_der in H'; trivial.
+       + destruct H' as [H' | H'].
          * unfold SatRL.
            split.
            {simpl.
@@ -564,11 +560,11 @@ Module Type Soundness
          * unfold complete in H0.
            destruct H0 as (gamma & H2 & H3).
            unfold total in T.
-           apply T with
-           (gamma := gamma) (rho := rho) in H; trivial.
-           destruct H as (gamma' & H).
+           apply T  with
+           (gamma := gamma) (rho := rho) in H'; trivial.
+           destruct H' as (gamma' & H').
            unfold terminating in H3.
-           contradict H.
+           contradict H'.
            apply H3; trivial.
            unfold startsFrom in H1.
            destruct H1 as (gamma0 & (H1 & H1')).
@@ -617,6 +613,7 @@ Module Type Soundness
          apply H with (tau := (Path_i tau 1))
                         (m := n); trivial.
          apply wf_subpath; trivial.
+         Check G_in_F. 
          apply G_in_F with (G := (Delta S G0));trivial.
          rewrite H7.
          apply der_in_Delta; trivial.
@@ -626,8 +623,9 @@ Module Type Soundness
        + generalize H1.
          intros Step.
          clear H1.
-         destruct H3 as (G' & G'' & H1 & H4).
-         inversion H1. 
+         rename G' into G''.
+         rename G into G'.
+         inversion H3. 
          * simpl in H6.
            unfold SatRL.
            split.
