@@ -64,12 +64,11 @@ Module Type Formulas.
   
   Definition ValidML (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
-  Definition SatisfiableML (phi : MLFormula) : Prop :=
-    exists gamma rho, SatML gamma rho phi .
+(*  Definition SatisfiableML (phi : MLFormula) : Prop :=
+    exists gamma rho, SatML gamma rho phi . *)
 
   (* Free variables *)
   Parameter FreeVars : list MLFormula -> list Var .
-
   
   Definition modify_val_on_set :
     Valuation -> Valuation -> list Var -> Valuation .

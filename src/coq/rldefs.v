@@ -5,6 +5,7 @@ Require Import List.
 Module Type RL (F : Formulas) (U : Utils).
   Import F.
   Import U.
+  Import ListNotations.
   
   (* RL *)
   Definition RLFormula := (MLFormula * MLFormula)%type .
@@ -15,6 +16,11 @@ Module Type RL (F : Formulas) (U : Utils).
   Parameter RLFormula_eq_dec :
     forall x y : RLFormula, {x = y} + {x <> y}.
 
+  Check FreeVars.
+  (* well Formed *)
+  Definition wfFormula (F : RLFormula) : Prop :=
+    incl (FreeVars [(rhs F)]) (FreeVars [(lhs F)]).  
+  
   Lemma RL_decompose :
     forall F : RLFormula, F = ((lhs F) => (rhs F)).
   Proof.

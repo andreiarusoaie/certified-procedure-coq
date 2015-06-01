@@ -61,17 +61,8 @@ Module Type Soundness
   
   (* End step *)
 
-
-
   
   (* Section Valuations *)
-
-  (* TODO: wfFormula *)
-  Lemma rhs_vars_in_lhs :
-    forall x F,
-      In x (FreeVars [(lhs F); (rhs F)]) <-> In x (FreeVars [lhs F]).
-  Admitted.
-
   (* TODO: alpha equivalence *)
   Lemma disjoint_domain_2 :
     forall phi v c (G0 : list RLFormula) ,
@@ -89,12 +80,13 @@ Module Type Soundness
   
   
 
-  Axiom disjoint_vars :
+  Lemma disjoint_vars :
     forall gamma rho rho' phi,
       SatML gamma rho phi ->
       (forall v : Var, In v (FreeVars [phi]) -> rho v = rho' v) ->
       SatML gamma rho' phi.
-  
+  Admitted.
+    
    (* End Section Valuations *)
 
 
@@ -715,7 +707,9 @@ Module Type Soundness
              split.
              - intros v H20.
                apply H7.
-               rewrite <- rhs_vars_in_lhs; trivial.
+               rewrite in_FreeVars_iff in H20.
+               apply not_or_and in H20.
+               destruct H20 as [H20 _]; trivial.
              - apply SatML_And.
                split; trivial.
                rewrite Proposition1.
@@ -724,8 +718,8 @@ Module Type Soundness
                split; trivial.
                apply disjoint_vars with (rho := rho); trivial.
                intros v H19.
+               apply H7.
                apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
-               apply H7 in H19; trivial.
            }
 
            clear H18 H13 H14 H7 H7' rho'.
