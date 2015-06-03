@@ -605,7 +605,6 @@ Module Type Soundness
          apply H with (tau := (Path_i tau 1))
                         (m := n); trivial.
          apply wf_subpath; trivial.
-         Check G_in_F. 
          apply G_in_F with (G := (Delta S G0));trivial.
          rewrite H7.
          apply der_in_Delta; trivial.
