@@ -128,7 +128,8 @@ Module Type Soundness
           intros x V.
           rewrite in_FreeVars_iff.
           unfold FreeVars.
-          rewrite 2 app_nil_r.
+          pattern (getFreeVars phi_r ++ []).
+          rewrite app_nil_r.
           tauto.
   Qed.
        
