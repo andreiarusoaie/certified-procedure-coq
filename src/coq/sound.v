@@ -393,27 +393,6 @@ Module Type Soundness
      rewrite plus_assoc in H; trivial.
    Qed.
 
-   Lemma Delta_S_not_empty :
-     forall G0, G0 <> [] -> S <> [] -> Delta S G0 <> [].
-   Proof.
-     intros G0 H Ax.
-     unfold Delta.
-     case_eq G0.
-     - intros H'.
-       contradiction.
-     - intros r l H'.
-       unfold not.
-       intros H0.
-       fold Delta in H0.
-       apply app_eq_nil in H0.
-       destruct H0 as (H0 & _).
-       unfold SynDerRL in H0.
-       apply map_eq_nil in H0.
-       unfold SynDerML in H0.
-       apply map_eq_nil in H0.
-       contradict H0.
-       trivial.
-   Qed.
 
    Lemma remove_other :
      forall G g g',
