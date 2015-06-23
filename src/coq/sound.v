@@ -18,9 +18,6 @@ Module Type Soundness
   (* G0 *)
   Variable G0 : list RLFormula .
 
-  Axiom S_not_nil : S <> [] .
-
-
   (* Section step *)
   
   Inductive step (G G': list RLFormula)
@@ -397,9 +394,9 @@ Module Type Soundness
    Qed.
 
    Lemma Delta_S_not_empty :
-     forall G0, G0 <> [] -> Delta S G0 <> [].
+     forall G0, G0 <> [] -> S <> [] -> Delta S G0 <> [].
    Proof.
-     intros G0 H.
+     intros G0 H Ax.
      unfold Delta.
      case_eq G0.
      - intros H'.
@@ -415,7 +412,7 @@ Module Type Soundness
        unfold SynDerML in H0.
        apply map_eq_nil in H0.
        contradict H0.
-       apply S_not_nil.
+       trivial.
    Qed.
 
    Lemma remove_other :
