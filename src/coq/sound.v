@@ -18,10 +18,6 @@ Module Type Soundness
   (* G0 *)
   Variable G0 : list RLFormula .
 
-  Axiom all_G0_der :
-    forall phi phi',
-      In (phi => phi') G0 -> SDerivable phi.
-
   Axiom S_not_nil : S <> [] .
 
 
@@ -138,12 +134,13 @@ Module Type Soundness
     forall phi phi',
       total -> 
       inF (phi => phi') ->
+      (forall p p', In (p => p') G0 -> SDerivable p) ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros phi phi' T H0.
+    intros phi phi' T H0 H'.
     inversion H0.
     - right.
-      apply all_G0_der with (phi' := phi'); trivial.
+      apply H' with (p' := phi'); trivial.
     - rename G' into G''.
       rename G into G'.
       rename H1 into H1'.
@@ -520,10 +517,11 @@ Module Type Soundness
        steps (Delta S G0) [] ->
        startsFrom tau rho phi ->
        total ->
+       (forall p p', In (p => p') G0 -> SDerivable p) ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' NE WF H' H0 H H1 T.
+     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax.
        apply impl_or_der in H'; trivial.
        + destruct H' as [H' | H'].
          * unfold SatRL.
@@ -563,7 +561,7 @@ Module Type Soundness
            rewrite H2 in H1.
            inversion H1.
            exact H1'.
-     - intros tau rho phi phi' NE WF H' H0 H1 H2 T.
+     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax.
        inversion H'.
        + apply one_step; trivial.
          unfold startsFrom in H2.
@@ -865,10 +863,11 @@ Module Type Soundness
    
 
    Lemma sound : total ->
+                 (forall p p', In (p => p') G0 -> SDerivable p) ->
                  steps (Delta S G0) [] ->
                  SatTS_G G0.
    Proof.
-     intros T H g H0 tau rho n H1 H2 H3.
+     intros T Ax H g H0 tau rho n H1 H2 H3.
      case_eq G0.
      - intros H'.
        rewrite H' in H0.
