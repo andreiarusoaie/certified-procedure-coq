@@ -6,6 +6,29 @@ Module Type RL (F : Formulas) (U : Utils).
   Import F.
   Import U.
   Import ListNotations.
+
+  Fixpoint FreeVars (l : list MLFormula) : list Var :=
+    match l with
+      | nil => nil
+      | a :: l' => getFreeVars a ++ (FreeVars l')
+    end.
+  
+  Lemma in_FreeVars_iff :
+    forall x phi tl,
+      In x (FreeVars (phi::tl)) <-> In x (FreeVars [phi]) \/ In x (FreeVars tl).
+  Proof.
+    intros x phi l'.
+    split; intros.
+    - simpl in *.
+      rewrite in_app_iff in H.
+      rewrite app_nil_r.
+      assumption.
+    - simpl in *.
+      rewrite app_nil_r in H.
+      rewrite in_app_iff.
+      assumption.
+  Qed.
+
   
   (* RL *)
   Definition RLFormula := (MLFormula * MLFormula)%type .
@@ -16,7 +39,6 @@ Module Type RL (F : Formulas) (U : Utils).
   Parameter RLFormula_eq_dec :
     forall x y : RLFormula, {x = y} + {x <> y}.
 
-  Check FreeVars.
   (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
     incl (FreeVars [(rhs F)]) (FreeVars [(lhs F)]).  

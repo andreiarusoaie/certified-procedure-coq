@@ -68,31 +68,29 @@ Module Type Formulas.
     exists gamma rho, SatML gamma rho phi . *)
 
   (* Free variables *)
-  Parameter FreeVars : list MLFormula -> list Var .
+  Parameter getFreeVars : MLFormula -> list Var .
   
-  Definition modify_val_on_set :
+  
+  Parameter modify_val_on_set :
     Valuation -> Valuation -> list Var -> Valuation .
-  Admitted.
+  
   Axiom modify_1 :
     forall x V rho rho',
       In x V -> (modify_val_on_set rho rho' V) x = rho' x.
   Axiom modify_2 :
     forall x V rho rho',
       ~ In x V -> (modify_val_on_set rho rho' V) x = rho x.
+
   Axiom modify_Sat1 :
     forall gamma rho rho' phi V,
       SatML gamma rho' phi ->
-      (forall x, In x (FreeVars [phi]) -> In x V) ->
+      (forall x, In x (getFreeVars phi) -> In x V) ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
   Axiom modify_Sat2 :
     forall gamma rho rho' phi V,
       SatML gamma rho phi ->
-      (forall x, In x (FreeVars [phi]) -> ~ In x V) ->
+      (forall x, In x (getFreeVars phi) -> ~ In x V) ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
-
-  Axiom in_FreeVars_iff :
-    forall x phi tl,
-      In x (FreeVars (phi::tl)) <-> In x (FreeVars [phi]) \/ In x (FreeVars tl).
 
   
   (* encoding: ML -> FOL *)

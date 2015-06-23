@@ -116,14 +116,19 @@ Module Type Soundness
           apply modify_Sat1; trivial.
           intros x V.
           simpl.
-          rewrite in_FreeVars_iff.
+          apply in_app_iff.
           tauto.
           apply modify_Sat2; trivial.
           intros x V.
           apply disjoint_vars' with (phi := phi); trivial.
+          unfold FreeVars.
+          apply in_app_iff.
+          tauto.
         * apply modify_Sat1; trivial.
           intros x V.
           rewrite in_FreeVars_iff.
+          unfold FreeVars.
+          rewrite 2 app_nil_r.
           tauto.
   Qed.
        
