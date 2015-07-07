@@ -13,23 +13,6 @@ Module Type RL (F : Formulas) (U : Utils).
       | a :: l' => getFreeVars a ++ (FreeVars l')
     end.
   
-  Lemma in_FreeVars_iff :
-    forall x phi tl,
-      In x (FreeVars (phi::tl)) <-> In x (FreeVars [phi]) \/ In x (FreeVars tl).
-  Proof.
-    intros x phi l'.
-    split; intros.
-    - simpl in *.
-      rewrite in_app_iff in H.
-      rewrite app_nil_r.
-      assumption.
-    - simpl in *.
-      rewrite app_nil_r in H.
-      rewrite in_app_iff.
-      assumption.
-  Qed.
-
-  
   (* RL *)
   Definition RLFormula := (MLFormula * MLFormula)%type .
   Notation "L => R" := (L, R) (at level 100).
@@ -42,6 +25,29 @@ Module Type RL (F : Formulas) (U : Utils).
   (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
     incl (FreeVars [(rhs F)]) (FreeVars [(lhs F)]).  
+
+  Lemma wf_free :
+    forall F x,
+      wfFormula F ->
+      (In x (FreeVars [lhs F; rhs F]) <-> In x (FreeVars [lhs F])).
+  Proof.
+    intros F x H.
+    split; intros H'.
+    - unfold wfFormula, incl in H.
+      unfold FreeVars in *.
+      rewrite app_nil_r in *.
+      rewrite in_app_iff in H'.
+      destruct H' as [H' | H']; trivial.
+      apply H in H'.
+      rewrite app_nil_r in H'.
+      trivial.
+    - unfold FreeVars in *.
+      rewrite app_nil_r in *.
+      rewrite in_app_iff.
+      left.
+      trivial.
+  Qed.
+
   
   Lemma RL_decompose :
     forall F : RLFormula, F = ((lhs F) => (rhs F)).
