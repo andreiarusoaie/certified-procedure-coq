@@ -126,11 +126,10 @@ Module Type Soundness
           tauto.
         * apply modify_Sat1; trivial.
           intros x V.
-          rewrite in_FreeVars_iff.
-          unfold FreeVars.
-          pattern (getFreeVars phi_r ++ []).
+          unfold  FreeVars.
           rewrite app_nil_r.
-          tauto.
+          rewrite in_app_iff.
+          right. trivial.
   Qed.
        
   Lemma impl_or_der :
@@ -500,10 +499,12 @@ Module Type Soundness
        startsFrom tau rho phi ->
        total ->
        (forall p p', In (p => p') G0 -> SDerivable p) ->
+       (forall F, In F G0 -> wfFormula F) ->
+       (forall F, In F S -> wfFormula F) ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax.
+     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax WFF1 WFF2.
        apply impl_or_der in H'; trivial.
        + destruct H' as [H' | H'].
          * unfold SatRL.
@@ -543,7 +544,7 @@ Module Type Soundness
            rewrite H2 in H1.
            inversion H1.
            exact H1'.
-     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax.
+     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax WFF1 WFF2.
        inversion H'.
        + apply one_step; trivial.
          unfold startsFrom in H2.
@@ -686,9 +687,9 @@ Module Type Soundness
              split.
              - intros v H20.
                apply H7.
-               rewrite in_FreeVars_iff in H20.
-               apply not_or_and in H20.
-               destruct H20 as [H20 _]; trivial.
+               rewrite wf_free in H20.
+               trivial.
+               apply WFF1; trivial.
              - apply SatML_And.
                split; trivial.
                rewrite Proposition1.
@@ -846,10 +847,12 @@ Module Type Soundness
 
    Lemma sound : total ->
                  (forall p p', In (p => p') G0 -> SDerivable p) ->
+                 (forall F, In F G0 -> wfFormula F) ->
+                 (forall F, In F S -> wfFormula F) ->
                  steps (Delta S G0) [] ->
                  SatTS_G G0.
    Proof.
-     intros T Ax H g H0 tau rho n H1 H2 H3.
+     intros T Ax WFF1 WFF2 H g  H0 tau rho n H1 H2 H3.
      case_eq G0.
      - intros H'.
        rewrite H' in H0.
