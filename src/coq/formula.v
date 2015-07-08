@@ -92,6 +92,73 @@ Module Type Formulas.
       (forall x, In x (getFreeVars phi) -> ~ In x V) ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
 
+
+
+    (* renaming *)
+  Parameter rename_var : Var -> Var -> MLFormula -> MLFormula.
+  Axiom renamed_removed :
+    forall x y phi,
+      ~ In x (getFreeVars (rename_var x y phi)).
+
+  Axiom rename_sat :
+    forall gamma rho phi x y,
+      SatML gamma rho phi <->
+      SatML gamma rho (rename_var x y phi) .
+
+  Axiom free_rename:
+    forall z x y phi,
+      In z (getFreeVars (rename_var x y phi)) ->
+      y = z \/ (x <> z /\ In z (getFreeVars phi)).
+  
+  
+  Fixpoint rename_vars (X Y : list Var)
+           (phi : MLFormula) : MLFormula :=
+    match X, Y with
+      | x :: Xs, y :: Ys =>
+        rename_var x y (rename_vars Xs Ys phi)
+      | _, _ => phi
+    end.
+
+  Lemma rename_sat_Set :
+    forall gamma rho phi X Y,
+      SatML gamma rho phi <->
+      SatML gamma rho (rename_vars X Y phi) .
+  Admitted.
+
+  Axiom rename_And :
+    forall phi phi' X Y,
+      rename_vars X Y (AndML phi phi') =
+      (AndML (rename_vars X Y phi) (rename_vars X Y phi')).
+
+  Axiom rename_Not :
+    forall phi X Y,
+      rename_vars X Y (NotML phi) =
+      (NotML (rename_vars X Y phi)).
+
+  
+  Parameter generate_var_not_in_set : Var -> list Var -> Var .
+  Axiom new_var_not_in_set :
+    forall X x,
+       ~ In (generate_var_not_in_set x X) X.
+
+  Fixpoint generate_vars (Vs X : list Var) : list Var :=
+    match Vs with
+      | nil => nil
+      | v :: V =>
+        (generate_var_not_in_set v X) :: generate_vars V X
+    end.
+
+  Axiom rename_exists_sat :
+    forall X Y gamma rho phi,
+      SatML gamma rho (ExistsML X phi) <->
+      SatML gamma rho (ExistsML (generate_vars X Y)
+                                (rename_vars X (generate_vars X Y) phi)).
+
+  Lemma generated_free :
+    forall Y x phi,
+      In x (getFreeVars (rename_vars (getFreeVars phi) Y phi)) ->
+      In x Y .
+    Admitted.
   
   (* encoding: ML -> FOL *)
   (* Parameter encoding : MLFormula -> FOLFormula . *)
@@ -118,7 +185,11 @@ Module Type Formulas.
       SatML gamma rho (encoding phi) <->
       SatML gamma rho phi.
   
-  (* FOL as ML *)
-  (* Parameter injectFOL : FOLFormula -> MLFormula . *)
-    
+
+  Axiom rename_encoding :
+    forall phi X Y,
+      rename_vars X Y (encoding phi) =
+      (encoding (rename_vars X Y phi)).
+
+  
 End Formulas.

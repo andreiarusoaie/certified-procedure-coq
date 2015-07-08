@@ -82,10 +82,25 @@ Module Type Soundness
     
    (* End Section Valuations *)
 
+  Lemma not_free_vars:
+    forall y phi X,
+      In y
+         (getFreeVars
+            (rename_vars (getFreeVars phi)
+                         (generate_vars (getFreeVars phi) X) phi))
+      ->
+      ~ In y X.
+  Proof.
+    intros y phi X H.
+    admit.
+  Qed.
+
 
   
   Lemma cover_step :
     forall gamma gamma' rho phi,
+      (forall F, In F G0 -> wfFormula F) ->
+      (forall F, In F S -> wfFormula F) ->
       (gamma =>S gamma') ->
       SatML gamma rho phi ->
       exists alpha phi',
@@ -93,17 +108,30 @@ Module Type Soundness
         phi' = SynDerML' phi alpha /\
         SatML gamma' rho phi' .
   Proof.
-    intros gamma gamma' rho phi H H'.
+    intros gamma gamma' rho phi WFF1 WFF2 H H'.
     unfold TS in H.
     destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
-    exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
-    split; trivial.
+    exists ((rename_vars (getFreeVars phi_l)
+                                             (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) => (rename_vars (getFreeVars phi_r)
+                                                                                                                          (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r)),
+    (SynDerML' phi
+                                        ((rename_vars (getFreeVars phi_l)
+                                             (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) => (rename_vars (getFreeVars phi_r)
+                                             (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r))).
     split.
-    - reflexivity.
-    - unfold SynDerML'.
+    - admit.
+    - split; trivial.
+      unfold SynDerML'.
       simpl.
+      rewrite app_nil_r.
       apply SatML_Exists.
-      exists (modify_val_on_set rho rho' (FreeVars [phi_l; phi_r])) .
+      exists (modify_val_on_set rho rho'
+             (getFreeVars
+           (rename_vars (getFreeVars phi_l)
+              (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) ++
+         getFreeVars
+           (rename_vars (getFreeVars phi_r)
+              (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r))) .
       split.
       + intros v V.
         rewrite modify_2; trivial.
@@ -113,24 +141,32 @@ Module Type Soundness
           exists gamma.
           apply SatML_And.
           split.
-          apply modify_Sat1; trivial.
-          intros x V.
-          simpl.
-          apply in_app_iff.
-          tauto.
-          apply modify_Sat2; trivial.
-          intros x V.
-          apply disjoint_vars' with (phi := phi); trivial.
-          unfold FreeVars.
-          apply in_app_iff.
-          tauto.
-        * apply modify_Sat1; trivial.
-          intros x V.
-          unfold  FreeVars.
-          rewrite app_nil_r.
+          {
+            apply modify_Sat1.
+            - rewrite <- rename_sat_Set.
+              trivial.
+            - intros x V.
+              rewrite in_app_iff.
+              left.
+              trivial.
+          }
+
+          {
+            apply modify_Sat2; trivial.
+            intros.
+            rewrite in_app_iff.
+            unfold not.
+            intros.
+            destruct H3 as [H3 | H3];contradict H;
+            eapply not_free_vars; exact H3.
+          }                
+        * apply modify_Sat1.
+          rewrite <- rename_sat_Set; trivial.
+          intros x H3.
           rewrite in_app_iff.
           right. trivial.
   Qed.
+  
        
   Lemma impl_or_der :
     forall phi phi',
