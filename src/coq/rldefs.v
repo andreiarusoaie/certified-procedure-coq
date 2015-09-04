@@ -114,5 +114,9 @@ Module Type RL (F : Formulas) (U : Utils).
   (* RL satisfaction for a set of formulas *)
   Definition SatTS_G (G : list RLFormula) : Prop :=
     forall F, In F G -> SatTS F.
+
+
+  Definition rename_vars_RL (X Y : list Var) (F : RLFormula) : RLFormula :=
+    (rename_var_set X Y (lhs F)) => (rename_var_set X Y (rhs F)) .
   
 End RL.

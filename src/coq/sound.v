@@ -18,6 +18,7 @@ Module Type Soundness
   (* G0 *)
   Variable G0 : list RLFormula .
 
+  
   (* Section step *)
   
   Inductive step (G G': list RLFormula)
@@ -54,49 +55,7 @@ Module Type Soundness
   
   (* End step *)
 
-  
-  (* Section Valuations *)
-  (* TODO: alpha equivalence *)
-  Lemma disjoint_domain_2 :
-    forall phi v c (G0 : list RLFormula) ,
-      In c G0 ->
-      In v (FreeVars [phi]) ->
-      ~ In v (FreeVars [lhs c]).
-  Admitted.
-
-  Lemma disjoint_vars' :
-    forall phi phi_l phi_r x,
-      In (phi_l => phi_r) S ->
-      In x (FreeVars [phi]) ->
-      ~ In x (FreeVars [phi_l; phi_r]).
-  Admitted.
-  
-  
-
-  Lemma disjoint_vars :
-    forall gamma rho rho' phi,
-      SatML gamma rho phi ->
-      (forall v : Var, In v (FreeVars [phi]) -> rho v = rho' v) ->
-      SatML gamma rho' phi.
-  Admitted.
     
-   (* End Section Valuations *)
-
-  Lemma not_free_vars:
-    forall y phi X,
-      In y
-         (getFreeVars
-            (rename_vars (getFreeVars phi)
-                         (generate_vars (getFreeVars phi) X) phi))
-      ->
-      ~ In y X.
-  Proof.
-    intros y phi X H.
-    admit.
-  Qed.
-
-
-  
   Lemma cover_step :
     forall gamma gamma' rho phi,
       (forall F, In F G0 -> wfFormula F) ->
@@ -104,37 +63,44 @@ Module Type Soundness
       (gamma =>S gamma') ->
       SatML gamma rho phi ->
       exists alpha phi',
-        In alpha S /\
         phi' = SynDerML' phi alpha /\
         SatML gamma' rho phi' .
   Proof.
     intros gamma gamma' rho phi WFF1 WFF2 H H'.
     unfold TS in H.
     destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
-    exists ((rename_vars (getFreeVars phi_l)
-                                             (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) => (rename_vars (getFreeVars phi_r)
-                                                                                                                          (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r)),
-    (SynDerML' phi
-                                        ((rename_vars (getFreeVars phi_l)
-                                             (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) => (rename_vars (getFreeVars phi_r)
-                                             (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r))).
+    set (vars := ((getFreeVars phi_l) ++ (getFreeVars phi_r))).
+    set (n := (length vars)).
+    set (new_vars := (generate_vars n ((getFreeVars phi) ++ (getFreeVars phi_l) ++ (getFreeVars phi_r)))).
+    exists (rename_vars_RL vars new_vars (phi_l => phi_r)).
+    exists (SynDerML' phi (rename_vars_RL vars new_vars (phi_l => phi_r))).
     split.
-    - admit.
     - split; trivial.
-      unfold SynDerML'.
+    - unfold SynDerML'.
       simpl.
       rewrite app_nil_r.
       apply SatML_Exists.
-      exists (modify_val_on_set rho rho'
-             (getFreeVars
-           (rename_vars (getFreeVars phi_l)
-              (generate_vars (getFreeVars phi_l) (getFreeVars phi)) phi_l) ++
-         getFreeVars
-           (rename_vars (getFreeVars phi_r)
-              (generate_vars (getFreeVars phi_r) (getFreeVars phi)) phi_r))) .
+      exists (modify_val_on_set rho (rename_val_set rho' vars new_vars) new_vars).
       split.
       + intros v V.
-        rewrite modify_2; trivial.
+        symmetry.
+        apply modify_not_in.
+        unfold not in *.
+        intros H3.
+        apply V.
+        apply in_app_iff.
+        subst new_vars.
+        left.
+        rewrite replace_all; trivial.
+        * unfold incl.
+          intros a Ha.
+          subst vars.
+          apply in_app_iff.
+          left; trivial.
+        * rewrite <- generate_vars_exact_n.
+          subst vars.
+          subst n.
+          reflexivity.
       + apply SatML_And.
         split.
         * apply Proposition1.
@@ -142,29 +108,68 @@ Module Type Soundness
           apply SatML_And.
           split.
           {
-            apply modify_Sat1.
-            - rewrite <- rename_sat_Set.
-              trivial.
-            - intros x V.
-              rewrite in_app_iff.
-              left.
-              trivial.
+            - apply modify_Sat1.
+              + apply rename_sat_set.
+                * trivial.
+                * subst new_vars.
+                  unfold incl.
+                  intros y Hy.
+                  apply generated_vars_not_in_set in Hy.
+                  unfold not in *.
+                  intros.
+                  apply Hy.
+                  apply in_app_iff.
+                  right.
+                  apply in_app_iff.
+                  left.
+                  trivial.
+              + intros x Hx.
+                apply replace_all with (X := vars) (phi := phi_l); trivial.
+                * subst vars.
+                  unfold incl.
+                  intros H Ha.
+                  apply in_app_iff.
+                  left.
+                  trivial.
+                * subst n.
+                  subst new_vars.
+                  rewrite <- generate_vars_exact_n.
+                  reflexivity.
           }
-
           {
-            apply modify_Sat2; trivial.
-            intros.
-            rewrite in_app_iff.
-            unfold not.
-            intros.
-            destruct H3 as [H3 | H3];contradict H;
-            eapply not_free_vars; exact H3.
-          }                
+            - apply modify_Sat2; trivial.
+              intros x Hx.
+              subst new_vars.
+              apply generated_vars_not_in with (X := (getFreeVars phi)); trivial.
+              apply incl_appl.
+              apply incl_refl.
+          }
         * apply modify_Sat1.
-          rewrite <- rename_sat_Set; trivial.
-          intros x H3.
-          rewrite in_app_iff.
-          right. trivial.
+          {
+            apply rename_sat_set; trivial.
+            intros y Hy.
+            subst new_vars.
+            apply generated_vars_not_in_set with (n := n) in Hy.
+            unfold not in *.
+            intros.
+            apply Hy.
+            rewrite 2 in_app_iff.
+            right; right; trivial.
+          }
+          {
+            intros x Hx.
+            apply replace_all in Hx; trivial.
+            - subst vars.
+              unfold incl.
+              intros a Ha.
+              rewrite in_app_iff.
+              right; trivial.
+            - subst vars.
+              subst new_vars.
+              rewrite <- generate_vars_exact_n.
+              subst n.
+              reflexivity.
+          }
   Qed.
   
        
@@ -878,6 +883,8 @@ Module Type Soundness
                rewrite shift_index in H15; trivial.
            }
            assumption.
+           trivial.
+           trivial.
    Qed.
    
 
