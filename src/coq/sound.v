@@ -20,23 +20,25 @@ Module Type Soundness
 
   
   (* Section step *)
-  
   Inductive step (G G': list RLFormula)
             (g : RLFormula) : Prop :=
-  | base_case : In g G ->
-                ValidML (ImpliesML (lhs g) (rhs g)) ->
-                G' = remove RLFormula_eq_dec g G ->
-                step G G' g
-  | circ_case : forall c, 
-                  In g G -> In c G0 -> SDerivable (lhs g) ->
-                  ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
-                  G' = (remove RLFormula_eq_dec g G)
-                         ++ (SynDerRL [c] g) ->
-                  step G G' g
-  | deriv_case: In g G -> SDerivable (lhs g) ->
-                G' = (remove RLFormula_eq_dec g G)
-                       ++ (SynDerRL S g) ->
-                step G G' g.
+  | base_case :
+      In g G ->
+      ValidML (ImpliesML (lhs g) (rhs g)) ->
+      G' = remove RLFormula_eq_dec g G ->
+      step G G' g
+  | circ_case :
+      forall c,
+        disjoint_vars (lhs c) (lhs g) ->
+        In g G -> In c G0 -> SDerivable (lhs g) ->
+        ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
+        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c] g) ->
+        step G G' g
+  | deriv_case:
+      disjoint_vars_rules S (lhs g) ->
+      In g G -> SDerivable (lhs g) ->
+      G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g) ->
+      step G G' g.
   
   Inductive steps : list RLFormula -> list RLFormula ->
                          Prop :=
@@ -58,120 +60,68 @@ Module Type Soundness
     
   Lemma cover_step :
     forall gamma gamma' rho phi,
+      disjoint_vars_rules S phi ->
       (forall F, In F G0 -> wfFormula F) ->
       (forall F, In F S -> wfFormula F) ->
       (gamma =>S gamma') ->
       SatML gamma rho phi ->
       exists alpha phi',
+        In alpha S /\
         phi' = SynDerML' phi alpha /\
         SatML gamma' rho phi' .
   Proof.
-    intros gamma gamma' rho phi WFF1 WFF2 H H'.
+    intros gamma gamma' rho phi D WFF1 WFF2 H H'.
     unfold TS in H.
     destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
-    set (vars := ((getFreeVars phi_l) ++ (getFreeVars phi_r))).
-    set (n := (length vars)).
-    set (new_vars := (generate_vars n ((getFreeVars phi) ++ (getFreeVars phi_l) ++ (getFreeVars phi_r)))).
-    exists (rename_vars_RL vars new_vars (phi_l => phi_r)).
-    exists (SynDerML' phi (rename_vars_RL vars new_vars (phi_l => phi_r))).
+    exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
+    split; trivial.
+    split; trivial.
+    unfold SynDerML'.
+    simpl.
+    rewrite app_nil_r.
+    apply SatML_Exists.
+    set (vars := (getFreeVars phi_l ++ getFreeVars phi_r)).
+    exists (modify_val_on_set rho rho' vars).
     split.
-    - split; trivial.
-    - unfold SynDerML'.
-      simpl.
-      rewrite app_nil_r.
-      apply SatML_Exists.
-      exists (modify_val_on_set rho (rename_val_set rho' vars new_vars) new_vars).
+    - intros v V.
+      symmetry.
+      apply modify_not_in.
+      trivial.
+    - apply SatML_And.
       split.
-      + intros v V.
-        symmetry.
-        apply modify_not_in.
-        unfold not in *.
-        intros H3.
-        apply V.
-        apply in_app_iff.
-        subst new_vars.
-        left.
-        rewrite replace_all; trivial.
-        * unfold incl.
-          intros a Ha.
-          subst vars.
-          apply in_app_iff.
-          left; trivial.
-        * rewrite <- generate_vars_exact_n.
-          subst vars.
-          subst n.
-          reflexivity.
-      + apply SatML_And.
+      + apply Proposition1.
+        exists gamma.
+        apply SatML_And.
         split.
-        * apply Proposition1.
-          exists gamma.
-          apply SatML_And.
-          split.
-          {
-            - apply modify_Sat1.
-              + apply rename_sat_set.
-                * trivial.
-                * subst new_vars.
-                  unfold incl.
-                  intros y Hy.
-                  apply generated_vars_not_in_set in Hy.
-                  unfold not in *.
-                  intros.
-                  apply Hy.
-                  apply in_app_iff.
-                  right.
-                  apply in_app_iff.
-                  left.
-                  trivial.
-              + intros x Hx.
-                apply replace_all with (X := vars) (phi := phi_l); trivial.
-                * subst vars.
-                  unfold incl.
-                  intros H Ha.
-                  apply in_app_iff.
-                  left.
-                  trivial.
-                * subst n.
-                  subst new_vars.
-                  rewrite <- generate_vars_exact_n.
-                  reflexivity.
-          }
-          {
-            - apply modify_Sat2; trivial.
-              intros x Hx.
-              subst new_vars.
-              apply generated_vars_not_in with (X := (getFreeVars phi)); trivial.
-              apply incl_appl.
-              apply incl_refl.
-          }
-        * apply modify_Sat1.
-          {
-            apply rename_sat_set; trivial.
-            intros y Hy.
-            subst new_vars.
-            apply generated_vars_not_in_set with (n := n) in Hy.
-            unfold not in *.
-            intros.
-            apply Hy.
-            rewrite 2 in_app_iff.
-            right; right; trivial.
-          }
-          {
-            intros x Hx.
-            apply replace_all in Hx; trivial.
-            - subst vars.
-              unfold incl.
-              intros a Ha.
-              rewrite in_app_iff.
-              right; trivial.
-            - subst vars.
-              subst new_vars.
-              rewrite <- generate_vars_exact_n.
-              subst n.
-              reflexivity.
-          }
+        * apply modify_Sat1; trivial.
+          subst vars.
+          apply incl_appl.
+          apply incl_refl.
+        * apply modify_Sat2; trivial.
+          intros x Hx.
+          unfold disjoint_vars_rules in D.
+          assert (H0'' : In (phi_l => phi_r) S); trivial.
+          apply D in H0.
+          simpl in H0.
+          unfold disjoint_vars in H0.
+          destruct H0 as (H0 & H0').
+          apply H0' in Hx.
+          unfold not in *.
+          intros H3.
+          apply Hx.
+          subst vars.
+          apply in_app_iff in H3.
+          destruct H3 as [H3 | H3']; trivial.
+          rewrite <- wf_free with (phi' := phi_r).
+          rewrite in_app_iff.
+          right. trivial.
+          apply WFF2; trivial.
+      + apply modify_Sat1; trivial.
+        subst vars.
+        apply incl_appr.
+        apply incl_refl.
   Qed.
-  
+        
        
   Lemma impl_or_der :
     forall phi phi',
@@ -195,26 +145,6 @@ Module Type Soundness
       + right; trivial.
   Qed.
  
-  (* custom induction principle *)
-   Lemma custom_lt_wf_ind :
-     forall (P:nat -> Prop),
-       P 0 ->
-       (forall n,
-          (forall m,
-             m <= n -> P m) -> P (Datatypes.S n)) ->
-       (forall n, P n).
-   Proof.
-     intros P H1 H2 n.
-     apply lt_wf_ind.
-     intros n0 H3.
-     induction n0; trivial.
-     apply H2.
-     intros m H.
-     apply H3.
-     apply le_lt_n_Sm in H; trivial.
-   Qed.
-
-
    Lemma shift_index :
      forall tau j k,
        Path_i tau j k = tau (k + j).
@@ -529,6 +459,144 @@ Module Type Soundness
           
    
 
+   Lemma disjoint_over_der :
+     forall phi S' alpha,
+       In alpha S' ->
+       disjoint_vars_rules S' phi ->
+       disjoint_vars_rules S' (SynDerML' phi alpha).
+   Proof.
+     intros phi S' alpha H H'.
+     unfold disjoint_vars_rules in *.
+     intros a Ha.
+     unfold disjoint_vars.
+     split; intros x Hx.
+     - unfold SynDerML'.
+       unfold not.
+       intros H0.
+       apply freeVars_ExistsML in H0.
+       destruct H0 as (H0 & H0').
+       apply freeVars_AndML in H0.
+       destruct H0 as [H0 | H0].
+       + rewrite freeVars_encoding in H0.
+         apply freeVars_AndML in H0.
+         destruct H0 as [H0 | H0].
+         * apply H0'.
+           unfold FreeVars.
+           apply in_app_iff.
+           left.
+           trivial.
+         * apply H' in Ha.
+           unfold disjoint_vars in Ha.
+           destruct Ha as (Ha & Ha').
+           apply Ha in Hx.
+           contradict H0.
+           trivial.
+       + apply H0'.
+         unfold FreeVars.
+         rewrite in_app_iff.
+         right.
+         rewrite in_app_iff.
+         left.
+         trivial.
+     - apply H' in Ha.
+       unfold disjoint_vars in Ha.
+       destruct Ha as (Ha & Ha').
+       apply Ha'.
+       unfold SynDerML' in Hx.
+       apply freeVars_ExistsML in Hx.
+       destruct Hx as (Hx & Hx').
+       apply freeVars_AndML in Hx.
+       destruct Hx as [Hx | Hx].
+       + rewrite freeVars_encoding in Hx.
+         apply freeVars_AndML in Hx.
+         destruct Hx as [Hx | Hx]; trivial.
+         contradict Hx'.
+         unfold FreeVars.
+         rewrite in_app_iff.
+         left.
+         trivial.
+       + contradict Hx'.
+         unfold FreeVars.
+         rewrite in_app_iff.
+         right.
+         rewrite in_app_iff.
+         left.
+         trivial.
+   Qed.
+  
+   Lemma disjoint_circ_der :
+     forall S' phi c,
+       disjoint_vars_rules S' phi ->
+       disjoint_vars_rules S' (lhs c) ->
+       disjoint_vars_rules S' (SynDerML' phi c) .
+   Proof.
+     intros S' phi c H H'.
+     unfold disjoint_vars_rules in *.
+     intros a Ha.
+     unfold disjoint_vars.
+     split; intros x Hx.
+     - unfold SynDerML', not.
+       intros H0.
+       rewrite freeVars_ExistsML in H0.
+       destruct H0 as (H0 & H1).
+       apply freeVars_AndML in H0.
+       destruct H0 as [H0 | H0].
+       + rewrite freeVars_encoding in H0.
+         apply freeVars_AndML in H0.
+         destruct H0 as [H0 | H0].
+         * apply H' in Ha.
+           unfold disjoint_vars in Ha.
+           destruct Ha as (Ha & Ha').
+           apply Ha in Hx.
+           contradict H0.
+           trivial.
+         * apply H in Ha.
+           unfold disjoint_vars in Ha.
+           destruct Ha as (Ha & Ha').
+           apply Ha' in H0.
+           contradict H0.
+           trivial.
+       + apply H' in Ha.
+         unfold disjoint_vars in Ha.
+         destruct Ha as (Ha & Ha').
+         apply Ha in Hx.
+         apply H1.
+         unfold FreeVars.
+         rewrite in_app_iff.
+         right.
+         rewrite in_app_iff.
+         left.
+         trivial.
+     - unfold SynDerML' in Hx.
+       apply freeVars_ExistsML in Hx.
+       destruct Hx as (Hx & Hx').
+       apply freeVars_AndML in Hx.
+       destruct Hx as [Hx | Hx].
+       + rewrite freeVars_encoding in Hx.
+         apply freeVars_AndML in Hx.
+         destruct Hx as [Hx | Hx].
+         * apply H' in Ha.
+           unfold disjoint_vars in Ha.
+           destruct Ha as (Ha & Ha').
+           apply Ha' in Hx.
+           trivial.
+         * apply H in Ha.
+           unfold disjoint_vars in Ha.
+           destruct Ha as (Ha & Ha').
+           apply Ha' in Hx.
+           trivial.
+       + unfold not.
+         intros H''.
+         apply Hx'.
+         unfold FreeVars.
+         rewrite in_app_iff.
+         right.
+         rewrite in_app_iff.
+         left.
+         trivial.
+   Qed.         
+         
+       
    
    Lemma finite_sound :
      forall n tau rho phi phi',
@@ -542,10 +610,12 @@ Module Type Soundness
        (forall p p', In (p => p') G0 -> SDerivable p) ->
        (forall F, In F G0 -> wfFormula F) ->
        (forall F, In F S -> wfFormula F) ->
+       disjoint_vars_rules S phi ->
+       (forall p p', In (p => p') G0 -> disjoint_vars_rules S p) ->
        SatRL tau rho (phi => phi').
    Proof.
      induction n using custom_lt_wf_ind.
-     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax WFF1 WFF2.
+     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax WFF1 WFF2 D D'.
        apply impl_or_der in H'; trivial.
        + destruct H' as [H' | H'].
          * unfold SatRL.
@@ -585,54 +655,54 @@ Module Type Soundness
            rewrite H2 in H1.
            inversion H1.
            exact H1'.
-     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax WFF1 WFF2.
+     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax WFF1 WFF2 D D'.
        inversion H'.
        + apply one_step; trivial.
          unfold startsFrom in H2.
          destruct H2 as (gamma & H2 & H4).
          assert (H5 : exists gamma', tau 1 = Some gamma').
-         { apply first_step_gamma with (n := n) (gamma := gamma); trivial. }
-         destruct H5 as (gamma' & H5).
-         
-         assert (H10 : gamma =>S gamma').
-         {
-           unfold wfPath, wfGPath in WF.
-           destruct WF as (WF & WF').
-           assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+         * apply first_step_gamma with (n := n) (gamma := gamma); trivial.
+         * destruct H5 as (gamma' & H5).
+           assert (H10 : gamma =>S gamma').
            {
-             split; unfold not; intros H10.
-             - rewrite H10 in *.
-               inversion H2.
-             - simpl in H10.
-               rewrite H10 in *.
-               inversion H5.
+             unfold wfPath, wfGPath in WF.
+             destruct WF as (WF & WF').
+             assert (H10: tau 0 <> None /\ tau (0 + 1) <> None).
+             {
+               split; unfold not; intros H10.
+               - rewrite H10 in *.
+                 inversion H2.
+               - simpl in H10.
+                 rewrite H10 in *.
+                 inversion H5.
+             }
+             apply WF' in H10.
+             destruct H10 as (e & e' & H10 & H11 & H12).
+             simpl in H11.
+             rewrite H10 in H2.
+             rewrite H11 in H5.
+             inversion H2.
+             inversion H5.
+             subst e e'.
+             assumption.
            }
-           apply WF' in H10.
-           destruct H10 as (e & e' & H10 & H11 & H12).
-           simpl in H11.
-           rewrite H10 in H2.
-           rewrite H11 in H5.
-           inversion H2.
-           inversion H5.
-           subst e e'.
-           assumption.
-         }
-         assert (H6 : exists (alpha : RLFormula) (phi1 : MLFormula),
-                        In alpha S /\ phi1 = SynDerML' phi alpha /\ SatML gamma' rho phi1).
-         { apply cover_step with (gamma := gamma); trivial. }
-         destruct H6 as (alpha & phi1 & H6 & H7 & H8).
-         exists phi1.
-         split.
-         apply alpha_to_S with (alpha := alpha); trivial.
-         apply H with (tau := (Path_i tau 1))
-                        (m := n); trivial.
-         apply wf_subpath; trivial.
-         apply G_in_F with (G := (Delta S G0));trivial.
-         rewrite H7.
-         apply der_in_Delta; trivial.
-         unfold startsFrom.
-         exists gamma'.
-         split; trivial.
+           assert (H6 : exists (alpha : RLFormula) (phi1 : MLFormula),
+                          In alpha S /\ phi1 = SynDerML' phi alpha /\ SatML gamma' rho phi1); try apply cover_step with (gamma := gamma); trivial.
+           destruct H6 as (alpha & phi1 & H6 & H7 & H8).
+           exists phi1.
+           split.
+           apply alpha_to_S with (alpha := alpha); trivial.
+           apply H with (tau := (Path_i tau 1))
+                          (m := n); trivial.
+           apply wf_subpath; trivial.
+           apply G_in_F with (G := (Delta S G0));trivial.
+           rewrite H7.
+           apply der_in_Delta; trivial.
+           unfold startsFrom.
+           exists gamma'.
+           split; trivial.
+           subst phi1.
+           apply disjoint_over_der; trivial.
        + generalize H1.
          intros Step.
          clear H1.
@@ -641,36 +711,31 @@ Module Type Soundness
          inversion H3. 
          * simpl in H6.
            unfold SatRL.
-           split.
-           { simpl. exact H2. }
-           {
-             unfold startsFrom in H2.
-             destruct H2 as (gamma & H2 & H8).
-             apply valid_impl with
-             (gamma := gamma) (rho := rho) (phi' := phi') in H8; trivial.
-             exists (Datatypes.S n), 0, gamma.
-             simpl.
-             split; trivial.
-             omega.
-             repeat split; trivial.
-           }
-         * simpl in H7.
+           split; try simpl; try exact H2.
+           unfold startsFrom in H2.
+           destruct H2 as (gamma & H2 & H8).
+           apply valid_impl with
+           (gamma := gamma) (rho := rho) (phi' := phi') in H8; trivial.
+           exists (Datatypes.S n), 0, gamma.
+           simpl.
+           split; trivial.
+           omega.
+           repeat split; trivial.
+         * simpl in H7, H8.
            unfold startsFrom in H2.
            destruct H2 as (gamma & (H2 & H2')).
            apply valid_impl with
            (gamma := gamma) (phi' := (EClos (lhs c)))
-                            (phi := phi) (rho := rho) in H7; trivial.
-           unfold EClos in H7.
-           apply SatML_Exists in H7.
-           destruct H7 as (rho' & (H7 & H7')).
+                            (phi := phi) (rho := rho) in H8; trivial.
+           unfold EClos in H8.
+           apply SatML_Exists in H8.
+           destruct H8 as (rho' & (H8 & H8')).
            
            (* first part *)
-           assert (H9 : exists gamma', tau 1 = Some gamma').
-           {
-             apply first_step_gamma with
-             (n := n) (gamma := gamma); trivial.
-           }
-           destruct H9 as (gamma' & H9).
+           assert (H9' : exists gamma', tau 1 = Some gamma');
+             try apply first_step_gamma with
+             (n := n) (gamma := gamma); try trivial.
+           destruct H9' as (gamma' & H9').
            
            assert (H10 : gamma =>S gamma').
            {
@@ -683,30 +748,27 @@ Module Type Soundness
                  inversion H2.
                - simpl in H10.
                  rewrite H10 in *.
-                 inversion H9.
+                 inversion H9'.
              }
              apply WF' in H10.
              destruct H10 as (e & e' & H10 & H11 & H12).
              simpl in H11.
              rewrite H10 in H2.
-             rewrite H11 in H9.
+             rewrite H11 in H9'.
              inversion H2.
-             inversion H9.
+             inversion H9'.
              subst e e'.
              assumption.
            }
 
-           apply cover_step with
-           (rho := rho') (phi := (lhs c)) in H10; trivial.
-           
+           apply cover_step with (rho := rho') (phi := (lhs c)) in H10; trivial.
            destruct H10 as (alpha & phic_1 & H11 & H12 & H13).
            
            assert (H14 : SatRL (Path_i tau 1) rho' (phic_1 => (rhs c))).
            {
              apply H with (m := n); trivial.
              - apply wf_subpath; trivial.
-             -
-               apply G_in_F with (G := (Delta S G0));trivial.
+             - apply G_in_F with (G := (Delta S G0));trivial.
                rewrite H12.
                apply der_in_Delta; trivial.
                destruct c; simpl; trivial.
@@ -715,6 +777,10 @@ Module Type Soundness
                rewrite shift_index.
                simpl.
                split; trivial.
+             - subst phic_1.
+               apply disjoint_over_der; trivial.
+               apply D' with (p' := (rhs c)); trivial.
+               rewrite <- RL_decompose; trivial.
            }
            unfold SatRL in H14.
            simpl in H14.
@@ -724,26 +790,50 @@ Module Type Soundness
            {
              unfold SynDerML'.
              rewrite SatML_Exists.
-             exists rho'.
+             set (vars := ((getFreeVars (lhs c)))).
+             exists (modify_val_on_set rho rho' vars).
              split.
              - intros v H20.
-               apply H7.
-               rewrite wf_free in H20.
-               trivial.
-               apply WFF1; trivial.
+               rewrite modify_not_in.
+               reflexivity.
+               unfold not in *.
+               intros Hv.
+               apply H20.
+               subst vars.
+               simpl.
+               rewrite app_nil_r; trivial.
+               apply in_app_iff.
+               left. trivial.
              - apply SatML_And.
                split; trivial.
                rewrite Proposition1.
                exists gamma.
                apply SatML_And.
                split; trivial.
-               apply disjoint_vars with (rho := rho); trivial.
-               intros v H19.
-               apply H7.
-               apply disjoint_domain_2 with (c := c) (G0 := G0) in H19; trivial.
+               apply modify_Sat1; trivial.
+               subst vars.
+               apply incl_refl.
+               apply modify_Sat2; trivial.
+               intros x Hx.
+               unfold disjoint_vars in H1.
+               destruct H1 as (H1 & H1').
+               subst vars.
+               apply H1'.
+               simpl.
+               trivial.
+               
+               apply modify_Sat1; trivial.
+               subst vars.
+               unfold incl.
+               intros a Ha.
+               rewrite <- wf_free with (phi' := (rhs c)).
+               rewrite in_app_iff.
+               right.
+               trivial.
+               apply WFF1; rewrite <- RL_decompose; trivial.
            }
 
-           clear H18 H13 H14 H7 H7' rho'.
+           clear H18 H13 H14 H8 H8' rho' H5.
            assert (H20 : SatRL (Path_i tau (i + 1)) rho
                                ((SynDerML' phi c) => phi')).
            {
@@ -754,7 +844,7 @@ Module Type Soundness
              - omega.
              - apply wf_subpath; trivial.
              - apply H4.
-               rewrite H8.
+               rewrite H9.
                apply in_app_iff.
                right.
                unfold SynDerRL.
@@ -780,6 +870,9 @@ Module Type Soundness
                repeat rewrite shift_index.
                simpl.
                reflexivity.
+             - apply disjoint_circ_der; trivial.
+               apply D' with (p' := (rhs c)).
+               rewrite <- RL_decompose; trivial.
            }
 
            unfold SatRL in H20.
@@ -805,6 +898,8 @@ Module Type Soundness
                exact H23.
              - simpl. exact H24.
            }
+           apply D' with (p' := (rhs c)).
+           rewrite <- RL_decompose; trivial.
            (* third case *)
          * simpl in H6.
            unfold startsFrom in H2.
@@ -839,14 +934,15 @@ Module Type Soundness
            }
            
            apply cover_step with (rho := rho) (phi := phi) in H10.
-           destruct H10 as (alpha & phi1 & H10 & H11 & H12).
+           destruct H10 as (alpha & phi1 & H11 & H12).
            
+           destruct H12 as (H12 & H12').
            assert (H13: SatRL (Path_i tau 1) rho (phi1 => phi')).
            {
              apply H with (m := n); trivial.
              - apply wf_subpath; trivial.
              - apply H4.
-               rewrite H6.
+               rewrite H7.
                apply in_app_iff.
                right.
                unfold SynDerRL.
@@ -857,14 +953,17 @@ Module Type Soundness
                exists phi1.
                split; trivial.
                rewrite in_map_iff.
-               exists alpha.
+               exists alpha. 
                split; trivial.
                subst phi1.
                reflexivity.
              - unfold startsFrom.
                exists gamma'.
                split; trivial.
+             - subst phi1.
+               apply disjoint_over_der; trivial.
            }
+           
            unfold SatRL.
            split.
            { simpl.
@@ -882,31 +981,41 @@ Module Type Soundness
              * repeat split; trivial.
                rewrite shift_index in H15; trivial.
            }
-           assumption.
+           trivial.
+           trivial.
            trivial.
            trivial.
    Qed.
    
 
    Lemma sound : total ->
+                 (forall p p' : MLFormula, In (p => p') G0 -> disjoint_vars_rules S p) ->
                  (forall p p', In (p => p') G0 -> SDerivable p) ->
                  (forall F, In F G0 -> wfFormula F) ->
                  (forall F, In F S -> wfFormula F) ->
                  steps (Delta S G0) [] ->
                  SatTS_G G0.
    Proof.
-     intros T Ax WFF1 WFF2 H g  H0 tau rho n H1 H2 H3.
+     intros T D Ax WFF1 WFF2 H g H0 tau rho n H1 H2 H3.
      case_eq G0.
      - intros H'.
        rewrite H' in H0.
        contradict H0.
      - intros r l NE.
+       Check finite_sound.
        apply finite_sound with (n := n); trivial.
        + intros H'.
          rewrite H' in NE.
          inversion NE.
        + destruct g.
          apply init; assumption.
+       + destruct g.
+         unfold disjoint_vars_rules.
+         intros a Ha.
+         unfold disjoint_vars.
+         split; intros x Hx; apply D in H0; unfold disjoint_vars_rules in H0; apply H0 in Ha; unfold disjoint_vars in Ha; destruct Ha as (Ha & Ha').
+         * apply Ha in Hx; trivial.
+         * apply Ha' in Hx; trivial.
    Qed.
               
 End Soundness.

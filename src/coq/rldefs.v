@@ -24,26 +24,20 @@ Module Type RL (F : Formulas) (U : Utils).
 
   (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
-    incl (FreeVars [(rhs F)]) (FreeVars [(lhs F)]).  
+    incl (getFreeVars (rhs F)) (getFreeVars (lhs F)).  
 
   Lemma wf_free :
-    forall F x,
-      wfFormula F ->
-      (In x (FreeVars [lhs F; rhs F]) <-> In x (FreeVars [lhs F])).
+    forall phi phi' x,
+      wfFormula (phi => phi') ->
+      (In x (getFreeVars phi ++ getFreeVars phi') <-> In x (getFreeVars phi)).
   Proof.
-    intros F x H.
+    intros phi phi' x H.
     split; intros H'.
     - unfold wfFormula, incl in H.
-      unfold FreeVars in *.
-      rewrite app_nil_r in *.
       rewrite in_app_iff in H'.
       destruct H' as [H' | H']; trivial.
-      apply H in H'.
-      rewrite app_nil_r in H'.
-      trivial.
-    - unfold FreeVars in *.
-      rewrite app_nil_r in *.
-      rewrite in_app_iff.
+      apply H in H'; trivial.
+    - rewrite in_app_iff.
       left.
       trivial.
   Qed.
@@ -118,5 +112,14 @@ Module Type RL (F : Formulas) (U : Utils).
 
   Definition rename_vars_RL (X Y : list Var) (F : RLFormula) : RLFormula :=
     (rename_var_set X Y (lhs F)) => (rename_var_set X Y (rhs F)) .
+
+
+  Definition disjoint_vars (phi phi' : MLFormula) : Prop :=
+    (forall x, In x (getFreeVars phi) -> ~ In x (getFreeVars phi')) /\
+    (forall x, In x (getFreeVars phi') -> ~ In x (getFreeVars phi)).
+  
+
+  Definition disjoint_vars_rules (S' : list RLFormula) (phi : MLFormula) :=
+    forall alpha, In alpha S' -> disjoint_vars (lhs alpha) phi .
   
 End RL.

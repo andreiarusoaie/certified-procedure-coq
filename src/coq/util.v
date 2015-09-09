@@ -29,8 +29,32 @@ Module Type Utils .
       ~ isInfiniteGPath T mu /\ wfGPath T rel mu /\ 
       exists n phi,
         mu n = Some phi /\ mu (n + 1) = None.
-
     
   End Paths.
+
+
+  Section InductionPrinciple.
+
+      (* custom induction principle *)
+   Lemma custom_lt_wf_ind :
+     forall (P:nat -> Prop),
+       P 0 ->
+       (forall n,
+          (forall m,
+             m <= n -> P m) -> P (Datatypes.S n)) ->
+       (forall n, P n).
+   Proof.
+     intros P H1 H2 n.
+     apply lt_wf_ind.
+     intros n0 H3.
+     induction n0; trivial.
+     apply H2.
+     intros m H.
+     apply H3.
+     apply le_lt_n_Sm in H; trivial.
+   Qed.
+   
+  End InductionPrinciple.
+
   
 End Utils.
