@@ -18,6 +18,8 @@ Module Type Soundness
   (* G0 *)
   Variable G0 : list RLFormula .
 
+
+  Parameter ML_alpha_equiv : MLFormula -> MLFormula -> Prop .
   
   (* Section step *)
   Inductive step (G G': list RLFormula)
@@ -28,17 +30,21 @@ Module Type Soundness
       G' = remove RLFormula_eq_dec g G ->
       step G G' g
   | circ_case :
-      forall c,
-        disjoint_vars (lhs c) (lhs g) ->
+      forall c g',
         In g G -> In c G0 -> SDerivable (lhs g) ->
-        ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
-        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c] g) ->
+        ML_alpha_equiv (lhs g) (lhs g') ->
+        disjoint_vars (lhs g') (lhs c) ->
+        ValidML (ImpliesML (lhs g') (EClos (lhs c))) ->
+        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c] g') ->
         step G G' g
   | deriv_case:
-      disjoint_vars_rules S (lhs g) ->
-      In g G -> SDerivable (lhs g) ->
-      G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g) ->
-      step G G' g.
+      (* TODO : the same as above *)
+      forall g',
+        In g G -> SDerivable (lhs g) ->
+        ML_alpha_equiv (lhs g) (lhs g') ->
+        disjoint_vars_rules S (lhs g') ->
+        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g') ->
+        step G G' g.
   
   Inductive steps : list RLFormula -> list RLFormula ->
                          Prop :=
