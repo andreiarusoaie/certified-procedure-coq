@@ -110,10 +110,6 @@ Module Type RL (F : Formulas) (U : Utils).
     forall F, In F G -> SatTS F.
 
 
-  Definition rename_vars_RL (X Y : list Var) (F : RLFormula) : RLFormula :=
-    (rename_var_set X Y (lhs F)) => (rename_var_set X Y (rhs F)) .
-
-
   Definition disjoint_vars (phi phi' : MLFormula) : Prop :=
     (forall x, In x (getFreeVars phi) -> ~ In x (getFreeVars phi')) /\
     (forall x, In x (getFreeVars phi') -> ~ In x (getFreeVars phi)).

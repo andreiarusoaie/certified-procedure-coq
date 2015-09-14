@@ -458,79 +458,12 @@ Module Type Soundness
    Qed.
           
    
-
-   Lemma disjoint_over_der :
-     forall phi S' alpha,
-       In alpha S' ->
-       disjoint_vars_rules S' phi ->
-       disjoint_vars_rules S' (SynDerML' phi alpha).
-   Proof.
-     intros phi S' alpha H H'.
-     unfold disjoint_vars_rules in *.
-     intros a Ha.
-     unfold disjoint_vars.
-     split; intros x Hx.
-     - unfold SynDerML'.
-       unfold not.
-       intros H0.
-       apply freeVars_ExistsML in H0.
-       destruct H0 as (H0 & H0').
-       apply freeVars_AndML in H0.
-       destruct H0 as [H0 | H0].
-       + rewrite freeVars_encoding in H0.
-         apply freeVars_AndML in H0.
-         destruct H0 as [H0 | H0].
-         * apply H0'.
-           unfold FreeVars.
-           apply in_app_iff.
-           left.
-           trivial.
-         * apply H' in Ha.
-           unfold disjoint_vars in Ha.
-           destruct Ha as (Ha & Ha').
-           apply Ha in Hx.
-           contradict H0.
-           trivial.
-       + apply H0'.
-         unfold FreeVars.
-         rewrite in_app_iff.
-         right.
-         rewrite in_app_iff.
-         left.
-         trivial.
-     - apply H' in Ha.
-       unfold disjoint_vars in Ha.
-       destruct Ha as (Ha & Ha').
-       apply Ha'.
-       unfold SynDerML' in Hx.
-       apply freeVars_ExistsML in Hx.
-       destruct Hx as (Hx & Hx').
-       apply freeVars_AndML in Hx.
-       destruct Hx as [Hx | Hx].
-       + rewrite freeVars_encoding in Hx.
-         apply freeVars_AndML in Hx.
-         destruct Hx as [Hx | Hx]; trivial.
-         contradict Hx'.
-         unfold FreeVars.
-         rewrite in_app_iff.
-         left.
-         trivial.
-       + contradict Hx'.
-         unfold FreeVars.
-         rewrite in_app_iff.
-         right.
-         rewrite in_app_iff.
-         left.
-         trivial.
-   Qed.
-  
-   Lemma disjoint_circ_der :
+   Lemma disjoint :
      forall S' phi c,
        disjoint_vars_rules S' phi ->
-       disjoint_vars_rules S' (lhs c) ->
        disjoint_vars_rules S' (SynDerML' phi c) .
    Proof.
-     intros S' phi c H H'.
+     intros S' phi c H.
      unfold disjoint_vars_rules in *.
      intros a Ha.
      unfold disjoint_vars.
@@ -544,11 +477,10 @@ Module Type Soundness
        + rewrite freeVars_encoding in H0.
          apply freeVars_AndML in H0.
          destruct H0 as [H0 | H0].
-         * apply H' in Ha.
-           unfold disjoint_vars in Ha.
-           destruct Ha as (Ha & Ha').
-           apply Ha in Hx.
-           contradict H0.
+         * apply H1.
+           unfold FreeVars.
+           rewrite in_app_iff.
+           left.
            trivial.
          * apply H in Ha.
            unfold disjoint_vars in Ha.
@@ -556,11 +488,7 @@ Module Type Soundness
            apply Ha' in H0.
            contradict H0.
            trivial.
-       + apply H' in Ha.
-         unfold disjoint_vars in Ha.
-         destruct Ha as (Ha & Ha').
-         apply Ha in Hx.
-         apply H1.
+       + apply H1.
          unfold FreeVars.
          rewrite in_app_iff.
          right.
@@ -575,10 +503,10 @@ Module Type Soundness
        + rewrite freeVars_encoding in Hx.
          apply freeVars_AndML in Hx.
          destruct Hx as [Hx | Hx].
-         * apply H' in Ha.
-           unfold disjoint_vars in Ha.
-           destruct Ha as (Ha & Ha').
-           apply Ha' in Hx.
+         * contradict Hx'.
+           unfold FreeVars.
+           rewrite in_app_iff.
+           left.
            trivial.
          * apply H in Ha.
            unfold disjoint_vars in Ha.
@@ -702,7 +630,7 @@ Module Type Soundness
            exists gamma'.
            split; trivial.
            subst phi1.
-           apply disjoint_over_der; trivial.
+           apply disjoint; trivial.
        + generalize H1.
          intros Step.
          clear H1.
@@ -778,7 +706,7 @@ Module Type Soundness
                simpl.
                split; trivial.
              - subst phic_1.
-               apply disjoint_over_der; trivial.
+               apply disjoint; trivial.
                apply D' with (p' := (rhs c)); trivial.
                rewrite <- RL_decompose; trivial.
            }
@@ -870,9 +798,7 @@ Module Type Soundness
                repeat rewrite shift_index.
                simpl.
                reflexivity.
-             - apply disjoint_circ_der; trivial.
-               apply D' with (p' := (rhs c)).
-               rewrite <- RL_decompose; trivial.
+             - apply disjoint; trivial.
            }
 
            unfold SatRL in H20.
@@ -961,7 +887,7 @@ Module Type Soundness
                exists gamma'.
                split; trivial.
              - subst phi1.
-               apply disjoint_over_der; trivial.
+               apply disjoint; trivial.
            }
            
            unfold SatRL.
@@ -986,8 +912,7 @@ Module Type Soundness
            trivial.
            trivial.
    Qed.
-   
-
+      
    Lemma sound : total ->
                  (forall p p' : MLFormula, In (p => p') G0 -> disjoint_vars_rules S p) ->
                  (forall p p', In (p => p') G0 -> SDerivable p) ->
@@ -1002,7 +927,6 @@ Module Type Soundness
        rewrite H' in H0.
        contradict H0.
      - intros r l NE.
-       Check finite_sound.
        apply finite_sound with (n := n); trivial.
        + intros H'.
          rewrite H' in NE.

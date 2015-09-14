@@ -44,12 +44,6 @@ Module Type Definitions (U : Utils)
              (F : RLFormula) : list RLFormula :=
     map (SynDerRL' F) (SynDerML (lhs F) S').
   
-  Definition SynSDerML (phi : MLFormula) : list MLFormula :=
-    map (SynDerML' phi) S .
-  
-  Definition SynSDerRL (F : RLFormula) : list RLFormula :=
-    map (SynDerRL' F) (SynDerML (lhs F) S) .
-
   (* Delta_S(G) *)
   Fixpoint Delta (S' G' : list RLFormula)
     : list RLFormula :=
