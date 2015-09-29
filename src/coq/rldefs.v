@@ -7,6 +7,7 @@ Module Type RL (F : Formulas) (U : Utils).
   Import U.
   Import ListNotations.
 
+  (* get free variables for a list of ML formulas *)
   Fixpoint FreeVars (l : list MLFormula) : list Var :=
     match l with
       | nil => nil
@@ -26,6 +27,7 @@ Module Type RL (F : Formulas) (U : Utils).
   Definition wfFormula (F : RLFormula) : Prop :=
     incl (getFreeVars (rhs F)) (getFreeVars (lhs F)).  
 
+  (* helper *)
   Lemma wf_free :
     forall phi phi' x,
       wfFormula (phi => phi') ->
@@ -42,7 +44,8 @@ Module Type RL (F : Formulas) (U : Utils).
       trivial.
   Qed.
 
-  
+
+  (* helper *)
   Lemma RL_decompose :
     forall F : RLFormula, F = ((lhs F) => (rhs F)).
   Proof.
@@ -51,22 +54,25 @@ Module Type RL (F : Formulas) (U : Utils).
     simpl.
     reflexivity.
   Qed.
+
+
   
   (* Hereafter S is a set of RLFormula *)
   Variable S : list RLFormula .
 
-  (* rule transition *)
+  (* transition given by a single rule *)
   Definition TS_rule (gamma gamma' : State)
              (alpha : RLFormula) : Prop :=
     exists rho,
       SatML gamma rho (lhs alpha) /\ SatML gamma' rho (rhs alpha) .
   
-  (* transition system *)
+  (* transition system given by a set of rules *)
   Definition TS (gamma gamma' : State) : Prop :=
     exists phi phi' rho,
       In (phi => phi') S /\
       (SatML gamma rho phi) /\ (SatML gamma' rho phi').
   Notation "f =>S f'" := (TS f f') (at level 100).
+
   
   (* concrete paths *)
   Definition Path := GPath State.
@@ -110,12 +116,32 @@ Module Type RL (F : Formulas) (U : Utils).
     forall F, In F G -> SatTS F.
 
 
+  (* Disjoint variables section *)
   Definition disjoint_vars (phi phi' : MLFormula) : Prop :=
-    (forall x, In x (getFreeVars phi) -> ~ In x (getFreeVars phi')) /\
-    (forall x, In x (getFreeVars phi') -> ~ In x (getFreeVars phi)).
-  
+    (forall x, In x (getFreeVars phi) -> ~ In x (getFreeVars phi')) .
 
-  Definition disjoint_vars_rules (S' : list RLFormula) (phi : MLFormula) :=
-    forall alpha, In alpha S' -> disjoint_vars (lhs alpha) phi .
+  Definition disjoint_set_RL (F : RLFormula) (V : list Var) : Prop :=
+    (forall x, In x V -> ~ In x (FreeVars [lhs F; rhs F])) .
+
+  Definition disjoint_vars_RL (F F' : RLFormula) : Prop :=
+    disjoint_vars (lhs F) (lhs F').
+  
+  Definition disjoint_vars_rules (S' : list RLFormula) (F : RLFormula) :=
+    forall alpha, In alpha S' -> disjoint_vars_RL alpha F .
+
+  (* helper *)
+  Lemma disjoint_vars_RL_sym :
+    forall F F',
+      disjoint_vars_RL F F' <-> disjoint_vars_RL F' F.
+  Proof.
+    intros F F'.
+    split; intros H;
+    unfold disjoint_vars_RL, disjoint_vars in *;
+    intros x Hx;
+    unfold not;
+    intros C;
+    apply H in C;
+    contradiction.
+  Qed.
   
 End RL.

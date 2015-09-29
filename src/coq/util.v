@@ -47,7 +47,8 @@ Module Type Utils .
      intros P H1 H2 n.
      apply lt_wf_ind.
      intros n0 H3.
-     induction n0; trivial.
+     case_eq n0; intros; trivial.
+     subst.
      apply H2.
      intros m H.
      apply H3.
