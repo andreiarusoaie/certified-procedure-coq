@@ -74,14 +74,13 @@ Module Type Soundness
       In g G -> SDerivable (lhs g) -> disjoint_vars_rules S g ->
       G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g) ->
       step G G' g.
-
-  Inductive steps : list RLFormula -> list RLFormula ->
-                         Prop :=
-    | base : steps [] []
-    | tranz : forall G G' G'' g,
-                step G G'' g ->
-                steps G'' G' ->
-                steps G G'.
+  
+  Inductive steps : list RLFormula -> Prop :=
+    | base : steps []
+    | tranz : forall G G' g,
+                step G G' g ->
+                steps G' ->
+                steps G.
 
 
   (* Definition: g in F *)
@@ -425,7 +424,7 @@ Module Type Soundness
   (* Important: any G is in F *)
   Lemma G_in_F :
     forall g G,
-      steps G [] ->
+      steps G ->
       In g G ->
       inF g.
   Proof.
@@ -437,7 +436,7 @@ Module Type Soundness
       + apply classic.
       + destruct H3 as [H3 | H3].
         * subst.
-          apply in_step with (G := G) (G' := G''); trivial.
+          apply in_step with (G := G) (G' := G'); trivial.
         * apply IHsteps.
           inversion H; subst.
           apply remove_other; trivial.
@@ -546,7 +545,7 @@ Module Type Soundness
       wfPath tau ->
       inF (phi => phi') ->
       complete tau n ->
-      steps (Delta S G0) [] ->
+      steps (Delta S G0) ->
       startsFrom tau rho phi ->
       total ->
       (forall p p', In (p => p') G0 -> SDerivable p) ->
@@ -915,7 +914,7 @@ Module Type Soundness
                   (forall p p', In (p => p') G0 -> SDerivable p) ->
                   (forall F, In F G0 -> wfFormula F) ->
                   (forall F, In F S -> wfFormula F) ->
-                  steps (Delta S G0) [] ->
+                  steps (Delta S G0) ->
                   SatTS_G G0.
   Proof.
     intros T D Ax WFF1 WFF2 H g H0 tau rho n H1 H2 H3.
