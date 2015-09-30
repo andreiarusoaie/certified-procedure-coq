@@ -66,7 +66,7 @@ Module Type Soundness
   | circ :
       forall c c',
         In g G -> In c G0 ->
-        RL_alpha_equiv c c' -> disjoint_vars_RL c c' -> disjoint_vars_RL g c' ->
+        RL_alpha_equiv c c' -> disjoint_vars_RL g c' ->
         ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
         G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c'] g) ->
         step G G' g
@@ -659,6 +659,8 @@ Module Type Soundness
           assert (SF: startsFrom tau rho phi); trivial.
           unfold startsFrom in H2.
           destruct H2 as (gamma & (H2 & H2')).
+          rename H9 into H10.
+          rename H8 into H9.
           simpl in H9.
           apply valid_impl
           with (gamma := gamma) (phi' := (EClos (lhs c)))
