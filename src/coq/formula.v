@@ -20,7 +20,6 @@ Module Type Formulas.
   
   (* ML syntax - axiomatisation *)
   Parameter MLFormula : Type .
-  Parameter TrueML : MLFormula .
   Parameter AndML : MLFormula -> MLFormula -> MLFormula .
   Parameter NotML : MLFormula -> MLFormula.
   Parameter ExistsML : list Var -> MLFormula -> MLFormula .

@@ -20,11 +20,11 @@ Module Type Soundness
 
 
   (* ML and RL alpha equiv *)
-  Parameter ML_alpha_equiv :
+  Parameter ML_equiv :
     MLFormula -> Valuation -> MLFormula -> Valuation -> Prop.
-  Axiom SatML_alpha_equiv :
+  Axiom SatML_equiv :
     forall varphi rho varphi' rho' gamma,
-      ML_alpha_equiv varphi rho varphi' rho' ->
+      ML_equiv varphi rho varphi' rho' ->
       SatML gamma rho varphi -> SatML gamma rho' varphi' .
   
 
@@ -34,25 +34,11 @@ Module Type Soundness
     forall f f' g g',
       RL_alpha_equiv (f => f') (g => g') ->
       forall rho, exists rho',
-        (ML_alpha_equiv f rho g rho') /\ (ML_alpha_equiv f' rho g' rho') .
+        (ML_equiv f rho g rho') /\ (ML_equiv f' rho g' rho') .
            
-  Axiom disjoint_equiv_RL :
-    forall F V, exists F_eqv,
-      RL_alpha_equiv F F_eqv /\ disjoint_set_RL F_eqv V.
-
   Axiom RL_alpha_equiv_wf :
     forall F F',
       wfFormula F -> RL_alpha_equiv F F' -> wfFormula F'.
-
-
-  (* SMT solver 'axiom' *)
-  Lemma SMT_lemma :
-    forall phi phi',
-      ValidML (ImpliesML phi phi') ->
-      SDerivable phi' ->
-      SDerivable phi.
-  Admitted.
-
   
   
   (* Section procedure *)
@@ -70,7 +56,7 @@ Module Type Soundness
         ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
         G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c'] g) ->
         step G G' g
-  | der:
+  | der :
       In g G -> SDerivable (lhs g) -> disjoint_vars_rules S g ->
       G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g) ->
       step G G' g.
@@ -145,52 +131,6 @@ Module Type Soundness
         apply incl_refl.
   Qed.
 
-  
-
-  (* Important: implication or S-derivable *)
-  Lemma impl_or_der :
-    forall phi phi',
-      total -> 
-      inF (phi => phi') ->
-      (forall p p', In (p => p') G0 -> SDerivable p) ->
-      ValidML (ImpliesML phi phi') \/ SDerivable phi .
-  Proof.
-    intros phi phi' T H0 H'.
-    inversion H0.
-    - right.
-      apply H' with (p' := phi'); trivial.
-    - inversion H; simpl in H3.
-      + left; trivial.
-      + right.
-        apply SMT_lemma with (phi' := (EClos (lhs c))); trivial.
-        destruct c, c'.
-        simpl in *.
-        apply H' in H3.
-        unfold SDerivable in *.
-        destruct H3 as (gamma & rho & gamma' & H10 & H11).
-        apply RL_alpha_equiv_ML with (rho := rho) in H4.
-        destruct H4 as (rho' & H12' & H12).
-        exists gamma, rho, gamma'.
-        split; trivial.
-        unfold EClos.
-        apply SatML_Exists.
-        exists rho; trivial.
-        split; trivial.
-      + right; trivial.
-  Qed.
-
-
-  (* helper *)
-  Lemma shift_index :
-    forall tau j k,
-      Path_i tau j k = tau (k + j).
-  Proof.
-    intros tau j k.
-    unfold Path_i, GPath_i.
-    rewrite plus_comm; trivial.
-  Qed.
-                         
-
   (* helper *)
   Lemma valid_impl :
     forall gamma rho phi phi',
@@ -211,7 +151,53 @@ Module Type Soundness
     - rewrite SatML_Not in H0.
       apply NNPP; trivial.
   Qed.
-  
+    
+
+  (* Important: implication or S-derivable *)
+  Lemma impl_or_der :
+    forall phi phi' gamma rho,
+      total -> 
+      inF (phi => phi') ->
+      (forall p p', In (p => p') G0 -> SDerivable p) ->
+      SatML gamma rho phi ->
+      ValidML (ImpliesML phi phi') \/ SDerivable phi .
+  Proof.
+    intros phi phi' gamma rho T H0 H' H1.
+    inversion H0.
+    - right.
+      apply H' with (p' := phi'); trivial.
+    - inversion H; simpl in H3.
+      + left; trivial.
+      + right.
+        simpl in *.
+        destruct c, c'.
+        simpl in *.
+        apply valid_impl with (phi := phi) (gamma := gamma) (rho := rho) (phi' := (EClos m)) in H7; trivial.
+        unfold EClos in H7.
+        apply SatML_Exists in H7.
+        destruct H7 as (rho' & H9 & H10).
+        apply H' in H4.
+        unfold total in T.
+        apply T with (gamma := gamma) (rho := rho') in H4; trivial.
+        destruct H4 as (gamma' & H4).
+        unfold SDerivable.
+        exists gamma, rho, gamma'.
+        split; trivial.
+      + right; trivial.
+  Qed.
+
+
+  (* helper *)
+  Lemma shift_index :
+    forall tau j k,
+      Path_i tau j k = tau (k + j).
+  Proof.
+    intros tau j k.
+    unfold Path_i, GPath_i.
+    rewrite plus_comm; trivial.
+  Qed.
+                         
+
 
   (* helper *)
   Lemma wf_subpath : forall tau j,
@@ -349,7 +335,7 @@ Module Type Soundness
    Qed.
 
 
-  (* Important: subpath satisfies F -> path satisfies F *)
+  (* helper: subpath satisfies F -> path satisfies F *)
   Lemma one_step :
     forall tau rho phi phi',
       startsFrom tau rho phi ->
@@ -556,7 +542,10 @@ Module Type Soundness
   Proof.
     induction n using custom_lt_wf_ind.
     - intros tau rho phi phi' NE WF H' H0 H H1 T Ax WFF1 WFF2 D.
-      apply impl_or_der in H'; trivial.
+      assert (SF : startsFrom tau rho phi); trivial.
+      unfold startsFrom in SF.
+      destruct SF as (g & SF & SF').
+      apply impl_or_der with (gamma := g) (rho := rho) in H'; trivial.
       + destruct H' as [H' | H'].
         * unfold SatRL.
           simpl.
@@ -740,12 +729,12 @@ Module Type Soundness
                  split; trivial.
                  * apply modify_Sat1; trivial.
                    subst vars.
-                   apply SatML_alpha_equiv with (varphi := phic) (rho := rho'); trivial.
+                   apply SatML_equiv with (varphi := phic) (rho := rho'); trivial.
                    subst vars.
                    apply incl_refl.
                  * apply modify_Sat2; trivial.
                + apply modify_Sat1; trivial.
-                 apply SatML_alpha_equiv with (varphi := phic') (rho := rho'); trivial.  
+                 apply SatML_equiv with (varphi := phic') (rho := rho'); trivial.  
            }
 
            (* apply the inductive hypothesis for the subpath starting at i *)
