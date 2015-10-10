@@ -78,6 +78,7 @@ Module Type RL (F : Formulas) (U : Utils).
   Definition Path := GPath State.
   Definition wfPath := wfGPath State TS.
   Definition Path_i (tau : Path) := GPath_i State tau.
+  Definition isInfinite (tau : Path) := isInfiniteGPath State tau. 
   
   (* starts from *)
   Definition startsFrom (tau : Path) (rho : Valuation) 
@@ -88,27 +89,32 @@ Module Type RL (F : Formulas) (U : Utils).
   Definition terminating (gamma : State) :=
     forall gamma', not (gamma =>S gamma') .
 
-  (* complete path *)
-  Definition complete (tau : Path) (n : nat) :=
+  (* complete path with n transitions *)
+  Definition completeN (tau : Path) (n : nat) :=
     exists gamma, tau n = Some gamma /\ terminating gamma.
+
+  Definition complete (tau : Path) :=
+    isInfinite tau \/ (~ isInfinite tau /\ exists n, completeN tau n).
 
   (* path satisfaction *)
   (* Note: the path should be well-formed *)
   Definition SatRL (tau : Path) (rho : Valuation) 
              (F : RLFormula) : Prop :=
     startsFrom tau rho (lhs F) /\
-    (exists n i gamma,
+    ((exists n i gamma,
        i <= n /\
-       complete tau n /\
+       completeN tau n /\
        tau i = Some gamma /\
-       SatML gamma rho (rhs F)).
-                                
+       SatML gamma rho (rhs F))
+    \/
+    isInfinite tau).
+                   
   (* RL satisfaction *)
   Definition SatTS (F : RLFormula) : Prop :=
-    forall tau rho n,
+    forall tau rho,
       wfPath tau ->
       startsFrom tau rho (lhs F) ->
-      complete tau n ->
+      complete tau ->
       SatRL tau rho F.
 
   (* RL satisfaction for a set of formulas *)

@@ -155,14 +155,14 @@ Module Type Soundness
 
   (* Important: implication or S-derivable *)
   Lemma impl_or_der :
-    forall phi phi' gamma rho,
+    forall phi phi',
       total -> 
       inF (phi => phi') ->
       (forall p p', In (p => p') G0 -> SDerivable p) ->
-      SatML gamma rho phi ->
+      (exists gamma rho, SatML gamma rho phi) ->
       ValidML (ImpliesML phi phi') \/ SDerivable phi .
   Proof.
-    intros phi phi' gamma rho T H0 H' H1.
+    intros phi phi' T H0 H' H1.
     inversion H0.
     - right.
       apply H' with (p' := phi'); trivial.
@@ -172,6 +172,7 @@ Module Type Soundness
         simpl in *.
         destruct c, c'.
         simpl in *.
+        destruct H1 as (gamma & rho & H1).
         apply valid_impl with (phi := phi) (gamma := gamma) (rho := rho) (phi' := (EClos m)) in H7; trivial.
         unfold EClos in H7.
         apply SatML_Exists in H7.
@@ -222,7 +223,7 @@ Module Type Soundness
   Lemma first_step_gamma :
     forall tau n gamma,
       wfPath tau ->
-      complete tau (Datatypes.S n) ->
+      completeN tau (Datatypes.S n) ->
       tau 0 = Some gamma ->
       exists gamma', tau 1 = Some gamma'.
   Proof.
@@ -256,8 +257,8 @@ Module Type Soundness
   Lemma one_step_less :
     forall tau n n0,
       wfPath tau ->
-      complete tau (Datatypes.S n) ->
-      complete (Path_i tau 1) n0 ->
+      completeN tau (Datatypes.S n) ->
+      completeN (Path_i tau 1) n0 ->
       n0 = n.
   Proof.
     intros tau n n0 WF H H'.
@@ -334,24 +335,36 @@ Module Type Soundness
            inversion H0'.
    Qed.
 
-
+  Lemma is_infinite :
+    forall tau i,
+      wfPath tau ->
+      isInfinite (Path_i tau i) -> isInfinite tau.
+  Proof.
+    intros tau i H.
+    unfold isInfinite, isInfiniteGPath in *.
+    intros j.
+    admit.
+  Qed.
+  
   (* helper: subpath satisfies F -> path satisfies F *)
   Lemma one_step :
     forall tau rho phi phi',
+      wfPath tau ->
       startsFrom tau rho phi ->
       (exists phi1,
          In phi1 (SynDerML phi S) /\
          SatRL (Path_i tau 1) rho (phi1 => phi')) ->
       SatRL tau rho (phi => phi').
   Proof.
-    intros tau rho phi phi' H H'.
+    intros tau rho phi phi' WF H H'.
     destruct H' as (phi1 & H' & H'').
     unfold SatRL.
     split; trivial.
     unfold SatRL in H''.
-    destruct H'' as (H0 & H1).
+    destruct H'' as (H0 & [H1 | H1]).
     simpl in *.
     destruct H1 as (n & i & gamma & H1 & H2 & H3 & H4).
+    left.
     exists (n + 1), (i + 1), gamma.
     split; trivial.
     - omega.
@@ -363,17 +376,18 @@ Module Type Soundness
         rewrite <- shift_index; trivial.
       + split; trivial.
         rewrite <- shift_index; trivial.
+    -right. apply is_infinite with (i := 1); trivial.
   Qed.
   
 
   (* helper *)
   Lemma complete_shift :
     forall tau i n',
-      complete (Path_i tau (i + 1)) n' ->
-      complete (Path_i tau 1) (n' + i) .
+      completeN (Path_i tau (i + 1)) n' ->
+      completeN (Path_i tau 1) (n' + i) .
   Proof.
     intros tau i n' H.
-    unfold complete in *.
+    unfold completeN in *.
     destruct H as (gamma & H & H').
     exists gamma.
     split; trivial.
@@ -469,7 +483,7 @@ Module Type Soundness
   Lemma first_transition :
     forall tau rho phi n,
       wfPath tau ->
-      complete tau (Datatypes.S n) ->
+      completeN tau (Datatypes.S n) ->
       startsFrom tau rho phi ->
       exists gamma gamma',
         tau 0 = Some gamma /\ tau 1 = Some gamma' /\
@@ -530,7 +544,7 @@ Module Type Soundness
       G0 <> [] -> 
       wfPath tau ->
       inF (phi => phi') ->
-      complete tau n ->
+      completeN tau n ->
       steps (Delta S G0) ->
       startsFrom tau rho phi ->
       total ->
@@ -545,14 +559,15 @@ Module Type Soundness
       assert (SF : startsFrom tau rho phi); trivial.
       unfold startsFrom in SF.
       destruct SF as (g & SF & SF').
-      apply impl_or_der with (gamma := g) (rho := rho) in H'; trivial.
+      apply impl_or_der in H'; trivial.
       + destruct H' as [H' | H'].
         * unfold SatRL.
           simpl.
           split; trivial.
-          assert (C : complete tau 0); trivial.
+          assert (C : completeN tau 0); trivial.
           unfold complete in H0.
           destruct H0 as (gamma & H0 & H3).
+          left.
           exists 0, 0, gamma.
           repeat split; trivial.
           apply valid_impl with (phi := phi); trivial.
@@ -574,6 +589,7 @@ Module Type Soundness
           destruct H1 as (gamma0 & (H1 & H1')).
           rewrite H2 in H1.
           inversion H1; trivial.
+      + exists g, rho; trivial.
     - intros tau rho phi phi' NE WF H' H0 H1 H2 T Ax WFF1 WFF2 D.
       inversion H'.
       + (* case 1: the goal in F is in G0 *)
@@ -639,10 +655,11 @@ Module Type Soundness
           destruct H2 as (gamma & H2 & H8).
           apply valid_impl with
           (gamma := gamma) (rho := rho) (phi' := phi') in H8; trivial.
+          left.
           exists (Datatypes.S n), 0, gamma.
-           simpl;split; trivial.
-           omega.
-           repeat split; trivial.
+          simpl;split; trivial.
+          omega.
+          repeat split; trivial.
         * (* goal eliminated by circularity *)
           assert (SF: startsFrom tau rho phi); trivial.
           unfold startsFrom in H2.
@@ -690,8 +707,9 @@ Module Type Soundness
            
            (* prepare for the second application of the inductive hypothesis *)
            unfold SatRL in H17.
+           destruct H17 as (H17' & [H17 | H17]).
            simpl in H17.
-           destruct H17 as (H17' & n0 & i & gamma_i & H17 & H18 & H19 & H20).
+           destruct H17 as (n0 & i & gamma_i & H17 & H18 & H19 & H20).
            
            
            (* goal: gamma_i starts from  Delta_c(phi) *)
@@ -773,10 +791,12 @@ Module Type Soundness
            }
 
            unfold SatRL in H20'.
+           destruct H20' as (S & [H20' | H20']).
            simpl in H20'.
-           destruct H20' as (H20' & n1 & j & gamma_j & H21' & H22 & H23 & H24).
+           destruct H20' as (n1 & j & gamma_j & H21' & H22 & H23 & H24).
            unfold SatRL.
            split; try simpl; trivial.
+           left.
            exists (Datatypes.S n), (j + (i + 1)), gamma_j.
            split; trivial.
            apply complete_shift in H22.
@@ -789,9 +809,21 @@ Module Type Soundness
            split; try rewrite shift_index in H23; trivial.
            apply D in H5.
            unfold disjoint_vars_rules in H5.
+           apply is_infinite in H20'.
+           unfold SatRL.
+           split; trivial.
+           right; trivial.
+           trivial.
+           apply is_infinite in H17.
+           unfold SatRL.
+           split; trivial.
+           right; trivial.
+           trivial.
            intros F HF.
            assert (H13 : wfFormula F).
            apply WFF2. trivial.
+           apply D in H5.
+           unfold disjoint_vars_rules in H5.
            apply H5 in HF.
            unfold disjoint_vars_RL, disjoint_vars in HF.
            unfold disjoint_set_RL, disjoint_vars.
@@ -869,8 +901,10 @@ Module Type Soundness
            unfold SatRL.
            split; trivial.
            unfold SatRL in H13.
+           destruct H13 as (S & [H13 | H13]).
            simpl in H13.
-           destruct H13 as (H13 & n0 & j & gamma_j & Hj & H14 & H15 & H16).
+           destruct H13 as (n0 & j & gamma_j & Hj & H14 & H15 & H16).
+           left.
            exists (Datatypes.S n), (j + 1), gamma_j.
            split.
            rewrite one_step_less with
@@ -878,6 +912,8 @@ Module Type Soundness
            omega.
            repeat split; trivial.
            rewrite shift_index in H15; trivial.
+           right.
+           apply is_infinite in H13; trivial.
            intros F HF.
            unfold disjoint_vars_rules in H6.
            assert (HF' : In F S); trivial.
@@ -906,18 +942,23 @@ Module Type Soundness
                   steps (Delta S G0) ->
                   SatTS_G G0.
   Proof.
-    intros T D Ax WFF1 WFF2 H g H0 tau rho n H1 H2 H3.
+    intros T D Ax WFF1 WFF2 H g H0 tau rho H1 H2 H3.
     case_eq G0.
     - intros H'.
       rewrite H' in H0.
       contradict H0.
     - intros r l NE.
-      apply finite_sound with (n := n); trivial.
-      + intros H'.
-        rewrite H' in NE.
-        inversion NE.
-      + destruct g.
-        apply init; assumption.
+      unfold complete in H3.
+      destruct H3 as [H3 | (NI & n & H3)].
+      + unfold SatRL.
+        split; trivial.
+        right; trivial.
+      + apply finite_sound with (n := n); trivial.
+        * intros H'.
+          rewrite H' in NE.
+          inversion NE.
+        * destruct g.
+          apply init; assumption.
   Qed.
   
 End Soundness.
