@@ -17,28 +17,6 @@ Module Type Soundness
 
   (* G0 *)
   Variable G0 : list RLFormula.
-
-
-  (* ML and RL alpha equiv *)
-  Parameter ML_equiv :
-    MLFormula -> Valuation -> MLFormula -> Valuation -> Prop.
-  Axiom SatML_equiv :
-    forall varphi rho varphi' rho' gamma,
-      ML_equiv varphi rho varphi' rho' ->
-      SatML gamma rho varphi -> SatML gamma rho' varphi' .
-  
-
-  Parameter RL_alpha_equiv : RLFormula -> RLFormula -> Prop.
-
-  Axiom RL_alpha_equiv_ML :
-    forall f f' g g',
-      RL_alpha_equiv (f => f') (g => g') ->
-      forall rho, exists rho',
-        (ML_equiv f rho g rho') /\ (ML_equiv f' rho g' rho') .
-           
-  Axiom RL_alpha_equiv_wf :
-    forall F F',
-      wfFormula F -> RL_alpha_equiv F F' -> wfFormula F'.
   
   
   (* Section procedure *)
@@ -57,8 +35,10 @@ Module Type Soundness
         G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c'] g) ->
         step G G' g
   | der :
-      In g G -> SDerivable (lhs g) -> disjoint_vars_rules S g ->
-      G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S g) ->
+      forall S', 
+        In g G -> SDerivable (lhs g) -> 
+        RL_alpha_equiv_S S S' -> disjoint_vars_rules S' g ->
+        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S' g) ->
       step G G' g.
   
   Inductive steps : list RLFormula -> Prop :=
@@ -82,16 +62,16 @@ Module Type Soundness
     
   (* Coverage one step *)
   Lemma cover_step :
-    forall gamma gamma' rho phi,
-      (forall F, In F S -> disjoint_set_RL F (getFreeVars phi)) ->
+    forall gamma gamma' rho phi S',
+      (forall F, In F S' -> disjoint_set_RL F (getFreeVars phi)) ->
       (forall F, In F G0 -> wfFormula F) ->
-      (forall F, In F S -> wfFormula F) ->
-      (gamma =>S gamma') ->
+      (forall F, In F S' -> wfFormula F) ->
+      (TS S' gamma gamma') ->
       SatML gamma rho phi ->
       exists alpha phi',
-        In alpha S /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
+        In alpha S' /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
   Proof.
-    intros gamma gamma' rho phi D WFF1 WFF2 H H'.
+    intros gamma gamma' rho phi S' D WFF1 WFF2 H H'.
     unfold TS in H.
     destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
     exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
@@ -335,16 +315,41 @@ Module Type Soundness
            inversion H0'.
    Qed.
 
+
+  (* helper *)
   Lemma is_infinite :
     forall tau i,
       wfPath tau ->
       isInfinite (Path_i tau i) -> isInfinite tau.
   Proof.
-    intros tau i H.
+    intros tau i H H'.
     unfold isInfinite, isInfiniteGPath in *.
     intros j.
-    admit.
+    unfold wfPath, wfGPath in H.
+    destruct H as (H & H'').
+    assert (C : (i < j) \/ ~(i < j)).
+    apply classic.
+    destruct C as [C | C].
+    - rewrite <- le_plus_minus_r with (n := i) (m := j); try omega.
+      rewrite plus_comm.
+      rewrite <- shift_index.
+      apply H'.
+    - unfold not in *.
+      intros.
+      apply H' with (i0 := 0).
+      rewrite shift_index.
+      simpl.
+      assert (C' : (i = j) \/ ~ (i = j)).
+      apply classic.
+      destruct C' as [C' | C'].
+      + subst; trivial.
+      + eapply H.
+        instantiate (1 := j).
+        omega.
+        trivial.
   Qed.
+
+
   
   (* helper: subpath satisfies F -> path satisfies F *)
   Lemma one_step :
@@ -747,12 +752,12 @@ Module Type Soundness
                  split; trivial.
                  * apply modify_Sat1; trivial.
                    subst vars.
-                   apply SatML_equiv with (varphi := phic) (rho := rho'); trivial.
+                   apply SatML_val_relation with (varphi := phic) (rho := rho'); trivial.
                    subst vars.
                    apply incl_refl.
                  * apply modify_Sat2; trivial.
                + apply modify_Sat1; trivial.
-                 apply SatML_equiv with (varphi := phic') (rho := rho'); trivial.  
+                 apply SatML_val_relation with (varphi := phic') (rho := rho'); trivial.  
            }
 
            (* apply the inductive hypothesis for the subpath starting at i *)
@@ -843,7 +848,7 @@ Module Type Soundness
            simpl in H5.
            assert (SF:  startsFrom tau rho phi); trivial.
            unfold startsFrom in H2.
-           destruct H2 as (gamma & H2 & H8).
+           destruct H2 as (gamma & H2 & H8').
            assert (H9 : exists gamma', tau 1 = Some gamma').
            apply first_step_gamma with (n := n) in H2; trivial.
            destruct H9 as (gamma' & H9).
@@ -871,6 +876,26 @@ Module Type Soundness
              assumption.
            }
 
+           unfold TS in H10.
+           destruct H10 as (phi_l & phi_r & rho' & H10 & h1 & h2).
+           unfold RL_alpha_equiv_S in H6.
+           assert (H10': In (phi_l => phi_r) S); trivial.
+           apply H6 in H10.
+           destruct H10 as (F' & HS' & E).
+           
+           assert (H10 : TS S' gamma gamma').
+           {
+             destruct F'.
+             unfold TS.
+             apply RL_alpha_equiv_ML with (rho := rho') in E.
+             destruct E as (rho'' & E & E').
+             exists m, m0, rho''.
+             split; trivial.
+             split.
+             apply SatML_val_relation with (gamma := gamma) in E; trivial.
+             apply SatML_val_relation with (gamma := gamma') in E'; trivial.
+           }
+           
            (* cover step *)
            apply cover_step with (rho := rho) (phi := phi) in H10; trivial.
            destruct H10 as (alpha & phi1 & H10 & H11 & H12).
@@ -881,7 +906,7 @@ Module Type Soundness
              apply H with (m := n); trivial.
              - apply wf_subpath; trivial.
              - apply H4.
-               rewrite H7.
+               rewrite H8.
                apply in_app_iff.
                right.
                unfold SynDerRL, SynDerRL', SynDerML.
@@ -915,21 +940,31 @@ Module Type Soundness
            right.
            apply is_infinite in H13; trivial.
            intros F HF.
-           unfold disjoint_vars_rules in H6.
-           assert (HF' : In F S); trivial.
-           apply H6 in HF.
+           unfold disjoint_vars_rules in H7.
+           assert (HF' : In F S'); trivial.
+           apply H7 in HF'.
            unfold disjoint_set_RL.
-           unfold disjoint_vars_RL, disjoint_vars in HF.
+           unfold disjoint_vars_RL, disjoint_vars in HF'.
            intros x Hx.
-           unfold not.
+           unfold not in *.
            intros HH.
-           apply WFF2 in HF'.
+           apply HF' with (x := x).
            unfold FreeVars in HH.
            rewrite app_nil_r in HH.
            rewrite wf_free with (x := x) in HH; trivial.
-           apply HF in HH.
-           simpl in HH.
-           contradiction.
+           apply H6 in HF.
+           destruct HF as (F1 & FS & EE).
+           apply RL_alpha_equiv_wf with (F := F1).
+           apply WFF2; trivial.
+           destruct F; simpl.
+           apply RL_alpha_equiv_sym; trivial.
+           simpl; trivial.
+           intros F HF.
+           apply H6 in HF.
+           destruct HF as (F1 & FS & EE).
+           apply RL_alpha_equiv_wf with (F := F1).
+           apply WFF2; trivial.
+           apply RL_alpha_equiv_sym; trivial.
   Qed.
   
 

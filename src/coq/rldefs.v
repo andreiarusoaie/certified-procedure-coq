@@ -67,16 +67,16 @@ Module Type RL (F : Formulas) (U : Utils).
       SatML gamma rho (lhs alpha) /\ SatML gamma' rho (rhs alpha) .
   
   (* transition system given by a set of rules *)
-  Definition TS (gamma gamma' : State) : Prop :=
+  Definition TS (S' : list RLFormula) (gamma gamma' : State) : Prop :=
     exists phi phi' rho,
-      In (phi => phi') S /\
+      In (phi => phi') S' /\
       (SatML gamma rho phi) /\ (SatML gamma' rho phi').
-  Notation "f =>S f'" := (TS f f') (at level 100).
+  Notation "f =>S f'" := (TS S f f') (at level 100).
 
   
   (* concrete paths *)
   Definition Path := GPath State.
-  Definition wfPath := wfGPath State TS.
+  Definition wfPath := wfGPath State (TS S).
   Definition Path_i (tau : Path) := GPath_i State tau.
   Definition isInfinite (tau : Path) := isInfiniteGPath State tau. 
   
@@ -94,7 +94,7 @@ Module Type RL (F : Formulas) (U : Utils).
     exists gamma, tau n = Some gamma /\ terminating gamma.
 
   Definition complete (tau : Path) :=
-    isInfinite tau \/ (~ isInfinite tau /\ exists n, completeN tau n).
+    isInfinite tau \/ (~ isInfinite tau /\ exists n, completeN tau n) .
 
   (* path satisfaction *)
   (* Note: the path should be well-formed *)
@@ -121,6 +121,41 @@ Module Type RL (F : Formulas) (U : Utils).
   Definition SatTS_G (G : list RLFormula) : Prop :=
     forall F, In F G -> SatTS F.
 
+
+
+  (* ML helper relation *)
+  Parameter ML_val_relation :
+    MLFormula -> Valuation -> MLFormula -> Valuation -> Prop.
+  Axiom SatML_val_relation :
+    forall varphi rho varphi' rho' gamma,
+      ML_val_relation varphi rho varphi' rho' ->
+      SatML gamma rho varphi -> SatML gamma rho' varphi' .
+  
+
+  (* RL_alpha_equiv *)
+  Parameter RL_alpha_equiv : RLFormula -> RLFormula -> Prop.
+
+  Axiom RL_alpha_equiv_ML :
+    forall f f' g g',
+      RL_alpha_equiv (f => f') (g => g') ->
+      forall rho, exists rho',
+        (ML_val_relation f rho g rho') /\ (ML_val_relation f' rho g' rho') .
+
+  Axiom RL_alpha_equiv_sym :
+    forall F F',
+      RL_alpha_equiv F F' -> RL_alpha_equiv F' F.
+  
+    
+  Axiom RL_alpha_equiv_wf :
+    forall F F',
+      wfFormula F -> RL_alpha_equiv F F' -> wfFormula F'.
+
+  (* Extension to sets *)
+  Definition RL_alpha_equiv_S (S S' : list RLFormula) : Prop :=
+    (forall F, In F S -> exists F_eqv, In F_eqv S' /\ RL_alpha_equiv F F_eqv) /\
+    (forall F_eqv, In F_eqv S' -> exists F, In F S /\ RL_alpha_equiv F_eqv F).
+
+  
 
   (* Disjoint variables section *)
   Definition disjoint_vars (phi phi' : MLFormula) : Prop :=
