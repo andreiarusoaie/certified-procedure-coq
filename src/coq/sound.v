@@ -62,16 +62,16 @@ Module Type Soundness
     
   (* Coverage one step *)
   Lemma cover_step :
-    forall gamma gamma' rho phi S',
-      (forall F, In F S' -> disjoint_set_RL F (getFreeVars phi)) ->
+    forall gamma gamma' rho phi S,
+      (forall F, In F S -> disjoint_set_RL F (getFreeVars phi)) ->
       (forall F, In F G0 -> wfFormula F) ->
-      (forall F, In F S' -> wfFormula F) ->
-      (TS S' gamma gamma') ->
+      (forall F, In F S -> wfFormula F) ->
+      (TS S gamma gamma') ->
       SatML gamma rho phi ->
       exists alpha phi',
-        In alpha S' /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
+        In alpha S /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
   Proof.
-    intros gamma gamma' rho phi S' D WFF1 WFF2 H H'.
+    intros gamma gamma' rho phi S D WFF1 WFF2 H H'.
     unfold TS in H.
     destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
     exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
@@ -876,13 +876,13 @@ Module Type Soundness
              assumption.
            }
 
+           (* First transition with S' : gamma =>S' gamma' *)
            unfold TS in H10.
            destruct H10 as (phi_l & phi_r & rho' & H10 & h1 & h2).
            unfold RL_alpha_equiv_S in H6.
            assert (H10': In (phi_l => phi_r) S); trivial.
            apply H6 in H10.
            destruct H10 as (F' & HS' & E).
-           
            assert (H10 : TS S' gamma gamma').
            {
              destruct F'.
