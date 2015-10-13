@@ -124,12 +124,9 @@ Module Type RL (F : Formulas) (U : Utils).
 
 
   (* ML helper relation *)
-  Parameter ML_val_relation :
-    MLFormula -> Valuation -> MLFormula -> Valuation -> Prop.
-  Axiom SatML_val_relation :
-    forall varphi rho varphi' rho' gamma,
-      ML_val_relation varphi rho varphi' rho' ->
-      SatML gamma rho varphi -> SatML gamma rho' varphi' .
+  Definition ML_val_relation (phi : MLFormula) (rho : Valuation)
+             (phi' : MLFormula) (rho' : Valuation) : Prop :=
+    forall gamma, SatML gamma rho phi -> SatML gamma rho' phi' .
   
 
   (* RL_alpha_equiv *)

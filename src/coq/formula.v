@@ -50,10 +50,13 @@ Module Type Formulas.
   Definition ValidML (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
 
-
   
   (* Free variables *)
   Parameter getFreeVars : MLFormula -> list Var .
+
+  (* existential closure *)
+  Definition EClos (phi : MLFormula) :=
+    (ExistsML (getFreeVars phi) phi).
 
   (* Encoding *)
   Parameter encoding : MLFormula -> MLFormula .

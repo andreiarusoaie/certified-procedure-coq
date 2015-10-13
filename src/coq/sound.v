@@ -19,7 +19,7 @@ Module Type Soundness
   Variable G0 : list RLFormula.
   
   
-  (* Section procedure *)
+  (* The 'step' relation encoding the inference steps of the procedure. *)
   Inductive step (G G': list RLFormula)
             (g : RLFormula) : Prop :=
   | impl :
@@ -40,7 +40,8 @@ Module Type Soundness
         RL_alpha_equiv_S S S' -> disjoint_vars_rules S' g ->
         G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S' g) ->
       step G G' g.
-  
+
+  (* successful execution of the non-deterministic procedure *)
   Inductive steps : list RLFormula -> Prop :=
     | base : steps []
     | tranz : forall G G' g,
@@ -752,12 +753,14 @@ Module Type Soundness
                  split; trivial.
                  * apply modify_Sat1; trivial.
                    subst vars.
-                   apply SatML_val_relation with (varphi := phic) (rho := rho'); trivial.
+                   unfold ML_val_relation in H6.
+                   apply H6; trivial.
                    subst vars.
                    apply incl_refl.
                  * apply modify_Sat2; trivial.
                + apply modify_Sat1; trivial.
-                 apply SatML_val_relation with (varphi := phic') (rho := rho'); trivial.  
+                 unfold ML_val_relation in H6'.
+                 apply H6'; trivial.
            }
 
            (* apply the inductive hypothesis for the subpath starting at i *)
@@ -892,8 +895,8 @@ Module Type Soundness
              exists m, m0, rho''.
              split; trivial.
              split.
-             apply SatML_val_relation with (gamma := gamma) in E; trivial.
-             apply SatML_val_relation with (gamma := gamma') in E'; trivial.
+             unfold ML_val_relation in E. apply E; trivial.
+             unfold ML_val_relation in E'. apply E'; trivial.
            }
            
            (* cover step *)

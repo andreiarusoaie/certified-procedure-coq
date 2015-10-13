@@ -10,9 +10,6 @@ Module Type Definitions (U : Utils)
   Import R.
   Import ListNotations.
 
-  (* existential closure *)
-  Definition EClos (phi : MLFormula) :=
-    (ExistsML (FreeVars [phi]) phi).
   
   (* S - derivable *)
   Definition SDerivable (phi : MLFormula) : Prop :=
