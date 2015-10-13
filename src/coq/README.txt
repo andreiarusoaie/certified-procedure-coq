@@ -1,5 +1,8 @@
 
-Formal proof of soundness in Coq
+Formal proof of soundness in Coq of the ''prove'' procedure
+
+
+Revision: 
 
 Coq version: 8.4pl5
 
