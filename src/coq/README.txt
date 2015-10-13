@@ -1,16 +1,17 @@
 
 Formal proof of soundness in Coq of the ''prove'' procedure
 
-
-Revision: 
-
 Coq version: 8.4pl5
 
 Folder content:
-- Makefile
-- README.txt
-- Coq files: formula.v util.v rldefs.v definition.v sound.v
-- Main Coq file: sound.v
+   - Makefile
+   - README.txt
+   - Coq files:
+         * ml.v : Matching Logic axioms
+	 * util.v : generic paths
+	 * rl.v : Reachability Logic definitions
+	 * derivatives.v : Derivatives definitions
+	 * sound.v : the main Coq file; it contains the main lemmas and the theorem
 
 
 Build:

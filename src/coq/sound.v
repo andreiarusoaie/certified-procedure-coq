@@ -59,59 +59,11 @@ Module Type Soundness
                 inF g.
   
 
-      
-    
-  (* Coverage one step *)
-  Lemma cover_step :
-    forall gamma gamma' rho phi S,
-      (forall F, In F S -> disjoint_set_RL F (getFreeVars phi)) ->
-      (forall F, In F G0 -> wfFormula F) ->
-      (forall F, In F S -> wfFormula F) ->
-      (TS S gamma gamma') ->
-      SatML gamma rho phi ->
-      exists alpha phi',
-        In alpha S /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
-  Proof.
-    intros gamma gamma' rho phi S D WFF1 WFF2 H H'.
-    unfold TS in H.
-    destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
-    exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
-    repeat split; trivial.
-    unfold SynDerML'.
-    apply SatML_Exists.
-    set (vars := (FreeVars [phi_l; phi_r])).
-    simpl in *.
-    exists (modify_val_on_set rho rho' vars).
-    split.
-    - intros v V.
-      symmetry.
-      apply modify_not_in; trivial.
-    - apply SatML_And.
-      split.
-      + apply Proposition1.
-        exists gamma.
-        apply SatML_And.
-        split.
-        * apply modify_Sat1; trivial.
-          subst vars.
-          apply incl_appl.
-          apply incl_refl.
-        * apply modify_Sat2; trivial.
-          intros x Hx.
-          subst vars.
-          apply D in H0.
-          unfold disjoint_set_RL in H0.
-          apply H0 in Hx.
-          simpl in *.
-          trivial.
-      + apply modify_Sat1; trivial.
-        subst vars.
-        unfold FreeVars.
-        apply incl_appr.
-        rewrite app_nil_r.
-        apply incl_refl.
-  Qed.
 
+  (*******************
+   *  Helper lemmas  *
+   *******************)
+  
   (* helper *)
   Lemma valid_impl :
     forall gamma rho phi phi',
@@ -134,39 +86,6 @@ Module Type Soundness
   Qed.
     
 
-  (* Important: implication or S-derivable *)
-  Lemma impl_or_der :
-    forall phi phi',
-      total -> 
-      inF (phi => phi') ->
-      (forall p p', In (p => p') G0 -> SDerivable p) ->
-      (exists gamma rho, SatML gamma rho phi) ->
-      ValidML (ImpliesML phi phi') \/ SDerivable phi .
-  Proof.
-    intros phi phi' T H0 H' H1.
-    inversion H0.
-    - right.
-      apply H' with (p' := phi'); trivial.
-    - inversion H; simpl in H3.
-      + left; trivial.
-      + right.
-        simpl in *.
-        destruct c, c'.
-        simpl in *.
-        destruct H1 as (gamma & rho & H1).
-        apply valid_impl with (phi := phi) (gamma := gamma) (rho := rho) (phi' := (EClos m)) in H7; trivial.
-        unfold EClos in H7.
-        apply SatML_Exists in H7.
-        destruct H7 as (rho' & H9 & H10).
-        apply H' in H4.
-        unfold total in T.
-        apply T with (gamma := gamma) (rho := rho') in H4; trivial.
-        destruct H4 as (gamma' & H4).
-        unfold SDerivable.
-        exists gamma, rho, gamma'.
-        split; trivial.
-      + right; trivial.
-  Qed.
 
 
   (* helper *)
@@ -542,9 +461,105 @@ Module Type Soundness
   Qed.
   
 
+  (************************
+   *   End helper lemmas  *
+   ************************)
+
+  
+  (******************
+   *   Main lemmas  *
+   ******************)
+  
+  (* Implication or S-derivable *)
+  Lemma impl_or_der :
+    forall phi phi',
+      total -> 
+      inF (phi => phi') ->
+      (forall p p', In (p => p') G0 -> SDerivable p) ->
+      (exists gamma rho, SatML gamma rho phi) ->
+      ValidML (ImpliesML phi phi') \/ SDerivable phi .
+  Proof.
+    intros phi phi' T H0 H' H1.
+    inversion H0.
+    - right.
+      apply H' with (p' := phi'); trivial.
+    - inversion H; simpl in H3.
+      + left; trivial.
+      + right.
+        simpl in *.
+        destruct c, c'.
+        simpl in *.
+        destruct H1 as (gamma & rho & H1).
+        apply valid_impl with (phi := phi) (gamma := gamma) (rho := rho) (phi' := (EClos m)) in H7; trivial.
+        unfold EClos in H7.
+        apply SatML_Exists in H7.
+        destruct H7 as (rho' & H9 & H10).
+        apply H' in H4.
+        unfold total in T.
+        apply T with (gamma := gamma) (rho := rho') in H4; trivial.
+        destruct H4 as (gamma' & H4).
+        unfold SDerivable.
+        exists gamma, rho, gamma'.
+        split; trivial.
+      + right; trivial.
+  Qed.
 
 
-  (* Important: MAIN LEMMA *)
+  
+  (* Coverage step *)
+  Lemma cover_step :
+    forall gamma gamma' rho phi S,
+      (forall F, In F S -> disjoint_set_RL F (getFreeVars phi)) ->
+      (forall F, In F G0 -> wfFormula F) ->
+      (forall F, In F S -> wfFormula F) ->
+      (TS S gamma gamma') ->
+      SatML gamma rho phi ->
+      exists alpha phi',
+        In alpha S /\ phi' = SynDerML' phi alpha /\ SatML gamma' rho phi'.
+  Proof.
+    intros gamma gamma' rho phi S D WFF1 WFF2 H H'.
+    unfold TS in H.
+    destruct H as (phi_l & phi_r & rho' & H0 & H1 & H2).
+    exists (phi_l => phi_r), (SynDerML' phi (phi_l => phi_r)).
+    repeat split; trivial.
+    unfold SynDerML'.
+    apply SatML_Exists.
+    set (vars := (FreeVars [phi_l; phi_r])).
+    simpl in *.
+    exists (modify_val_on_set rho rho' vars).
+    split.
+    - intros v V.
+      symmetry.
+      apply modify_not_in; trivial.
+    - apply SatML_And.
+      split.
+      + apply Proposition1.
+        exists gamma.
+        apply SatML_And.
+        split.
+        * apply modify_Sat1; trivial.
+          subst vars.
+          apply incl_appl.
+          apply incl_refl.
+        * apply modify_Sat2; trivial.
+          intros x Hx.
+          subst vars.
+          apply D in H0.
+          unfold disjoint_set_RL in H0.
+          apply H0 in Hx.
+          simpl in *.
+          trivial.
+      + apply modify_Sat1; trivial.
+        subst vars.
+        unfold FreeVars.
+        apply incl_appr.
+        rewrite app_nil_r.
+        apply incl_refl.
+  Qed.
+
+
+
+  (* Important: soundness for finite paths *)
   Lemma finite_sound :
     forall n tau rho phi phi',
       G0 <> [] -> 
@@ -970,8 +985,15 @@ Module Type Soundness
            apply RL_alpha_equiv_sym; trivial.
   Qed.
   
+  (*********************
+   *  End main lemmas  *
+   *********************)
 
-  (* The soundness theorem *)
+
+  (***************************
+   *  The soundness theorem  *
+   ***************************)
+
   Theorem sound : total ->
                   (forall g, In g G0 -> disjoint_vars_rules S g) ->
                   (forall p p', In (p => p') G0 -> SDerivable p) ->
@@ -998,5 +1020,9 @@ Module Type Soundness
         * destruct g.
           apply init; assumption.
   Qed.
+
+  (*******
+   * End *
+   *******)
   
 End Soundness.
