@@ -1024,5 +1024,169 @@ Module Type Soundness
   (*******
    * End *
    *******)
+
+
+
+  (************
+   * function *
+   ************)
   
+  Parameter validMLtest : MLFormula -> bool .
+  Axiom soundValidTest :
+    forall phi, (validMLtest phi) = true -> ValidML phi .
+
+  Parameter renameFresh : RLFormula -> RLFormula -> RLFormula .
+  Axiom rename_fresh :
+    forall c g,
+      RL_alpha_equiv c (renameFresh c g) /\ disjoint_vars_RL g (renameFresh c g) .
+
+  Parameter renameFreshSet : list RLFormula -> RLFormula -> list RLFormula .
+  Axiom rename_fresh_set :
+    forall S g,
+      RL_alpha_equiv_S S (renameFreshSet S g) /\ disjoint_vars_rules (renameFreshSet S g) g .
+
+  Parameter derivTest : MLFormula -> bool .
+  Axiom deriv_test :
+    forall phi,
+      derivTest phi = true -> SDerivable phi .
+  
+  
+  Fixpoint chooseCirc (g : RLFormula) (C : list RLFormula)
+  : option RLFormula :=
+    match C with
+      | nil => None
+      | c :: C' =>
+        if validMLtest (ImpliesML (lhs g) (EClos (lhs c)))
+        then Some c
+        else chooseCirc g C'
+    end.
+
+  Inductive Status := success | failure .
+
+
+  (* Main prove function *)
+  Fixpoint prove (G : list RLFormula) (n : nat) : Status :=
+    match n with 
+      | 0 => failure
+      | Datatypes.S n' => 
+        match G with
+          | nil => success 
+          | g :: G' =>
+            if validMLtest (ImpliesML (lhs g) (rhs g))
+            then prove (remove RLFormula_eq_dec g G) n'
+            else match chooseCirc g G0 with
+                   | Some c => prove ((remove RLFormula_eq_dec g G)
+                                        ++ (SynDerRL [renameFresh c g] g)) n'
+                   | None =>
+                     if derivTest (lhs g)
+                     then prove ((remove RLFormula_eq_dec g G)
+                                   ++ (SynDerRL (renameFreshSet S g) g)) n'
+                     else failure
+                 end
+        end
+    end.
+  
+  Lemma chooseCircValidImpl : 
+    forall G0 g c, chooseCirc g G0 = Some c ->  ValidML (ImpliesML (lhs g) (EClos (lhs c))) .        
+  Proof.
+    intros G. induction G; intros g c H; simpl in H.
+    - inversion H.
+    - case_eq (validMLtest (ImpliesML (lhs g) (EClos (lhs a)))); intros H'; rewrite H' in H.
+      + inversion H.
+        subst a.
+        apply soundValidTest; trivial.
+      + apply IHG; trivial.
+  Qed.
+
+  Lemma chooseCircInG0 : 
+    forall G0 g c, chooseCirc g G0 = Some c -> In c G0 .          
+  Proof.
+    intros G.
+    induction G.
+    - intros g c H.
+      simpl in H.
+      inversion H.
+    - intros g c H.
+      simpl.
+      simpl in H.
+      case_eq (validMLtest (ImpliesML (lhs g) (EClos (lhs a)))).
+      + intros Hv.
+        rewrite Hv in H.
+        inversion H; left; trivial.
+      + intros Hv.
+        rewrite Hv in H.
+        right.
+        apply IHG with (g := g); trivial.
+  Qed.
+  
+
+  Definition strictsublist_wf_ind_RL := strictsublist_wf_ind RLFormula.
+
+  Theorem function_to_steps :
+    forall n G,
+      prove G n = success -> steps G .
+  Proof.
+    induction n using custom_lt_wf_ind.
+    - intros G H.
+      simpl in H.
+      inversion H.
+    - intros G.
+      case_eq G.
+      + intros H1 H'.
+        apply base.
+      + intros g G' Hg H1.
+        subst G.
+        simpl in H1.
+        case_eq (validMLtest (ImpliesML (lhs g) (rhs g))); intros H''; rewrite H'' in H1.
+        * apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G'))) (g := g).
+          apply impl.
+          { simpl; left; trivial. }
+          apply soundValidTest; trivial.
+          trivial.
+          apply H in H1; trivial.
+        * case_eq (chooseCirc g G0).
+          
+          intros c Hc.
+          rewrite Hc in H1.
+          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL [renameFresh c g] g)) 
+                             (g := g).
+          apply circ with (c := c) (c' := (renameFresh c g)); trivial.
+          apply H in H1; trivial.
+          simpl; left; trivial.
+          apply chooseCircInG0 with (g := g); trivial.
+          apply rename_fresh.
+          apply rename_fresh.
+          apply chooseCircValidImpl with (G0 := G0); trivial.
+          apply H in H1; trivial.
+          
+          intros Hc.
+          rewrite Hc in H1.
+          case_eq (derivTest (lhs g)); intros D; rewrite D in H1.
+          
+          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL (renameFreshSet S g) g)) (g := g).
+          apply der with (S' := (renameFreshSet S g)); trivial.
+          simpl; left; trivial.
+          apply deriv_test; trivial.
+          apply rename_fresh_set.
+          apply rename_fresh_set.
+          
+          apply H in H1; trivial.
+          
+          inversion H1.
+  Qed.
+
+  
+  Theorem sound_prove : 
+    forall n, total ->
+              (forall g, In g G0 -> disjoint_vars_rules S g) ->
+              (forall p p', In (p => p') G0 -> SDerivable p) ->
+              (forall F, In F G0 -> wfFormula F) ->
+              (forall F, In F S -> wfFormula F) ->
+              prove (Delta S G0) n = success ->
+              SatTS_G G0.
+  Proof.
+    intros; apply sound; trivial.
+    apply function_to_steps with (n := n); trivial.
+  Qed.
+
 End Soundness.

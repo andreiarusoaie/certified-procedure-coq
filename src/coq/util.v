@@ -35,7 +35,7 @@ Module Type Utils .
 
   Section InductionPrinciple.
 
-      (* custom induction principle *)
+  (* custom induction principle *)
    Lemma custom_lt_wf_ind :
      forall (P:nat -> Prop),
        P 0 ->
@@ -55,6 +55,33 @@ Module Type Utils .
      apply le_lt_n_Sm in H; trivial.
    Qed.
    
+
+   (* sublist wf induction *)
+   Inductive strictsublist {A : Type} : list A -> list A -> Prop :=
+   | strictsublist_nil : forall h t, strictsublist nil (h :: t)
+   | strictsublist_skip : forall l1 h t, strictsublist l1 t -> strictsublist l1 (h :: t)
+   | strictsublist_cons : forall h t1 t2, strictsublist t1 t2 -> strictsublist (h :: t1) (h :: t2).
+   
+
+   Lemma strictsublist_wf (A : Type) :
+     well_founded (strictsublist (A := A)).
+   Proof.
+     eapply well_founded_lt_compat with (f := (length (A := A))).
+     intros l1 l2 H.
+     induction H; simpl; auto with arith.
+   Qed.
+   
+   Lemma strictsublist_wf_ind (A : Type) (P : list A -> Prop) :
+     (forall l, (forall l', strictsublist l' l -> P l') -> P l) -> forall l: list A, P l.
+   Proof.
+     intros H1 l.
+     elim (strictsublist_wf _ l).
+     intros l' _ H3.
+     apply H1.
+     exact H3.
+   Qed.
+   
+
   End InductionPrinciple.
 
   
