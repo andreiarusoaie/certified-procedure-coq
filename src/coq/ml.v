@@ -8,7 +8,6 @@ Module Type Formulas.
   (* General *)
   Parameter State : Type .
   Parameter Model : Type .
-  Parameter Term : Type .
   Parameter Var : Type .
   Definition Valuation : Type := Var -> Model .
 
