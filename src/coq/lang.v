@@ -11,31 +11,32 @@ Module Lang.
   (* syntax *)
   Inductive AExp : Type := 
   | id : string -> AExp
-  | sval : snat -> AExp
+  | sval : _nat -> AExp
   | plus : AExp -> AExp -> AExp
   | div : AExp -> AExp -> AExp 
-  | mod : AExp -> AExp -> AExp .
+  | mod : AExp -> AExp -> AExp
+  | aexp_var : string -> AExp .
 
   Inductive BExp : Type :=
-  | bval : sbool -> BExp 
+  | bval : _bool -> BExp 
   | not : BExp -> BExp 
   | and : BExp -> BExp -> BExp 
   | le : AExp -> AExp -> BExp 
-  | leq : AExp -> AExp -> BExp .
-
+  | leq : AExp -> AExp -> BExp
+  | bexp_var : string -> BExp .
 
   Inductive Stmt : Type :=
   | assign : string -> AExp -> Stmt
-  | ifelse : BExp -> Block -> Block -> Stmt
-  | while : BExp -> Block -> Stmt 
+  | ifelse : BExp -> Stmt -> Stmt -> Stmt
+  | while : BExp -> Stmt -> Stmt 
   | seq : Stmt -> Stmt -> Stmt 
-  with Block : Type := block : Stmt -> Block .
-         
-  Notation "{{ B }}" := (block B) (at level 100).
+  | stmt_var : string -> Stmt .
 
+         
   (* configuration *)
-  Definition MapItem := (string * snat)%type.
+  Definition MapItem := (string * AExp)%type .
   Notation "X |-> A" := (X, A) (at level 100).
+
   Definition Mem := list MapItem.
   Definition Cfg : Type := (Stmt * Mem)%type .
   Notation "< S > < M >" := (S, M) (at level 101).
