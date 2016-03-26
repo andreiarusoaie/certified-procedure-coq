@@ -3,7 +3,7 @@ Module Symbolic.
 
   (* symbolic domain *)
   Inductive _nat : Type := 
-    | s_nat : nat -> _nat 
+    | s_nat : string -> _nat 
     | c_nat : nat -> _nat
     | _plus : _nat -> _nat -> _nat
     | _div : _nat -> _nat -> _nat
@@ -17,13 +17,14 @@ Module Symbolic.
 
 
   Inductive _bool : Type :=
-  | s_bool : nat -> _bool 
+  | s_bool : string -> _bool 
   | c_bool : bool -> _bool
   | _not : _bool -> _bool 
   | _and : _bool -> _bool -> _bool
   | _or : _bool -> _bool -> _bool
   | _le : _nat -> _nat -> _bool
-  | _leq : _nat -> _nat -> _bool .
+  | _leq : _nat -> _nat -> _bool
+  | _exists : list _nat -> _bool -> _bool.
 
   Notation "$$ B" := (s_bool B) (at level 100).
   Notation "## B" := (c_bool B) (at level 100).

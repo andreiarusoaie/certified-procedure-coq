@@ -32,13 +32,15 @@ Module Lang.
   | seq : Stmt -> Stmt -> Stmt 
   | stmt_var : string -> Stmt .
 
+  Notation "X ::= A" := (assign X A) (at level 99). 
+  
          
   (* configuration *)
   Definition MapItem := (string * AExp)%type .
   Notation "X |-> A" := (X, A) (at level 100).
 
   Definition Mem := list MapItem.
-  Definition Cfg : Type := (Stmt * Mem)%type .
+  Definition Cfg := (Stmt * Mem)%type .
   Notation "< S > < M >" := (S, M) (at level 101).
 
 (*
