@@ -158,6 +158,10 @@ Module LangML <: Formulas.
                                       (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))) .
 
 
+  Fixpoint applyValToAExp (rho : Valuation) (A : AExp) : _nat :=
+    match A with 
+      | 
+
   Fixpoint applyVal (rho : Valuation) (phi : MLFormula) : Model := 
     match phi with 
       | T => (_bool_to_m (c_bool true))
