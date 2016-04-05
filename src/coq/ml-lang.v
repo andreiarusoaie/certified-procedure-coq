@@ -145,6 +145,12 @@ Module LangML <: Formulas.
       | ExistsML Vs F' => if (in_dec string_dec  v Vs) then (ExistsML Vs F') else (ExistsML Vs (substBounded v F')) 
     end.
 
+  Fixpoint substBoundedVs (vs : list Var) (F : MLFormula) : MLFormula := 
+    match vs with 
+      | nil => F 
+      | x :: xs => substBoundedVs xs (substBounded x F)
+    end.
+
   Eval compute in substBounded "a" T .
   Check pattern ("a" ::= (sval (# 10)) , cons ("a" |-> (sval (# 12))) nil) .
   Eval compute in substBounded "x" (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "x")) nil)) .
@@ -156,17 +162,20 @@ Module LangML <: Formulas.
   Eval compute in substBounded "y" (AndML 
                                       (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "x")) nil)))
                                       (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))) .
+  Eval compute in substBoundedVs ("x"::"y"::nil) (AndML 
+                                      (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))
+                                      (ExistsML (cons "z" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))) .
 
 
-  Fixpoint applyValToAExp (rho : Valuation) (A : AExp) : _nat :=
-    match A with 
-      | 
+  Parameter applyValToBExp : Valuation -> BExp -> _bool.
+  Parameter applyValToStmt : Valuation -> Stmt -> _stmt.
+  Parameter applyValToMem : Valuation -> Mem-> _map.
 
   Fixpoint applyVal (rho : Valuation) (phi : MLFormula) : Model := 
     match phi with 
       | T => (_bool_to_m (c_bool true))
-      | pattern (St, M) =>  (_bool_to_m (c_bool true)) (* => (s_cfg (applyValToStmt rho S) (applyValToMap rho M)) *)
-      | pred B =>  (_bool_to_m (c_bool true)) (* => (s_bool (applyValToBExp rho B)) *)
+      | pattern (St, M) => _cfg_to_m ((applyValToStmt rho St), (applyValToMem rho M))
+      | pred B => _bool_to_m (applyValToBExp rho B)
       | notML F => match (applyVal rho F) with 
                      | _bool_to_m B' =>  (_bool_to_m (_not  B'))
                      | _ => (_bool_to_m (c_bool false))
@@ -175,11 +184,25 @@ Module LangML <: Formulas.
                         | _bool_to_m B1, _bool_to_m B2 => (_bool_to_m (_and B1 B2))
                         | _, _ => (_bool_to_m (c_bool false))
                       end
-      | ExistsML Vs F => match (applyVal rho (substVars Vs F)) with
-                           | _bool_to_m B' => (_bool_to_m (_exists (transformVars Vs) B'))
+      | ExistsML Vs F => match (applyVal rho (substBoundedVs Vs F)) with
+                           | _bool_to_m B' => (_bool_to_m (_exists (varsTo_nat Vs) B'))
                            | _ => (_bool_to_m (c_bool false))
                          end
     end.
+
+
+  Fixpoint applyValToBExp (rho : Valuation) (B : BExp) : Model :=
+    match B with 
+      | bexp_var v => rho v
+      | not B' => not (
+    end.
+
+  Fixpoint applyValToAExp (rho : Valuation) (A : AExp) : _nat :=
+    match A with 
+      | aexp_var v => rho v
+      | _ => (c_nat 0)
+    end.
+
 
 
   Inductive SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
