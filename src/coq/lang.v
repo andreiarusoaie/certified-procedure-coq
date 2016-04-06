@@ -11,7 +11,7 @@ Module Lang.
   (* syntax *)
   Inductive AExp : Type := 
   | id : string -> AExp
-  | sval : _nat -> AExp
+  | val : _nat -> AExp
   | plus : AExp -> AExp -> AExp
   | div : AExp -> AExp -> AExp 
   | mod : AExp -> AExp -> AExp
@@ -21,16 +21,15 @@ Module Lang.
   | bval : _bool -> BExp 
   | not : BExp -> BExp 
   | and : BExp -> BExp -> BExp 
-  | le : AExp -> AExp -> BExp 
+  | le  : AExp -> AExp -> BExp 
   | leq : AExp -> AExp -> BExp
-  | bexp_var : string -> BExp .
+  | eq  : AExp -> AExp -> BExp.
 
   Inductive Stmt : Type :=
   | assign : string -> AExp -> Stmt
   | ifelse : BExp -> Stmt -> Stmt -> Stmt
   | while : BExp -> Stmt -> Stmt 
-  | seq : Stmt -> Stmt -> Stmt 
-  | stmt_var : string -> Stmt .
+  | seq : Stmt -> Stmt -> Stmt .
 
   Notation "X ::= A" := (assign X A) (at level 99). 
   

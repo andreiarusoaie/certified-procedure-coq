@@ -1,6 +1,8 @@
 Require Import String.
 Module Symbolic.
 
+  Definition _id : Type := string.
+
   (* symbolic domain *)
   Inductive _nat : Type := 
     | s_nat : string -> _nat 
@@ -24,7 +26,7 @@ Module Symbolic.
   | _or : _bool -> _bool -> _bool
   | _le : _nat -> _nat -> _bool
   | _leq : _nat -> _nat -> _bool
-  | _exists : list _nat -> _bool -> _bool.
+  | _eq : _nat -> _nat -> _bool .
 
   Notation "$$ B" := (s_bool B) (at level 100).
   Notation "## B" := (c_bool B) (at level 100).
@@ -34,17 +36,25 @@ Module Symbolic.
   Notation "A <nat B" := (_le A B) (at level 99).
   Notation "A <=nat B" := (_leq A B) (at level 99).
 
-  Definition _mapitem := (string * _nat)%type.
+  Definition _mapitem := (_id * _nat)%type.
   Definition _map := list _mapitem.
 
 
   (* model *)
   Inductive _stmt :Type := 
-    | _assign : string -> _nat -> _stmt
+    | _assign : _id -> _nat -> _stmt
     | _ifelse : _bool -> _stmt -> _stmt -> _stmt
     | _while : _bool -> _stmt -> _stmt
     | _seq : _stmt -> _stmt -> _stmt .
 
   Definition _cfg := (_stmt * _map)%type.
+
+  Inductive _f : Type := 
+    | _f_t : _f 
+    | _f_cfg : _cfg -> _f 
+    | _f_pred : _bool -> _f
+    | _f_not : _f -> _f
+    | _f_and : _f -> _f -> _f 
+    | _f_exists : list _nat -> _f -> _f .
 
 End Symbolic.

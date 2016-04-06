@@ -9,14 +9,14 @@ Module LangML <: Formulas.
   Import Lang.
   Import Symbolic.
   
- (* Definition State : Type := _cfg.*)
-  Inductive Model :Type := 
-  | _nat_to_m : _nat -> Model 
-  | _bool_to_m : _bool -> Model
-  | _mapitem_to_m : _mapitem -> Model
-  | _map_to_m : _map -> Model
-  | _cfg_to_m : _cfg -> Model
-  | _stmt_to_m : _stmt -> Model.
+  Definition State : Type := _cfg.
+  Inductive Model : Type := 
+    | to_m_f : _f -> Model 
+    | to_m_bool : _bool -> Model
+    | to_m_nat : _nat -> Model
+    | to_m_map : _map -> Model
+    | to_m_mapitem : _mapitem -> Model
+    | to_m_cfg : _cfg -> Model.
 
   Definition Var := string.
 
@@ -92,7 +92,7 @@ Module LangML <: Formulas.
 
   Fixpoint substBoundedAExp (v : Var) (A : AExp) : AExp :=
     match A with 
-      | aexp_var v' => if (var_eq v v') then sval (varTo_nat v) else (aexp_var v')
+      | aexp_var v' => if (var_eq v v') then val (varTo_nat v) else (aexp_var v')
       | plus E E' => plus (substBoundedAExp v E) (substBoundedAExp v E')
       | div E E' => div (substBoundedAExp v E) (substBoundedAExp v E')
       | mod E E' => mod (substBoundedAExp v E) (substBoundedAExp v E')
@@ -110,7 +110,7 @@ Module LangML <: Formulas.
       | B' => B'
     end.
 
-  Eval compute in substBoundedBExp "a" (le (plus (aexp_var "a") (id "b")) (sval ($ "a"))).
+  Eval compute in substBoundedBExp "a" (le (plus (aexp_var "a") (id "b")) (val ($ "a"))).
 
   Fixpoint substBoundedStmt (v : Var) (St : Stmt) : Stmt := 
     match St with 
@@ -118,7 +118,6 @@ Module LangML <: Formulas.
       | ifelse B S1 S2 => ifelse (substBoundedBExp v B) (substBoundedStmt v S1) (substBoundedStmt v S2) 
       | while B S1 => while (substBoundedBExp v B) (substBoundedStmt v S1)
       | seq S1 S2 => seq (substBoundedStmt v S1) (substBoundedStmt v S2)
-      | stmt_var Ss => stmt_var Ss 
     end.
 
   Eval compute in substBoundedStmt "a" (assign "x" (plus (aexp_var "a") (id "b"))).
@@ -152,7 +151,7 @@ Module LangML <: Formulas.
     end.
 
   Eval compute in substBounded "a" T .
-  Check pattern ("a" ::= (sval (# 10)) , cons ("a" |-> (sval (# 12))) nil) .
+  Check pattern ("a" ::= (val (# 10)) , cons ("a" |-> (val (# 12))) nil) .
   Eval compute in substBounded "x" (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "x")) nil)) .
   Eval compute in substBounded "x" (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "x")) nil))) .  
   Eval compute in substBounded "y" (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil))) .
@@ -166,46 +165,169 @@ Module LangML <: Formulas.
                                       (ExistsML (cons "x" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))
                                       (ExistsML (cons "z" nil) (pattern ("a" ::= (aexp_var "x") , cons ("a" |-> (aexp_var "y")) nil)))) .
 
+  Eval compute in "a" ::= plus (id "a")  (val (c_nat 3)).
 
-  Parameter applyValToBExp : Valuation -> BExp -> _bool.
-  Parameter applyValToStmt : Valuation -> Stmt -> _stmt.
-  Parameter applyValToMem : Valuation -> Mem-> _map.
 
-  Fixpoint applyVal (rho : Valuation) (phi : MLFormula) : Model := 
-    match phi with 
-      | T => (_bool_to_m (c_bool true))
-      | pattern (St, M) => _cfg_to_m ((applyValToStmt rho St), (applyValToMem rho M))
-      | pred B => _bool_to_m (applyValToBExp rho B)
-      | notML F => match (applyVal rho F) with 
-                     | _bool_to_m B' =>  (_bool_to_m (_not  B'))
-                     | _ => (_bool_to_m (c_bool false))
-                   end
-      | AndML F F' => match (applyVal rho F), (applyVal rho F') with
-                        | _bool_to_m B1, _bool_to_m B2 => (_bool_to_m (_and B1 B2))
-                        | _, _ => (_bool_to_m (c_bool false))
+  Fixpoint applyValToAExp (rho : Valuation) (A : AExp) : option _nat :=
+    match A with
+      | aexp_var v => match (rho v) with 
+                        | to_m_nat n => Some n
+                        | _ => None
                       end
-      | ExistsML Vs F => match (applyVal rho (substBoundedVs Vs F)) with
-                           | _bool_to_m B' => (_bool_to_m (_exists (varsTo_nat Vs) B'))
-                           | _ => (_bool_to_m (c_bool false))
-                         end
-    end.
+      | id s => Some (s_nat s)
+      | val s => Some s
+      | plus A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with
+                        | Some a1, Some a2 => Some (_plus a1 a2)
+                        | _, _ => None
+                      end
+      | div A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with
+                        | Some a1, Some a2 => Some (_div a1 a2)
+                       | _, _ => None
+                     end
+      | mod A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with
+                        | Some a1, Some a2 => Some (_mod a1 a2)
+                       | _, _ => None
+                     end
+      end.
 
 
-  Fixpoint applyValToBExp (rho : Valuation) (B : BExp) : Model :=
+  Definition testVal (v : Var) : Model :=
+    if var_eq v "x" then to_m_nat (c_nat 2) else to_m_nat (c_nat 0).
+
+  Eval compute in applyValToAExp testVal ( plus (aexp_var "x")  (aexp_var "y")) .
+
+  Fixpoint applyValToBExp (rho : Valuation) (B:BExp) : option _bool := 
     match B with 
-      | bexp_var v => rho v
-      | not B' => not (
+      | bval B' => Some B'
+      | not B' => match (applyValToBExp rho B') with 
+                    | Some b => Some (_not b)
+                    | _ => None 
+                  end
+      | and B1 B2 => match applyValToBExp rho B1, applyValToBExp rho B2 with
+                       | Some b1, Some b2 => Some (_and b1 b2)
+                       | _, _ => None
+                     end
+      | le A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with 
+                      | Some a1, Some a2 => Some (_le a1 a2)
+                      | _, _ => None
+                    end
+      | leq A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with 
+                       | Some a1, Some a2 => Some (_leq a1 a2)
+                       | _, _ => None
+                     end
+      | eq A1 A2 => match applyValToAExp rho A1, applyValToAExp rho A2 with 
+                      | Some a1, Some a2 => Some (_eq a1 a2)
+                      | _, _ => None
+                    end
     end.
 
-  Fixpoint applyValToAExp (rho : Valuation) (A : AExp) : _nat :=
-    match A with 
-      | aexp_var v => rho v
-      | _ => (c_nat 0)
+  Eval compute in applyValToBExp testVal ( leq (aexp_var "x")  (aexp_var "y")) .
+
+  Fixpoint applyValToMemItem (rho : Valuation) (M : MapItem) : option _mapitem :=
+    match M with
+      | (X, A) => match (applyValToAExp rho A) with 
+                    | Some e =>  Some (X, e)
+                    | None => None 
+                  end
     end.
 
+  Fixpoint applyValToMem (rho : Valuation) (M : Mem) : option _map :=
+    match M with
+      | nil => Some nil
+      | x :: xs => match (applyValToMemItem rho x), (applyValToMem rho xs) with 
+                     | Some e, Some es => Some (e :: es)
+                     | _, _ => None 
+                   end
+    end.
+
+  Eval compute in applyValToMem testVal (( "y" |-> (aexp_var "x")  ) :: nil) .
+  Eval compute in applyValToMem testVal (( "y" |-> (aexp_var "z")  ) :: nil) .
+
+  Fixpoint applyValToStmt (rho : Valuation) (St :  Stmt) : option _stmt :=
+    match St with 
+      | assign s e => match applyValToAExp rho e with
+                        | Some v => Some (_assign s v)
+                        | _ => None
+                      end
+      | ifelse b s1 s2 => match applyValToBExp rho b, 
+                                applyValToStmt rho s1, 
+                                applyValToStmt rho s2 with
+                            | Some b', Some s1', Some s2' => 
+                              Some (_ifelse b' s1' s2')
+                            | _, _, _ => None
+                          end
+      | while b s => match applyValToBExp rho b, applyValToStmt rho s with
+                       | Some b', Some s' => Some (_while b' s')
+                       | _, _ => None
+                     end
+      | seq s1 s2 => match applyValToStmt rho s1, applyValToStmt rho s2 with
+                       | Some s1', Some s2' => Some (_seq s1' s2')
+                       | _, _ => None 
+                     end 
+    end.
+
+  
+ Eval compute in "i" ::= plus (id "i") (val (c_nat 1)) .
+  Eval compute in "s" ::= plus (id "s") (id "i") .
+  Eval compute in seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")). 
+  Eval compute in (leq (id "i") (id "n")).
+  Eval compute in while (leq (id "i") (id "n"))
+                        (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i"))).
+  Definition testVal' (v : Var) : Model :=
+    if var_eq v "n" then to_m_nat (c_nat 10) else to_m_nat (c_nat 0).
+
+  Eval compute in applyValToStmt testVal' 
+                           (while (leq (id "i") (id "n"))
+                        (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")))).
+
+  Eval compute in applyValToStmt testVal' 
+                           (while (leq (id "i") (aexp_var "n"))
+                        (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")))).
 
 
+  Fixpoint size (F : MLFormula) : nat := 
+    match F with
+      | notML F' => Datatypes.S (size F')
+      | AndML F1 F2 => (size F1) + (size F2)
+      | ExistsML Vs F' => Datatypes.S (size F')
+      | _ => 1
+    end.
+                     
+
+
+  Fixpoint applyVal (n : nat) (rho : Valuation) (phi : MLFormula) : option _f := 
+    match n with
+      | 0 => None
+      | S n' =>
+        match phi with 
+          | T => Some _f_t
+          | pattern (St, M) => 
+            match (applyValToStmt rho St), (applyValToMem rho M) with 
+              | Some s, Some m => Some (_f_cfg (s, m))
+              | _, _ => None 
+            end
+          | pred B => match (applyValToBExp rho B) with 
+                        | Some b => Some (_f_pred b)
+                        | _ => None
+                      end
+      | notML F => match (applyVal n' rho F) with
+                     | Some f => Some (_f_not f)
+                     | _ => None
+                   end
+      | AndML F F' => match (applyVal n' rho F), (applyVal n' rho F') with
+                        | Some f, Some f' => Some (_f_and f f')
+                        | _, _ => None 
+                      end
+          | ExistsML Vs F => 
+            let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
+            match (applyVal n' rho F') with 
+              | Some f => Some (_f_exists vs f)
+              | _ => None
+            end 
+        end
+    end.
+      
   Inductive SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
-  | satML : rho phi = gamma -> SatML gamma rho phi .
+  | satML : applyVal (size phi) rho phi = `Some gamma -> SatML gamma rho phi .
   
 End LangML.
