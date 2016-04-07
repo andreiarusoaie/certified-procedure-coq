@@ -71,7 +71,7 @@ Module LangML <: Formulas.
     | T : MLFormulaHelper
     | pattern: Cfg -> MLFormulaHelper 
     | pred: BExp -> MLFormulaHelper
-    | notML : MLFormulaHelper -> MLFormulaHelper 
+    | NotML : MLFormulaHelper -> MLFormulaHelper 
     | AndML : MLFormulaHelper -> MLFormulaHelper -> MLFormulaHelper 
     | ExistsML : list Var -> MLFormulaHelper -> MLFormulaHelper.
   Definition MLFormula : Type := MLFormulaHelper.
@@ -139,7 +139,7 @@ Module LangML <: Formulas.
       | T => T 
       | pattern (St, M) => pattern ((substBoundedStmt v St), (substBoundedMap v M))
       | pred B => pred (substBoundedBExp v B)
-      | notML F' => notML (substBounded v F') 
+      | NotML F' => NotML (substBounded v F') 
       | AndML F1 F2 => AndML (substBounded v F1) (substBounded v F2)
       | ExistsML Vs F' => if (in_dec string_dec  v Vs) then (ExistsML Vs F') else (ExistsML Vs (substBounded v F')) 
     end.
@@ -287,7 +287,7 @@ Module LangML <: Formulas.
 
   Fixpoint size (F : MLFormula) : nat := 
     match F with
-      | notML F' => Datatypes.S (size F')
+      | NotML F' => Datatypes.S (size F')
       | AndML F1 F2 => (size F1) + (size F2)
       | ExistsML Vs F' => Datatypes.S (size F')
       | _ => 1
@@ -310,7 +310,7 @@ Module LangML <: Formulas.
                         | Some b => Some (_f_pred b)
                         | _ => None
                       end
-      | notML F => match (applyVal n' rho F) with
+      | NotML F => match (applyVal n' rho F) with
                      | Some f => Some (_f_not f)
                      | _ => None
                    end
@@ -323,11 +323,36 @@ Module LangML <: Formulas.
             match (applyVal n' rho F') with 
               | Some f => Some (_f_exists vs f)
               | _ => None
-            end 
+            end
         end
     end.
-      
-  Inductive SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
-  | satML : applyVal (size phi) rho phi = `Some gamma -> SatML gamma rho phi .
-  
+
+  Fixpoint SatML (gamma : State)(rho : Valuation)(phi : MLFormula) : Prop :=
+    match phi with
+      | T => True
+      | pattern (St, M) => applyVal (size phi) rho phi = Some (_f_cfg gamma)
+      | pred B => applyValToBExp rho B = Some (c_bool true)
+      | NotML phi' => ~ SatML gamma rho phi'
+      | AndML phi1 phi2 => SatML gamma rho phi1 /\ SatML gamma rho phi2
+      | ExistsML V phi' =>  exists rho', (forall v, ~In v V -> rho v = rho' v) /\ SatML gamma rho' phi'
+  end.
+
+  Lemma SatML_Exists :
+    forall phi gamma rho V,
+      SatML gamma rho (ExistsML V phi) <->
+      exists rho',
+        (forall v, ~In v V -> rho v = rho' v) /\
+        SatML gamma rho' phi.
+  Proof.
+  intros; split; intros.
+  - simpl in H.
+    destruct H as (rho' & (H1 & H2)).
+    exists rho'.
+    split; trivial.
+  - simpl.
+    destruct H as (rho' & (H1 & H2)).
+    exists rho'.
+    split; trivial.
+  Qed.
+
 End LangML.
