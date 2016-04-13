@@ -376,5 +376,6 @@ Module LangML <: Formulas.
     fold SatML in H;
     trivial.
   Qed.
-    
+
+
 End LangML.
