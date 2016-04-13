@@ -355,4 +355,26 @@ Module LangML <: Formulas.
     split; trivial.
   Qed.
 
+  Lemma SatML_And :
+    forall gamma rho phi phi',
+      SatML gamma rho (AndML phi phi') <->
+      SatML gamma rho phi /\ SatML gamma rho phi'.
+  Proof.
+    intros;split;intros;split;intros;
+    unfold SatML in H;
+    fold SatML in H;
+    destruct H as (H & H');
+    trivial.
+  Qed.
+  
+  Lemma SatML_Not :
+    forall gamma rho phi,
+      SatML gamma rho (NotML phi) <-> ~ SatML gamma rho phi.
+  Proof.
+    intros; split; intros;
+    unfold SatML in H;
+    fold SatML in H;
+    trivial.
+  Qed.
+    
 End LangML.
