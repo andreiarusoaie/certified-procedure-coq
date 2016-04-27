@@ -267,7 +267,7 @@ Module LangML <: Formulas.
     end.
 
   
- Eval compute in "i" ::= plus (id "i") (val (c_nat 1)) .
+  Eval compute in "i" ::= plus (id "i") (val (c_nat 1)) .
   Eval compute in "s" ::= plus (id "s") (id "i") .
   Eval compute in seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")). 
   Eval compute in (leq (id "i") (id "n")).
@@ -376,6 +376,8 @@ Module LangML <: Formulas.
     fold SatML in H;
     trivial.
   Qed.
+
+  
 
 
 End LangML.
