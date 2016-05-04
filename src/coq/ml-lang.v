@@ -73,7 +73,8 @@ Module LangML <: Formulas.
     | pred: BExp -> MLFormulaHelper
     | NotML : MLFormulaHelper -> MLFormulaHelper 
     | AndML : MLFormulaHelper -> MLFormulaHelper -> MLFormulaHelper 
-    | ExistsML : list Var -> MLFormulaHelper -> MLFormulaHelper.
+    | ExistsML : list Var -> MLFormulaHelper -> MLFormulaHelper
+    | enc : MLFormulaHelper -> MLFormulaHelper .
   Definition MLFormula : Type := MLFormulaHelper.
 
   Eval compute in T .
@@ -142,6 +143,7 @@ Module LangML <: Formulas.
       | NotML F' => NotML (substBounded v F') 
       | AndML F1 F2 => AndML (substBounded v F1) (substBounded v F2)
       | ExistsML Vs F' => if (in_dec string_dec  v Vs) then (ExistsML Vs F') else (ExistsML Vs (substBounded v F')) 
+      | enc F' => enc (substBounded v F')
     end.
 
   Fixpoint substBoundedVs (vs : list Var) (F : MLFormula) : MLFormula := 
@@ -310,23 +312,26 @@ Module LangML <: Formulas.
                         | Some b => Some (_f_pred b)
                         | _ => None
                       end
-      | NotML F => match (applyVal n' rho F) with
-                     | Some f => Some (_f_not f)
-                     | _ => None
-                   end
-      | AndML F F' => match (applyVal n' rho F), (applyVal n' rho F') with
-                        | Some f, Some f' => Some (_f_and f f')
-                        | _, _ => None 
-                      end
-          | ExistsML Vs F => 
-            let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
-            match (applyVal n' rho F') with 
-              | Some f => Some (_f_exists vs f)
-              | _ => None
-            end
+          | NotML F => match (applyVal n' rho F) with
+                         | Some f => Some (_f_not f)
+                         | _ => None
+                       end
+          | AndML F F' => match (applyVal n' rho F), (applyVal n' rho F') with
+                            | Some f, Some f' => Some (_f_and f f')
+                            | _, _ => None 
+                          end
+          | ExistsML Vs F => let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
+                             match (applyVal n' rho F') with 
+                               | Some f => Some (_f_exists vs f)
+                               | _ => None
+                             end
+          | enc F => match (applyVal n' rho F) with
+                            | Some f => Some (_f_not f)
+                            | _ => None
+                          end
         end
     end.
-
+  
   Fixpoint SatML (gamma : State)(rho : Valuation)(phi : MLFormula) : Prop :=
     match phi with
       | T => True
@@ -335,6 +340,7 @@ Module LangML <: Formulas.
       | NotML phi' => ~ SatML gamma rho phi'
       | AndML phi1 phi2 => SatML gamma rho phi1 /\ SatML gamma rho phi2
       | ExistsML V phi' =>  exists rho', (forall v, ~In v V -> rho v = rho' v) /\ SatML gamma rho' phi'
+      | enc phi' => exists gamma', SatML gamma' rho phi'
   end.
 
   Lemma SatML_Exists :
@@ -377,7 +383,138 @@ Module LangML <: Formulas.
     trivial.
   Qed.
 
+
+  Fixpoint in_list (x : Var) (l : list Var) : bool :=
+    match l with
+      | nil => false 
+      | a :: l' => if (string_dec x a) 
+                   then true 
+                   else in_list x l' 
+   end.
+
+  Fixpoint append (l1 l2 : list Var) : list Var :=
+    match l1 with 
+      | nil => l2
+      | x :: l1' => if (in_list x l2) 
+                    then append l1' l2
+                    else append l1' (cons x l2)
+    end.
+
+  Fixpoint getFreeVarsAExp (a : AExp) : list Var :=
+    match a with
+      | aexp_var v => cons v nil
+      | plus a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | div a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | mod a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | _ => nil
+    end. 
+
+  Eval compute in  plus (aexp_var "i") (aexp_var "i") .
+  Eval compute in getFreeVarsAExp (plus (aexp_var "i") (aexp_var "i")) .
+  Eval compute in getFreeVarsAExp (plus (aexp_var "i") (aexp_var "j")) .
+  Eval compute in getFreeVarsAExp (plus (id "i") (aexp_var "j")) .
   
+
+
+  Fixpoint getFreeVarsBExp (b : BExp) : list Var := 
+    match b with
+      | not b' => getFreeVarsBExp b'
+      | and b1 b2 => append (getFreeVarsBExp b1) (getFreeVarsBExp b2)
+      | le a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | leq a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | eq a1 a2 => append (getFreeVarsAExp a1) (getFreeVarsAExp a2) 
+      | _ => nil
+    end.
+
+  Eval compute in getFreeVarsBExp (le (id "i") (aexp_var "j")) .
+
+  Fixpoint getFreeVarsStmt (s : Stmt) : list Var :=
+    match s with
+      | assign s a => getFreeVarsAExp a 
+      | ifelse b s1 s2 => append (getFreeVarsBExp b)
+                                 (append (getFreeVarsStmt s1)
+                                         (getFreeVarsStmt s2))
+      | while b s' => append (getFreeVarsBExp b) (getFreeVarsStmt s') 
+      | seq s1 s2 => append (getFreeVarsStmt s1) (getFreeVarsStmt s2)
+    end.
+  
+  Eval compute in  (while (leq (id "i") (aexp_var "n"))
+                          (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")))).
+  Eval compute in  getFreeVarsStmt ((while (leq (id "i") (aexp_var "n"))
+                          (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i"))))).
+  Eval compute in  getFreeVarsStmt ((while (leq (id "i") (aexp_var "n"))
+                                           (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (aexp_var "i"))))).
+
+  Fixpoint getFreeVarsMapItem (mi : MapItem) : list Var :=
+    match mi with
+      | (s , a) => getFreeVarsAExp a 
+    end.
+  
+  Eval compute in ("i" |-> (aexp_var "n")) .
+  Eval compute in getFreeVarsMapItem ("i" |-> (aexp_var "n")) .
+
+  Fixpoint getFreeVarsMem (m : Mem) : list Var := 
+    match m with
+      | nil => nil
+      | mi :: m' => append (getFreeVarsMapItem mi) (getFreeVarsMem m') 
+    end.
+
+  Eval compute in (cons ("i" |-> (aexp_var "n")) 
+                        (cons ("i" |-> (aexp_var "n"))(cons ("i" |-> (aexp_var "n")) nil))).
+  Eval compute in getFreeVarsMem 
+                    (cons ("i" |-> (aexp_var "n")) 
+                        (cons ("i" |-> (aexp_var "n"))(cons ("i" |-> (aexp_var "n")) nil))).
+
+  Fixpoint getFreeVarsCfg (c : Cfg) : list Var :=
+    match c with
+      | (s, m) => append (getFreeVarsStmt s) (getFreeVarsMem m) 
+    end.
+  
+  Eval compute in (((while (leq (id "i") (aexp_var "n"))
+                           (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (aexp_var "i")))))  ,
+                   (cons ("i" |-> (aexp_var "n")) 
+                         (cons ("i" |-> (aexp_var "n"))(cons ("i" |-> (aexp_var "n")) nil))))  .
+  Eval compute in getFreeVarsCfg (((while (leq (id "i") (aexp_var "n"))
+                           (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (aexp_var "i")))))  ,
+                   (cons ("i" |-> (aexp_var "n")) 
+                         (cons ("i" |-> (aexp_var "n"))(cons ("i" |-> (aexp_var "i")) nil))))  .
+
+
+  Fixpoint list_diff (l1 l2 : list Var) : list Var :=
+    match l2 with
+      | nil => l1
+      | x :: l2' => if (in_list x l1) 
+                    then list_diff (remove string_dec x l1) l2'
+                    else list_diff l1 l2'
+    end.
+
+  Fixpoint getFreeVars (phi : MLFormula) : list Var :=
+    match phi with
+      | T => nil 
+      | pattern pi => getFreeVarsCfg pi
+      | pred b => getFreeVarsBExp b 
+      | NotML phi' => getFreeVars phi'
+      | AndML phi1 phi2 => append (getFreeVars phi1) (getFreeVars phi2)
+      | ExistsML vs phi' => list_diff (getFreeVars phi') vs
+      | enc phi' => getFreeVars phi'
+    end.
+
+  Definition encoding (F : MLFormula) : MLFormula := enc F.
+
+  Lemma Proposition1 :
+    forall gamma' phi rho,
+      SatML gamma' rho (encoding phi) <->
+      exists gamma, SatML gamma rho phi.
+  Proof.
+    intros; split; intros.
+    - simpl in *.
+      destruct H as (gamma'' & H).
+      exists gamma''. trivial.
+    - simpl.
+      destruct H as (gamma'' & H).
+      exists gamma''. trivial.
+  Qed.
+
 
 
 End LangML.
