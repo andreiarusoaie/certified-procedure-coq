@@ -320,15 +320,19 @@ Module LangML <: Formulas.
                             | Some f, Some f' => Some (_f_and f f')
                             | _, _ => None 
                           end
-          | ExistsML Vs F => let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
-                             match (applyVal n' rho F') with 
-                               | Some f => Some (_f_exists vs f)
-                               | _ => None
-                             end
+          | ExistsML Vs F => 
+            match Vs with 
+              | nil => applyVal n' rho F
+              | _ => let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
+                     match (applyVal n' rho F') with 
+                       | Some f => Some (_f_exists vs f)
+                       | _ => None
+                     end
+            end
           | enc F => match (applyVal n' rho F) with
-                            | Some f => Some (_f_not f)
-                            | _ => None
-                          end
+                       | Some f => Some (_f_not f)
+                       | _ => None
+                     end
         end
     end.
   
@@ -515,6 +519,332 @@ Module LangML <: Formulas.
       exists gamma''. trivial.
   Qed.
 
+  (* Modify valuation on set *)
+  Definition modify_val_on_var(rho rho' : Valuation) (x : Var) : Valuation :=
+    fun z => if (var_eq x z) then rho' x else rho z .
+  Fixpoint modify_val_on_set(rho rho' : Valuation) (X : list Var) : Valuation :=
+    match X with
+      | nil => rho
+      | cons x Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x
+    end.
 
+
+  (* helper *)
+  Lemma modify_in :
+    forall V x rho rho',
+      In x V -> (modify_val_on_set rho rho' V) x = rho' x.
+  Proof.
+    induction V; intros.
+    - contradiction.
+    - simpl in *.
+      destruct H as [H | H].
+      + subst a.
+        unfold modify_val_on_var.
+        rewrite var_eq_refl.
+        reflexivity.
+      + unfold modify_val_on_var.
+        case_eq (var_eq a x); intros H'.
+        * apply var_eq_true in H'.
+          subst a.
+          reflexivity.
+        * apply IHV; trivial.
+  Qed.
+    
+
+  (* helper *)
+  Lemma modify_not_in :
+    forall V x rho rho',
+      ~ In x V -> (modify_val_on_set rho rho' V) x = rho x.
+  Proof.
+    induction V; intros.
+    - simpl.
+      reflexivity.
+    - simpl in *.
+      apply not_or_and in H.
+      destruct H as (H & H').
+      unfold modify_val_on_var.
+      case_eq (var_eq a x); intros H''.
+      + apply var_eq_true in H''.
+        subst a.
+        contradict H.
+        reflexivity.
+      + apply IHV; trivial.
+  Qed.
+
+  Lemma no_vars : 
+    forall gamma rho phi,
+      (exists rho', SatML gamma rho' phi) ->
+      (getFreeVars phi = nil) ->
+      SatML gamma rho phi.
+  Admitted.
+
+
+  Lemma incl_nil :
+    forall l : list Var,
+      incl l nil -> l = nil.
+  Proof.
+    induction l; trivial; intros.
+    assert (H0 : In a (a :: l)); simpl; try left; trivial.
+    unfold incl in H.
+    assert (H1 : In a nil); try apply H; trivial.
+    contradict H1.
+  Qed.
+
+
+
+
+
+  Lemma apply_val_aexp : 
+    forall V rho rho' a,
+      incl (getFreeVarsAExp a) V ->
+      applyValToAExp (modify_val_on_set rho rho' V) a = applyValToAExp rho' a.
+  Admitted.
+
+
+  Lemma apply_val_stmt : 
+    forall V rho rho' s,
+      incl (getFreeVarsStmt s) V ->
+      applyValToStmt (modify_val_on_set rho rho' V) s = applyValToStmt rho' s.
+  Admitted.
+  
+  Lemma apply_val_mem : 
+    forall V rho rho' s,
+      incl (getFreeVarsMem s) V ->
+      applyValToMem (modify_val_on_set rho rho' V) s = applyValToMem rho' s.
+  Admitted.
+
+
+  Lemma apply_val_bexp : 
+    forall V rho rho' s,
+      incl (getFreeVarsBExp s) V ->
+      applyValToBExp (modify_val_on_set rho rho' V) s = applyValToBExp rho' s.
+  Admitted.
+  
+
+  Lemma append_incl_r : 
+    forall A B X,
+      incl (append A B) X -> incl B X.
+  Proof.
+    induction A; intros; simpl in *; trivial.
+    case_eq (in_list a B); intros; rewrite H0 in H.
+    - apply IHA; trivial.
+    - apply IHA in H.
+      unfold incl; intros a' Ha'.
+      unfold incl in H.
+      apply H.
+      simpl; right; trivial.
+  Qed.
+  
+  Lemma in_list_In : 
+    forall l a,
+      in_list a l = true -> In a l.
+  Proof.
+    induction l; intros.
+    - simpl in H.
+      inversion H.
+    - simpl in *.
+      case_eq (string_dec a0 a); intros; rewrite H0 in H.
+      + left; subst a; reflexivity.
+      + right. apply IHl; trivial.
+  Qed.
+  
+  Lemma append_incl_l : 
+    forall A B X,
+      incl (append A B) X -> incl A X.
+  Proof.
+    induction A; intros; simpl in *.
+    - unfold incl; intros. 
+      contradict H0.
+    - case_eq (in_list a B); intros; rewrite H0 in H.
+      + unfold incl; intros a' Ha'.
+        assert (H' : (incl (append A B) X)); trivial.
+        apply IHA in H'.
+        unfold incl in H'.
+        simpl in Ha'.
+        destruct Ha'.
+        * apply append_incl_r in H.
+          unfold incl in H.
+          apply H.
+          apply in_list_In; subst; trivial.
+        * apply H'; trivial.
+      + unfold incl; intros a' Ha'.
+        assert (H' : incl (append A (a :: B)) X); trivial.
+        apply append_incl_r in H'.
+        simpl in Ha'.
+        destruct Ha'.
+        * unfold incl in H'.
+          apply H'.
+          simpl; left; trivial.
+        * apply IHA in H.
+          unfold incl in H.
+          apply H; trivial.
+  Qed.
+
+
+  Lemma applyExists : 
+    forall l phi V n rho rho',
+      incl (getFreeVars (ExistsML l phi)) V ->
+      applyVal (S n) (modify_val_on_set rho rho' V) (substBoundedVs l phi) = 
+      applyVal (S n) rho' (substBoundedVs l phi).
+  Proof.
+        admit.
+  Qed.
+
+
+  Lemma subst_nil :
+    forall phi,
+      substBoundedVs nil phi = phi.
+  Proof.
+    simpl. trivial.
+  Qed.
+
+
+  Lemma apply_val : 
+    forall V rho rho' phi n,
+      incl (getFreeVars phi) V ->
+      applyVal n (modify_val_on_set rho rho' V) phi = applyVal n rho' phi.
+  Proof.
+    intros.
+    case n; trivial.
+    induction phi; simpl; trivial.
+    - destruct c.
+      rewrite apply_val_stmt.
+      case (applyValToStmt rho' s); trivial.
+      intros.
+      rewrite apply_val_mem.
+      case (applyValToMem rho' m); trivial.
+      admit.
+      admit.
+    - rewrite apply_val_bexp.
+      case (applyValToBExp rho' b); trivial.
+      admit.
+    - intros n'.
+      case n'; trivial; intros n''.
+      rewrite IHphi.
+      case (applyVal (size phi) rho' phi); trivial.
+      admit.
+    - intros n'; case n'; trivial; intros n''.
+      rewrite IHphi1.
+      case (applyVal (S n'') rho' phi1); intros; trivial.
+      rewrite IHphi2.
+      case (applyVal (S n'') rho' phi2); intros; trivial.
+      admit.
+      admit.
+    - intros n'; case n'; trivial; intros n''.
+      
+      Lemma val_subst : 
+        forall phi l rho n,
+          applyVal n rho (ExistsML l phi) = applyVal n rho (substBoundedVs l phi).
+      Proof.        
+        induction phi; intros.
+        - case n; simpl; trivial.
+          
+        - simpl.
+          case l.
+          + simpl.
+            case n.
+            simpl.
+          
+        
+        
+        induction l; intros.
+        - unfold substBoundedVs.
+          
+          Lemma applyVal_exists_nil : 
+            forall phi n rho,
+              applyVal (S (S n)) rho (ExistsML nil phi) = applyVal (S (S n)) rho phi.
+          Proof.
+            induction phi; intros.
+            - case_eq n;trivial.
+            - simpl; destruct c; trivial.
+            - simpl; trivial.
+            - simpl. 
+              case_eq n; intros.
+              + simpl.
+              
+              
+            
+
+
+
+      { 
+        induction l; intros.
+        - induction phi; trivial.
+          + destruct c.
+            simpl.
+            rewrite apply_val_stmt.
+            case (applyValToStmt rho' s).
+            rewrite apply_val_mem; intros.
+            case (applyValToMem rho' m); trivial.
+            simpl in H.
+            apply append_incl_r with (A := (getFreeVarsStmt s)); trivial.
+            trivial.
+            simpl in H.
+            apply append_incl_l with (B := (getFreeVarsMem m)); trivial.
+          + simpl. rewrite apply_val_bexp; trivial.
+          + rewrite subst_nil in *.
+            rewrite IHphi; trivial.
+          + rewrite subst_nil in *.
+            rewrite IHphi; trivial.
+          + rewrite subst_nil in *.
+            rewrite IHphi; trivial.
+          + rewrite subst_nil in *.
+            rewrite IHphi; trivial.
+        - unfold substBoundedVs.
+          fold substBoundedVs.
+
+assert (H' :  applyVal (S n'') (modify_val_on_set rho rho' V) (substBoundedVs (a :: l) phi) = 
+                 applyVal (S n'') rho' (substBoundedVs (a :: l) phi)).
+          + induction phi.
+            * 
+(*      rewrite local_subst.
+      rewrite local_subst.
+      rewrite IHphi; trivial.
+      admit.*)
+
+
+
+      rewrite applyExists; trivial.
+    - intros n'; case n'; trivial; intros n''.
+      rewrite IHphi.
+      case (applyVal (S n'') rho' phi); trivial.
+      admit.
+  Qed.
+        
+        
+
+  Lemma modify_Sat1 :
+    forall phi V gamma rho rho',
+      SatML gamma rho' phi ->
+      incl (getFreeVars phi) V ->
+      SatML gamma (modify_val_on_set rho rho' V) phi.
+  Proof.
+    intros.
+    unfold SatML.
+    (* generalize phi, gamma, rho, rho'. *)
+    induction V.
+    - simpl.
+      assert (H1 : (getFreeVars phi) = nil).
+      + induction (getFreeVars phi); trivial.
+        unfold incl in H0.
+        assert (H2: In a (a :: l)).
+        * simpl. left. reflexivity.
+        * assert (H3 : In a nil).
+          apply H0; trivial.
+          contradiction H3.
+      + apply no_vars; trivial.
+        exists rho'; trivial.
+    - simpl.
+      Lemma m1 : 
+        forall gamma rho rho' a phi,
+          In a (getFreeVars phi) ->
+          SatML gamma rho phi -> 
+          SatML gamma (modify_val_on_var rho rho' a) phi
+          
+
+      unfold modify_val_on_var.
+      assert (H' : (In a (getFreeVars phi)) \/ ~ (In a (getFreeVars phi))); try apply classic; trivial.
+      destruct H'.
+      +  
 
 End LangML.

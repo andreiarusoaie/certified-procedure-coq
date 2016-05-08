@@ -73,8 +73,8 @@ Module Type Formulas.
     fun z => if (var_eq x z) then rho' x else rho z .
   Fixpoint modify_val_on_set(rho rho' : Valuation) (X : list Var) : Valuation :=
     match X with
-      | [] => rho
-      | x :: Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x
+      | nil => rho
+      | cons x Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x
     end.
 
   (* helper *)
