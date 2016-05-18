@@ -89,7 +89,11 @@ Module LangML <: Formulas.
       | v :: vs => (varTo_nat v) :: (varsTo_nat vs)
     end.
 
+  Definition varTo_nat_val (v : Var) : Model :=
+    to_m_nat (varTo_nat v).
+
   Eval compute in varsTo_nat (cons "a" nil).
+  Eval compute in varTo_nat_val "a".
 
   Fixpoint substBoundedAExp (v : Var) (A : AExp) : AExp :=
     match A with 
@@ -287,59 +291,108 @@ Module LangML <: Formulas.
                         (seq ("i" ::= plus (id "i") (val (c_nat 1))) ("s" ::= plus (id "s") (id "i")))).
 
 
-  Fixpoint size (F : MLFormula) : nat := 
-    match F with
-      | NotML F' => Datatypes.S (size F')
-      | AndML F1 F2 => (size F1) + (size F2)
-      | ExistsML Vs F' => Datatypes.S (size F')
-      | _ => 1
-    end.
+
+
+
+
                      
 
 
-  Fixpoint applyVal (n : nat) (rho : Valuation) (phi : MLFormula) : option _f := 
-    match n with
-      | 0 => None
-      | S n' =>
-        match phi with 
-          | T => Some _f_t
-          | pattern (St, M) => 
-            match (applyValToStmt rho St), (applyValToMem rho M) with 
-              | Some s, Some m => Some (_f_cfg (s, m))
-              | _, _ => None 
-            end
-          | pred B => match (applyValToBExp rho B) with 
-                        | Some b => Some (_f_pred b)
-                        | _ => None
-                      end
-          | NotML F => match (applyVal n' rho F) with
-                         | Some f => Some (_f_not f)
-                         | _ => None
-                       end
-          | AndML F F' => match (applyVal n' rho F), (applyVal n' rho F') with
-                            | Some f, Some f' => Some (_f_and f f')
-                            | _, _ => None 
-                          end
-          | ExistsML Vs F => 
-            match Vs with 
-              | nil => applyVal n' rho F
-              | _ => let (F', vs) := ((substBoundedVs Vs F), (varsTo_nat Vs)) in 
-                     match (applyVal n' rho F') with 
-                       | Some f => Some (_f_exists vs f)
-                       | _ => None
-                     end
-            end
-          | enc F => match (applyVal n' rho F) with
-                       | Some f => Some (_f_not f)
-                       | _ => None
-                     end
-        end
+  (* Modify valuation on set *)
+  Definition modify_val_on_var(rho rho' : Valuation) (x : Var) : Valuation :=
+    fun z => if (var_eq x z) then rho' x else rho z .
+  Fixpoint modify_val_on_set(rho rho' : Valuation) (X : list Var) : Valuation :=
+    match X with
+      | nil => rho
+      | cons x Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x
     end.
+
+
+  (* helper *)
+  Lemma modify_in :
+    forall V x rho rho',
+      In x V -> (modify_val_on_set rho rho' V) x = rho' x.
+  Proof.
+    induction V; intros.
+    - contradiction.
+    - simpl in *.
+      destruct H as [H | H].
+      + subst a.
+        unfold modify_val_on_var.
+        rewrite var_eq_refl.
+        reflexivity.
+      + unfold modify_val_on_var.
+        case_eq (var_eq a x); intros H'.
+        * apply var_eq_true in H'.
+          subst a.
+          reflexivity.
+        * apply IHV; trivial.
+  Qed.
+    
+
+  (* helper *)
+  Lemma modify_not_in :
+    forall V x rho rho',
+      ~ In x V -> (modify_val_on_set rho rho' V) x = rho x.
+  Proof.
+    induction V; intros.
+    - simpl.
+      reflexivity.
+    - simpl in *.
+      apply not_or_and in H.
+      destruct H as (H & H').
+      unfold modify_val_on_var.
+      case_eq (var_eq a x); intros H''.
+      + apply var_eq_true in H''.
+        subst a.
+        contradict H.
+        reflexivity.
+      + apply IHV; trivial.
+  Qed.
+
+
+
+
+  Fixpoint applyVal (rho : Valuation) (phi : MLFormula) : option _f := 
+    match phi with 
+      | T => Some _f_t
+      | pattern (St, M) => 
+        match (applyValToStmt rho St), (applyValToMem rho M) with 
+          | Some s, Some m => Some (_f_cfg (s, m))
+          | _, _ => None 
+        end
+      | pred B => match (applyValToBExp rho B) with 
+                    | Some b => Some (_f_pred b)
+                    | _ => None
+                  end
+      | NotML F => match (applyVal rho F) with
+                     | Some f => Some (_f_not f)
+                     | _ => None
+                   end
+      | AndML F F' => match (applyVal rho F), (applyVal rho F') with
+                        | Some f, Some f' => Some (_f_and f f')
+                        | _, _ => None 
+                      end
+      | ExistsML Vs F => match (applyVal (modify_val_on_set rho varTo_nat_val Vs) F) with
+                           | Some f => Some (_f_exists (varsTo_nat Vs) f)
+                           | _ => None
+                         end
+      | enc F => match (applyVal rho F) with
+                   | Some f => Some (_f_not f)
+                   | _ => None
+                 end
+    end.
+
+
+
+
+
+
   
   Fixpoint SatML (gamma : State)(rho : Valuation)(phi : MLFormula) : Prop :=
     match phi with
       | T => True
-      | pattern (St, M) => applyVal (size phi) rho phi = Some (_f_cfg gamma)
+      | pattern (St, M) => applyVal rho phi = Some (_f_cfg gamma)
       | pred B => applyValToBExp rho B = Some (c_bool true)
       | NotML phi' => ~ SatML gamma rho phi'
       | AndML phi1 phi2 => SatML gamma rho phi1 /\ SatML gamma rho phi2
@@ -503,6 +556,14 @@ Module LangML <: Formulas.
       | enc phi' => getFreeVars phi'
     end.
 
+
+
+
+
+
+
+
+  (* encoding and Proposition 1*)
   Definition encoding (F : MLFormula) : MLFormula := enc F.
 
   Lemma Proposition1 :
@@ -510,66 +571,20 @@ Module LangML <: Formulas.
       SatML gamma' rho (encoding phi) <->
       exists gamma, SatML gamma rho phi.
   Proof.
-    intros; split; intros.
-    - simpl in *.
-      destruct H as (gamma'' & H).
-      exists gamma''. trivial.
-    - simpl.
-      destruct H as (gamma'' & H).
-      exists gamma''. trivial.
+    intros; split; intros; simpl in *;
+      destruct H as (gamma'' & H);
+      exists gamma''; trivial.
   Qed.
 
-  (* Modify valuation on set *)
-  Definition modify_val_on_var(rho rho' : Valuation) (x : Var) : Valuation :=
-    fun z => if (var_eq x z) then rho' x else rho z .
-  Fixpoint modify_val_on_set(rho rho' : Valuation) (X : list Var) : Valuation :=
-    match X with
-      | nil => rho
-      | cons x Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x
-    end.
 
 
-  (* helper *)
-  Lemma modify_in :
-    forall V x rho rho',
-      In x V -> (modify_val_on_set rho rho' V) x = rho' x.
-  Proof.
-    induction V; intros.
-    - contradiction.
-    - simpl in *.
-      destruct H as [H | H].
-      + subst a.
-        unfold modify_val_on_var.
-        rewrite var_eq_refl.
-        reflexivity.
-      + unfold modify_val_on_var.
-        case_eq (var_eq a x); intros H'.
-        * apply var_eq_true in H'.
-          subst a.
-          reflexivity.
-        * apply IHV; trivial.
-  Qed.
-    
 
-  (* helper *)
-  Lemma modify_not_in :
-    forall V x rho rho',
-      ~ In x V -> (modify_val_on_set rho rho' V) x = rho x.
-  Proof.
-    induction V; intros.
-    - simpl.
-      reflexivity.
-    - simpl in *.
-      apply not_or_and in H.
-      destruct H as (H & H').
-      unfold modify_val_on_var.
-      case_eq (var_eq a x); intros H''.
-      + apply var_eq_true in H''.
-        subst a.
-        contradict H.
-        reflexivity.
-      + apply IHV; trivial.
-  Qed.
+
+
+
+
+
+
 
   Lemma no_vars : 
     forall gamma rho phi,
@@ -595,9 +610,14 @@ Module LangML <: Formulas.
 
 
   Lemma apply_val_aexp : 
-    forall V rho rho' a,
+    forall a V rho rho',
       incl (getFreeVarsAExp a) V ->
       applyValToAExp (modify_val_on_set rho rho' V) a = applyValToAExp rho' a.
+  Proof.
+    induction a; intros; simpl; trivial.
+    - rewrite IHa1, IHa2; trivial.
+      + 
+
   Admitted.
 
 
@@ -682,10 +702,10 @@ Module LangML <: Formulas.
 
 
   Lemma applyExists : 
-    forall l phi V n rho rho',
+    forall l phi V rho rho',
       incl (getFreeVars (ExistsML l phi)) V ->
-      applyVal (S n) (modify_val_on_set rho rho' V) (substBoundedVs l phi) = 
-      applyVal (S n) rho' (substBoundedVs l phi).
+      applyVal (modify_val_on_set rho rho' V) (substBoundedVs l phi) = 
+      applyVal rho' (substBoundedVs l phi).
   Proof.
         admit.
   Qed.
@@ -698,15 +718,22 @@ Module LangML <: Formulas.
     simpl. trivial.
   Qed.
 
+  Lemma modify_reduction : 
+    forall phi rho rho' rho0 V,
+      applyVal rho phi = applyVal rho' phi ->
+      applyVal (modify_val_on_set rho rho0 V) phi = 
+      applyVal (modify_val_on_set rho' rho0 V) phi.
+  Proof.
+    admit.
+  Qed.
+  
 
   Lemma apply_val : 
-    forall V rho rho' phi n,
+    forall phi V rho rho',
       incl (getFreeVars phi) V ->
-      applyVal n (modify_val_on_set rho rho' V) phi = applyVal n rho' phi.
+      applyVal (modify_val_on_set rho rho' V) phi = applyVal rho' phi.
   Proof.
-    intros.
-    case n; trivial.
-    induction phi; simpl; trivial.
+    induction phi; intros; simpl; trivial.
     - destruct c.
       rewrite apply_val_stmt.
       case (applyValToStmt rho' s); trivial.
@@ -718,100 +745,20 @@ Module LangML <: Formulas.
     - rewrite apply_val_bexp.
       case (applyValToBExp rho' b); trivial.
       admit.
-    - intros n'.
-      case n'; trivial; intros n''.
-      rewrite IHphi.
-      case (applyVal (size phi) rho' phi); trivial.
+    - rewrite IHphi.
+      case (applyVal rho' phi); trivial.
       admit.
-    - intros n'; case n'; trivial; intros n''.
-      rewrite IHphi1.
-      case (applyVal (S n'') rho' phi1); intros; trivial.
+    - rewrite IHphi1.
+      case (applyVal rho' phi1); intros; trivial.
       rewrite IHphi2.
-      case (applyVal (S n'') rho' phi2); intros; trivial.
+      case (applyVal rho' phi2); intros; trivial.
       admit.
       admit.
-    - intros n'; case n'; trivial; intros n''.
-      
-      Lemma val_subst : 
-        forall phi l rho n,
-          applyVal n rho (ExistsML l phi) = applyVal n rho (substBoundedVs l phi).
-      Proof.        
-        induction phi; intros.
-        - case n; simpl; trivial.
-          
-        - simpl.
-          case l.
-          + simpl.
-            case n.
-            simpl.
-          
-        
-        
-        induction l; intros.
-        - unfold substBoundedVs.
-          
-          Lemma applyVal_exists_nil : 
-            forall phi n rho,
-              applyVal (S (S n)) rho (ExistsML nil phi) = applyVal (S (S n)) rho phi.
-          Proof.
-            induction phi; intros.
-            - case_eq n;trivial.
-            - simpl; destruct c; trivial.
-            - simpl; trivial.
-            - simpl. 
-              case_eq n; intros.
-              + simpl.
-              
-              
-            
-
-
-
-      { 
-        induction l; intros.
-        - induction phi; trivial.
-          + destruct c.
-            simpl.
-            rewrite apply_val_stmt.
-            case (applyValToStmt rho' s).
-            rewrite apply_val_mem; intros.
-            case (applyValToMem rho' m); trivial.
-            simpl in H.
-            apply append_incl_r with (A := (getFreeVarsStmt s)); trivial.
-            trivial.
-            simpl in H.
-            apply append_incl_l with (B := (getFreeVarsMem m)); trivial.
-          + simpl. rewrite apply_val_bexp; trivial.
-          + rewrite subst_nil in *.
-            rewrite IHphi; trivial.
-          + rewrite subst_nil in *.
-            rewrite IHphi; trivial.
-          + rewrite subst_nil in *.
-            rewrite IHphi; trivial.
-          + rewrite subst_nil in *.
-            rewrite IHphi; trivial.
-        - unfold substBoundedVs.
-          fold substBoundedVs.
-
-assert (H' :  applyVal (S n'') (modify_val_on_set rho rho' V) (substBoundedVs (a :: l) phi) = 
-                 applyVal (S n'') rho' (substBoundedVs (a :: l) phi)).
-          + induction phi.
-            * 
-(*      rewrite local_subst.
-      rewrite local_subst.
-      rewrite IHphi; trivial.
-      admit.*)
-
-
-
-      rewrite applyExists; trivial.
-    - intros n'; case n'; trivial; intros n''.
-      rewrite IHphi.
-      case (applyVal (S n'') rho' phi); trivial.
+    - simpl in H.
       admit.
+    - rewrite IHphi; trivial.
   Qed.
-        
-        
+
 
   Lemma modify_Sat1 :
     forall phi V gamma rho rho',
