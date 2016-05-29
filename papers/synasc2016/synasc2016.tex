@@ -49,7 +49,8 @@
 % The testflow support page is at:
 % http://www.michaelshell.org/tex/testflow/
 
-
+\newif\ifcomment
+\commenttrue
 
 \documentclass[conference]{IEEEtran}
 % Some Computer Society conferences also require the compsoc mode option,
@@ -312,6 +313,180 @@
 \hyphenation{op-tical net-works semi-conduc-tor}
 
 
+
+
+\usepackage[tight,style=math]{k}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{tikz}
+%\usepackage{framed}
+%\usepackage{color,soul}
+
+
+
+\newenvironment{todo}{\medskip\hrule\smallskip\noindent}{\smallskip\hrule\medskip}
+\ifcomment
+\newcommand{\dl}[1]{\begin{todo}\textcolor{blue}{Dorel:}\\ \color{red}{#1}\color{black}\end{todo}}
+\newcommand{\vr}[1]{\begin{todo}\textcolor{blue}{Vlad:}\\ \color{orange}{#1}\color{black}\end{todo}}
+\renewcommand{\aa}[1]{\begin{todo}\textcolor{OliveGreen}{Andrei:}\\ \color{OliveGreen}{#1}\color{black}\end{todo}}
+\newcommand{\dn}[1]{\begin{todo}\textcolor{Blue}{David:}\\ \color{ForestGreen}{#1}\color{black}\end{todo}}
+\else
+\newcommand{\dl}[1]{}
+\newcommand{\vr}[1]{}
+\renewcommand{\aa}[1]{}
+\newcommand{\dn}[1]{}
+\fi
+
+% Section commands %
+
+\newcommand{\Cfg}{\mathit{Cfg}}
+
+
+
+\newcommand{\Bool}{\mathit{Bool}}
+\newcommand{\M}{\mathit{M}}
+\newcommand{\true}{\mathit{true}}
+\newcommand{\True}{\top}
+\newcommand{\false}{\mathit{false}}
+\newcommand{\eqbydef}{\triangleq}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\A}{\mathcal{A}}
+\renewcommand{\P}{\mathcal{P}}
+\renewcommand{\S}{\mathcal{S}}
+%\newcommand{\G}{\mathit{G}}
+\newcommand{\T}{M}
+\renewcommand{\L}{\mathcal{L}}
+\newcommand{\C}{\mathcal{C}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\IMP}{\textsc{imp}\xspace}
+\newcommand{\Cink}{\textsc{Cink}\xspace}
+\newcommand{\sat}{\mathtt{sat}}
+\newcommand{\unsat}{\mathtt{unsat}}
+\newcommand{\tran}[2]{\Ra^{\!#1}_{\!#2}}
+\newcommand{\ltran}[3]{\stackrel{#1}{\Longrightarrow}\stackrel{#2}{_{#3}}}
+\newcommand{\stran}[1]{\Rightarrow^{\mathfrak{s}}_{\tiny #1}}
+\newcommand{\sem}[1]{[\![#1]\!]}
+
+
+\newcommand{\failure}{\mathtt{failure}}
+\newcommand{\success}{\mathtt{success}}
+\newcommand{\Ra}{\Rightarrow}
+\newcommand{\Var}{\mathit{Var}}
+\newcommand{\FreeVars}{\mathit{\textsc{FV}}}
+\renewcommand{\implies}{\rightarrow}
+
+\newcommand{\ML}{\textsc{ml}\xspace}
+\newcommand{\FOL}{\textsc{fol}\xspace}
+\newcommand{\RWL}{\textsc{rwl}\xspace}
+\newcommand{\RL}{\textsc{rl}\xspace}
+\newcommand{\APRL}{\textsc{aprl}\xspace}
+
+\newcommand{\rrule}[2]{{#1} \Ra{#2}}
+\newcommand{\rarule}[2]{{#1} \Ra{#2}}
+
+\newcommand{\modelsml}{\models_\ML}
+\newcommand{\modelsrl}{\models_\RL}
+\newcommand{\modelsfol}{\models_\FOL}
+
+\newcommand{\coq}[1]{{\small \textit{#1}}}
+\newcommand{\coqtt}[1]{{\small \texttt{#1}}}
+
+\newcommand{\cnot}{\pmb{\lnot}}
+\newcommand{\cand}{\pmb{\land}}
+\newcommand{\cor}{\pmb{\lor}}
+\newcommand{\cexists}{\pmb{\exists}}
+\newcommand{\cforall}{\pmb{\forall}}
+\newcommand{\cimplies}{\pmb{\rightarrow}}
+\newcommand{\cequiv}{\pmb{\leftrightarrow}}
+
+
+\newcommand{\extend}[3]{\varrho({#1},{#2},{#3})}
+\newcommand{\wf}[1]{\mathit{wf}({#1})}
+
+
+\newtheorem{assumption}{Assumption}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{example}{Example}
+
+\definecolor{light-gray}{gray}{0.35}
+\newenvironment{hlt}{\color{light-gray}}{}
+\newcommand{\hl}[1]{\hlt{#1}}
+
+
+
+
+% Custom maketitle %
+%	\makeatletter
+%	\def \@ivtitleauthors#1#2#3#4{%
+%	  \if \@andp{\@emptyargp{#2}}{\@emptyargp{#3}}%
+%	    \noindent \@setauthor{40pc}{#1}{\@false}\par
+%	  \else\if \@emptyargp{#3}%
+%	    \noindent \@setauthor{17pc}{#1}{\@false}\hspace{3pc}%
+%	              \@setauthor{17pc}{#2}{\@false}\par
+%	  \else\if \@emptyargp{#4}%
+%	    \noindent \@setauthor{17pc}{#1}{\@false}\hspace{3pc}%
+%	              \@setauthor{17pc}{#3}{\@false}\par
+%	  \else
+%	    \noindent \@setauthor{9.3333pc}{#1}{\@false}\hspace{1.5pc}%
+%	              \@setauthor{9.3333pc}{#2}{\@false}\hspace{1.5pc}%
+%	              \@setauthor{9.3333pc}{#3}{\@false}\hspace{1.5pc}%
+%	              \@setauthor{9.3333pc}{#4}{\@true}\par
+%	    \relax
+%	  \fi\fi\fi
+%	  \vspace{20pt}}
+%	\def \@maketitle {%
+%	  \begin{center}
+%	  \@settitlebanner
+%	  \let \thanks = \titlenote
+%	  {\leftskip = 0pt plus 0.25\linewidth
+%	   \rightskip = 0pt plus 0.25 \linewidth
+%	   \parfillskip = 0pt
+%	   \spaceskip = .7em
+%	   \noindent \LARGE \bfseries \@titletext \par}
+%	  \vskip 6pt
+%	  \noindent \Large \@subtitletext \par
+%	  \vskip 12pt
+%	  \ifcase \@authorcount
+%	    \@latex@error{No authors were specified for this paper}{}\or
+%	    \@titleauthors{i}{}{}\or
+%	    \@titleauthors{i}{ii}{}\or
+%	    \@titleauthors{i}{ii}{iii}\or
+%	    \@titleauthors{i}{ii}{}\@titleauthors{iii}{iv}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{viii}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{viii}{ix}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{viii}{ix}\@titleauthors{x}{}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{viii}{ix}\@titleauthors{x}{xi}{}\or
+%	    \@titleauthors{i}{ii}{iii}\@titleauthors{iv}{v}{vi}%
+%	                  \@titleauthors{vii}{viii}{ix}\@titleauthors{x}{xi}{xii}%
+%	  \else
+%	    \@latex@error{Cannot handle more than 12 authors}{}%
+%	  \fi
+%	  \vspace{1.75pc}
+%	  \end{center}}
+%	\makeatother
+% End custom maketitle %
+
+
+
+
+
+
+
+
 \begin{document}
 %
 % paper title
@@ -320,28 +495,45 @@
 % not capitalized unless they are the first or last word of the title.
 % Linebreaks \\ can be used within to get better formatting as desired.
 % Do not put math or special symbols in the title.
-\title{Bare Demo of IEEEtran.cls\\ for IEEE Conferences}
+\title{Formal Proof of Soundness for an \RL Prover}
 
+
+
+%\authorinfo{Andrei Arusoaie}
+%           {INRIA Lille Nord-Europe, France}
+%           {andrei.arusoaie@inria.fr}
+%\authorinfo{David Nowak}
+%           {CRIStAL, CNRS \& Lille 1 University, France}
+%           {david.nowak@univ-lille1.fr}
+%\authorinfo{Vlad Rusu}
+%           {INRIA Lille Nord-Europe, France}
+%           {vlad.rusu@inria.fr}
+%\authorinfo{Dorel Lucanu}
+%           {Alexandru Ioan Cuza, University of Ia{\c s}i}
+%           {dlucanu@info.uaic.ro}
 
 % author names and affiliations
 % use a multiple column layout for up to three different
 % affiliations
-\author{\IEEEauthorblockN{Michael Shell}
-\IEEEauthorblockA{School of Electrical and\\Computer Engineering\\
-Georgia Institute of Technology\\
-Atlanta, Georgia 30332--0250\\
-Email: http://www.michaelshell.org/contact.html}
+\author{\IEEEauthorblockN{Andrei Arusoaie}
+\IEEEauthorblockA{Alexandru Ioan Cuza, University of Ia{\c s}i\\
+andrei.arusoaie@gmail.com}
 \and
-\IEEEauthorblockN{Homer Simpson}
-\IEEEauthorblockA{Twentieth Century Fox\\
-Springfield, USA\\
-Email: homer@thesimpsons.com}
+\IEEEauthorblockN{David Nowak}
+\IEEEauthorblockA{CRIStAL, CNRS \& Lille 1 University, France\\
+david.nowak@univ-lille1.fr}
 \and
-\IEEEauthorblockN{James Kirk\\ and Montgomery Scott}
-\IEEEauthorblockA{Starfleet Academy\\
-San Francisco, California 96678--2391\\
-Telephone: (800) 555--1212\\
-Fax: (888) 555--1212}}
+\IEEEauthorblockN{~\\}
+\IEEEauthorblockA{\\
+}
+\and
+\IEEEauthorblockN{Vlad Rusu}
+\IEEEauthorblockA{INRIA Lille Nord-Europe, France\\
+vlad.rusu@inria.fr}
+\and
+\IEEEauthorblockN{Dorel Lucanu}
+\IEEEauthorblockA{Alexandru Ioan Cuza, University of Ia{\c s}i\\
+dlucanu@info.uaic.ro}}
 
 % conference papers do not typically use \thanks and this command
 % is locked out in conference mode. If really needed, such as for
@@ -351,11 +543,18 @@ Fax: (888) 555--1212}}
 % for over three affiliations, or if they all won't fit within the width
 % of the page, use this alternative format:
 % 
-%\author{\IEEEauthorblockN{Michael Shell\IEEEauthorrefmark{1},
-%Homer Simpson\IEEEauthorrefmark{2},
-%James Kirk\IEEEauthorrefmark{3}, 
-%Montgomery Scott\IEEEauthorrefmark{3} and
-%Eldon Tyrell\IEEEauthorrefmark{4}}
+\author{\IEEEauthorblockN{Andrei Arusoaie\IEEEauthorrefmark{1},
+David Nowak\IEEEauthorrefmark{2},
+Vlad Rusu\IEEEauthorrefmark{3}, and
+Dorel Lucanu\IEEEauthorrefmark{1}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1} Alexandru Ioan Cuza, University of Ia{\c s}i\\
+\{arusoaie.andrei, dlucanu\}@info.uaic.ro}
+\IEEEauthorblockA{\IEEEauthorrefmark{2}CRIStAL, CNRS \& Lille 1 University, France\\
+david.nowak@univ-lille1.fr}
+\IEEEauthorblockA{\IEEEauthorrefmark{3}INRIA Lille Nord-Europe, France\\
+vlad.rusu@inria.fr}}
+
+
 %\IEEEauthorblockA{\IEEEauthorrefmark{1}School of Electrical and Computer Engineering\\
 %Georgia Institute of Technology,
 %Atlanta, Georgia 30332--0250\\ Email: see http://www.michaelshell.org/contact.html}
@@ -364,7 +563,7 @@ Fax: (888) 555--1212}}
 %\IEEEauthorblockA{\IEEEauthorrefmark{3}Starfleet Academy, San Francisco, California 96678-2391\\
 %Telephone: (800) 555--1212, Fax: (888) 555--1212}
 %\IEEEauthorblockA{\IEEEauthorrefmark{4}Tyrell Inc., 123 Replicant Street, Los Angeles, California 90210--4321}}
-
+%
 
 
 
@@ -373,204 +572,1330 @@ Fax: (888) 555--1212}}
 
 
 
-
-% make the title area
 \maketitle
 
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
 \begin{abstract}
-The abstract goes here.
+Proving programs correct is one of the major challenges that computer scientists have been struggling with during the last decades.
+For this purpose, Reachability Logic (\RL) was proposed as a language-parametric generalisation of Hoare Logic. 
+Recently, based on \RL, an automatic verification procedure was given and proved sound. 
+In this paper we generalise this procedure and prove its soundness formally in the Coq proof assistant. 
+For the formalisation we had to deal with all the minutiae that were neglected in the paper proof. 
+The trickiest one was appropriate renaming of free variables which, we discovered, was handled in the paper proof using an insufficient assumption.
+We also discovered a missing case in the paper proof, and we clarified some implicit and hidden hypotheses.
+Last but not least, the Coq formalisation provides us with a certified program-verification procedure.
 \end{abstract}
-
-% no keywords
-
-
-
-
-% For peer review papers, you can put extra information on the cover
-% page as needed:
-% \ifCLASSOPTIONpeerreview
-% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
-% \fi
-%
-% For peerreview papers, this IEEEtran command inserts a page break and
-% creates the second title. It will be ignored for other modes.
-\IEEEpeerreviewmaketitle
-
 
 
 \section{Introduction}
-% no \IEEEPARstart
-This demo file is intended to serve as a ``starter file''
-for IEEE conference papers produced under \LaTeX\ using
-IEEEtran.cls version 1.8b and later.
-% You must have at least 2 lines in the paragraph with the drop letter
-% (should never be an issue)
-I wish you the best of success.
+Proving programs correct is one of the major challenges that computer scientists have been struggling with during the last decades.
+Many techniques have been developed  in order to automate this non-trivial and tedious process.
+Nowadays there are many software tools used for proving program correctness, but proving that the verification tools are themselves correct  is often avoided.
+In this paper we address this issue for our own work.
+More precisely, we present the formalisation in Coq of the soundness of a procedure for program verification that was  proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
 
-\hfill mds
+%In the last decades computer scientists came up with several logics meant to be used for program verification. 
+Floyd/Hoare Logic~\cite{Floyd1967Flowcharts,Hoare1969}, Separation Logic~\cite{OHearnP99,Reynolds02}, and Dynamic Logic~\cite{HarelKT01} are probably the most well known logics dedicated to program verification.
+Recently, Matching Logic (\ML)~\cite{rosu-ellison-schulte-2010-amast, rosu-stefanescu-2011-nier-icse} and Reachability Logic (\RL)~\cite{rosu-stefanescu-2012-icalp,rosu-stefanescu-2012-oopsla, rosu-stefanescu-ciobaca-moore-2013-lics, stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} have been proposed as alternative approaches for dealing with this problem. 
+\ML and \RL were inspired from the attempt to use rewrite-based operational semantics for program verification.
+Although operational semantics are considered too low level for verification, they are much easier to define and have the big advantage of being \emph{executable} (and thus testable). 
+For example, several large and complete operational semantics for real languages have been formalised with \RL using the \K framework~\cite{rosu-serbanuta-2010-jlap, rosu-serbanuta-2013-k, serbanuta201457}: C~\cite{ellison-rosu-2012-popl,hathhorn-ellison-rosu-2015-pldi}, Java~\cite{bogdanas-rosu-2015-popl}, JavaScript~\cite{park-stefanescu-rosu-2015-pldi}, etc.
+
+\ML is a first-order logic for specifying and reasoning about program \emph{configurations}, e.g., code and infrastructure for executing it (heap, stack, registers, etc.).
+Intuitively, an \ML formula $\varphi$ is a configuration template accompanied by a constraint, and it denotes the set of configurations that \emph{match} the template and satisfy the constraint.
+\RL is a formalism which can be used for both defining operational semantics of programming language and expressing properties about program executions. 
+An \RL formula is a pair of \ML formulas, denoted $\rrule{\varphi}{\varphi'}$, which says that all terminating executions that start from a configuration in the set denoted by $\varphi$, eventually reach a configuration in the set denoted by $\varphi'$.
+%A \emph{language-independent} and \emph{sound} proof system, which uses the operational semantics of a language to derive \RL formulas, has been proposed in~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}.
+
+The state-of-the-art techniques for program verification involve defining a semantics that is thought of as being more appropriate for program reasoning than operational semantics.
+A well-known example is axiomatic semantics, which is typically given in the form of a Hoare Logic proof system for deriving Hoare triples \{\coq{precondition}\}\coqtt{code}\{\coq{postcondition}\}.
+In~\cite{rosu-stefanescu-2012-fm} it has been shown that such a triple can be easily encoded as an \RL formula $\rrule{\varphi}{\varphi'}$, where $\varphi$ denotes the configurations that contain the $\coqtt{code}$ to be executed and satisfy a constraint describing the \coq{precondition}
+and $\varphi'$ denotes the final (in the sense that there is no more code to be executed) configurations that satisfy a constraint describing the \coq{postcondition}.
+There are several advantages of \RL over Hoare Logic:
+First, \RL does not depend on a specific programming language. 
+Second, the proof system of \RL~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} is proved \emph{sound}
+and relatively complete 
+for all languages, and thus, it eliminates the need for non-trivial soundness proofs for each language.
+Third, given an operational semantics, there is no need for an additional one which is amenable for program verification (i.e., no axiomatic semantics in the form of Hoare logic proof system is needed).
+Finally,  \RL is based on the operational semantics of a programming language, which is \emph{executable} and hence enables the testing of programs  prior to their verification.
+In contrast, axiomatic semantics are not executable, and thus,   errors that could have been discovered by testing are discovered only later,  after failed verification attempts.
+
+One practical disadvantage of the \RL proof system~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} is that the proofs tend to be very low level. 
+Moreover, some creative user input is required when applying the rules of the proof system.
+Those difficulties were addressed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, where a  procedure 
+for program verification based on  \RL was proposed and the soundness of the procedure was proved.
+The intent behind this procedure is to overcome the lack of strategies for applying the rules of the \RL proof system, and implicitly, move forward to automation.
+More precisely, the procedure applies in a fixed order three inference steps that are meant to capture the rules of the \RL proof system.
+The procedure takes as inputs sets of \RL formulas representing the operational semantics of a language and the program together with its specification to be proved; if it terminates, it returns either $\success$ or $\failure$.
+%\vr{In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} it can also take a RWL theory.}
+
+The soundness theorem says that if the procedure terminates and returns $\success$ then the program satisfies its specification. %goals hold semantically. 
+Its proof depends on several assumptions which are not precisely formalised in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+In order to provide additional confidence in this soundness result, we present in this paper  a formalisation of the soundness proof in Coq.
+The paper proof from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} raised a series of technical difficulties.
+One difficulty is hidden in an intermediary lemma whose proof requires intricate inductive reasoning. 
+Then, several hypotheses and assumptions are added in an ad-hoc  manner just for the proofs to hold.
+Also, some helper lemmas that are given inside other proofs are not precisely formulated, i.e., they need additional hypotheses.
+For a careful reader all these issues could raise some doubts about the validity of the paper proof.
+%\dl{I propose to rephrase it:\\
+%For a careful reader all these issues could raise some doubts about the validity of the paper proof.}
+%In principle all missing details issues could have been addressed in the paper proof (if we had discovered them!), but then the proof would have become even harder to  understand, because the core ideas of the proof would have been lost among the details.
+A proof in a research paper should keep a good balance between correctness and clarity. The soundness proof in \cite{lucanu-rusu-arusoaie-nowak-LRC2015} is monolithic, i.e. the soundness does not follow from the soundness of each derivation rule, as it
+is commonly done in soundness proofs. Therefore, even if the procedure is recursive, the nature of the proof is not inductive; the entire execution of the procedure is needed to prove that the goals are valid. This makes the proof complex and hence the task of keeping a good balance between correctness and clarity is difficult. In order to keep the proof concise, some details are omitted but this could have hidden side effects that are not discussed by the proof.
+
+%\dl{I propose to rephrase it:\\
+%A proof in a research paper should keep a good balance between the correctness and the clarity. The soundness proof in \cite{lucanu-rusu-arusoaie-nowak-LRC2015} is monolithic, i.e. the soundness does not follow from the soundness of each derivation rule, as it
+%is commonly done in soundness proofs. Therefore, even if the procedure is recursive, the nature of the proof is not inductive; the entire execution of the procedure is needed to prove that the goals are valid. This makes the proof complex and hence the task of keeping a good balance between correctness and clarity is difficult. In order to keep the proof concise, some details are omitted but this could have hidden side effects that are not discussed by the proof.
+%}
+Clearly, a proof assistant is the solution here: it has no problem dealing with every detail because it keeps track rigorously of all cases, and thus, it  ensures that no corner case is overlooked; and keys lemmas and propositions still show the main steps of the reasoning process.
+
+
+\paragraph{Contributions}
+%The main contribution is a generalisation of the procedure and a formal proof in Coq that it is sound.
+We first generalise the procedure by introducing non-determinism and then encode it as an inductive relation in Coq.
+Then, we formally prove that our generalised procedure is sound. 
+The soundness of the concrete procedure in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}  follows.
+
+The formalisation led us to discovering a flaw in the paper proof: 
+it is supposed that a claim holds for a set of \RL formulas, but the claim was proved only for a subset of formulas.
+%it turns out that a claim that was supposed to hold for a set of \RL formulas, holds only for a subset of them, but not for those of interest. % for a particular (but very important) subset of goals.
+%\dl{I think that \\
+%"it is supposed that a claim holds for a set of \RL formulas, but the claim was proved only for a subset of formulas."\\
+%reflects better the omitted case.}
+Fortunately, this flaw does not invalidate the final result, but it makes the proof in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} incomplete.
+Moreover, in order to fix the proof we realised that we need an extra hypothesis in the soundness theorem.
+In Coq, we add both the required hypothesis and an additional case which handles the \RL formulas in question and completes the proof.
+
+
+Another issue that we discovered and fixed is related to renaming the free variables in \RL formulas.
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} this is imprecisely handled using an assumption saying that certain sets of variables are disjoint, and if they are not, then the free variables can always be renamed. 
+However, why the variable renaming is sound is not established in the paper proof.
+%Here we explicitly show that free variables in \RL formulas can always be renamed appropriately, and we update the proof accordingly.
+
+
+During the formalisation in Coq we were able to find and fix some other imprecisions in lemmas from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+For instance, Lemmas 7 and 8 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}) only make sense in the context of the proof of Theorem 1 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}). 
+Here, these lemmas were reformulated to be self-contained, including all implicit or sometimes missing hypotheses.
+%Also, Lemma 5 in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} requires an additional hypothesis.
+%In order to simplify the formalization we abstract away some details about \ML that were fully stated in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, but are in fact not relevant for soundness. F
+Last but not least, the Coq formalisation provides us with a certified program-verification procedure. Its use in practice depends on the availability in Coq of \RL-based semantics for languages; such an effort is already underway in the \K team~\cite{moore-rosu-2015-tr}.
+
+
+
+\paragraph{Related work} 
+
+The closest related work is the formalisation in Coq of \RL reported in~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}.
+%Previous works~\cite{rosu-stefanescu-2012-icalp,rosu-stefanescu-2012-oopsla, rosu-stefanescu-ciobaca-moore-2013-lics, stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} include sound and relatively complete proof systems for various versions of \RL.
+Our initial attempt to prove the soundness of the procedure from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} consisted in reusing the mechanised proof reported in~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}. 
+However, the soundness of the procedure is not a direct consequence of the soundness of the \RL proof system, because there is no direct correspondence between the inference steps and the rules of the proof system.
+This is the reason why we choose to give a direct proof of the soundness of the procedure.
+An additional benefit of a direct proof is that, compared to the \RL proof system, our procedure is closer to an implementation.
+Thus, by formalising directly the soundness of the procedure in Coq (vs. formalising the soundness of a proof system) we bridge the gap between theory and implementation.
+
+Another approach which is strongly connected to \RL is~\cite{moore-rosu-2015-tr}.
+It proposes a language-independent proof method for verifying reachability properties on programs.
+The approach is also implemented in Coq. 
+Although it provides tactics to increase the level of automation, the tool is not fully automatic, unlike the procedure in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}. 
+From the same authors, there are also ongoing works for translating \K language definitions to Coq.
+
+%A prototype of the procedure was used to verify the Knuth-Morris-Pratt algorithm~\cite{arusoaie-lucanu-rusu-jsc2015-tr}.
+%\aa{need to find more convincing arguments here.}
+
+
+There are many soundness results about proof systems for program verification (e.g., \cite{Marti:2006:FVH:2105385.2105412, Appel:2014:PLC:2670099, weber04towards, Tuch_Klein_05, schirmer} to cite only a few).
+Most of them are based either on Hoare Logic or Separation Logic, and thus, they are language dependent.
+For instance, in \cite{weber04towards} the authors present three Hoare logics that correspond to different notions of correctness for the simple While language; for all three they prove the soundness and the relative completeness.
+However, compared to~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, they do not provide a language-parametric program-verification automatic procedure.
+
+There is moreover a wide range of certified sound procedures for deciding various logical fragments, some of them formalised in Coq (e.g. \cite{DBLP:journals/corr/abs-1105-4537, DBLP:conf/types/Besson06}), others in Isabelle/HOL (e.g., \cite{ChaiebN-LPAR05}).
+
+
+\paragraph{Outline.} 
+
+Section~\ref{sec:background} provides a short overview of \ML and \RL, and presents the verification procedure proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} together with the corresponding soundness result.
+Section~\ref{sec:proof} describes our formalisation in Coq of the soundness of the procedure.
+It mainly contains the definitions and lemmas needed by the soundness result, and it also highlights the differences between the Coq proof and the one in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+We conclude in Section~\ref{sec:conclusions}.
+
+
+
+
+\section{Background}
+\label{sec:background}
+\subsection{Matching Logic \& Reachability Logic}
+\label{sec:intro}
+%\dl{This section is too technical and hard to read. Since it includes the main concepts and  notations used in the paper, it should easy to read. If the reader (reviewer) tires reading it, then she renounce to read the rest. 
+%E.g., some examples could be replaced with short explanatory text.
+%}
+This section provides an overview of \ML and \RL.
+For both logics, we explain their syntax and semantics by means of simple examples. 
+In addition, several notions and definitions specific to this paper are also presented.
+We assume the reader is familiar with First-Order Logic (hereafter, \FOL).
+
+
+\paragraph{Matching Logic}
+\ML is a first-order logic variant for specifying and reasoning about structure.
+We here consider the version of \ML from~\cite{rosu-2015-rta}.
+%An example of \ML formula (also called \emph{pattern}) that is \emph{matched} by $\gamma$ is 
+%$$\varphi \eqbydef \langle x - y, z \rangle,$$ where $x$, $y$, and $z$ are variables. 
+%Indeed, by replacing $x$, $y$, and $z$ with $7$, $3$, and $3$, respectively, in $\varphi$ we obtain $\gamma$. 
+%On the other hand, $\gamma'$ and $\gamma''$ do not match against $\varphi$.
+%In \ML, one can also use \FOL constraints.
+%For instance, $\varphi'$ is a well-formed \ML formula:
+%$$\varphi' \eqbydef \langle x - y, z \rangle \land x > y \land z \geq 0$$
+Formally, \ML formulas are defined as follows.
+If $\Sigma$ is a many-sorted algebraic signature, $\Pi$ is a set of predicate symbols, $\Var$ a set of (sorted) variables, and $\Cfg$ a sort for program configurations, then the syntax of \ML formulas is:
+$$\varphi ::= \pi \mid \True\mid p(t_1,\ldots,t_n) \mid  \neg \varphi\mid \varphi\land\varphi\mid (\exists V) \varphi,$$
+where $\pi$ is a $\Sigma$-term of sort $\Cfg$ with variables (also called \emph{basic pattern}), $p$ is a predicate symbol in $\Pi$, $t_i$ are $\Sigma$-terms with variables of appropriate sorts, and $V$ a subset of $\Var$.
+As usual, the other known \FOL connectives ($\lor$, $\implies$, \ldots) and quantifier $\forall$ can be expressed using the ones above.
+%\dl{Here it is considered the "topmost version" of that presented in~\cite{rosu-2015-rta}.}
+
+Let us consider a signature $\Sigma$ which contains
+a sort $\mathit{A\!Exp}$ that includes the integer numbers (as symbols) together with the usual binary operations (e.g., $\terminal{\_}\!+\!\terminal{\_}$, $\terminal{\_}\!-\!\terminal{\_}$,  \ldots), 
+and a sort $\Cfg$, which has a single constructor $\langle\terminal{\_},\terminal{\_}\rangle : \mathit{A\!Exp} \times \mathit{A\!Exp} \to \Cfg$  (we use $\terminal{\_}$ to denote the positions of the arguments).
+Also, let $\Pi$ be the set which contains the predicate symbols $\terminal{\_}>\terminal{\_}$ and $\terminal{\_}\geq\terminal{\_}$ with arguments of sort $\mathit{A\!Exp}$, and $\Var$ a set of variables of sort $\mathit{A\!Exp}$ (e.g. $x$, $y$, $z$, \ldots).
+Then, an example of \ML formula is:
+$$\varphi \eqbydef \langle x - y, z \rangle \land x > y \land z \geq 0$$
+\noindent
+Indeed, $x,  y$ and $z$ are terms of sort $\mathit{A\!Exp}$, $\langle x - y, z \rangle$ is a term of sort $\Cfg$ with variables (i.e., a basic pattern), $x > y \land z \geq 0$ is an \ML formula, and $\langle x - y, z \rangle \land x > y \land z \geq 0$ is also an \ML formula.
+%\ML formulas are also called \emph{patterns}. \emph{matched} by concrete configurations. 
+%For example, $\langle 7 - 3, 3 \rangle$ matches $\varphi$.
+
+The set of free variables that occur in an \ML formula $\varphi$ is denoted by $\FreeVars(\varphi)$. 
+For instance,  $\FreeVars((\exists x,z) \langle x, y \rangle \land z \!>\! 0) = \{ y \}$.
+
+Next, we assume a $(\Sigma, \Pi)$-model $\M$. 
+The satisfaction relation $\modelsml$ of \ML is akin to the satisfaction relation of \FOL (denoted $\modelsfol$).
+For instance, $(\gamma, \rho) \modelsml (\exists V)\varphi$ iff  there is $\rho' : \Var \to \M$ with $\rho'(x) = \rho(x)$ for all $x \not\in V$ such that $(\gamma, \rho') \modelsml \varphi$.
+This is similar to \FOL, except that $\modelsml$ is defined over pairs $(\gamma, \rho)$, where $\gamma$ is an element in $\M$ of sort $\Cfg$ called a \emph{configuration}, $\rho : \Var \to \M$ is a valuation, and \ML formulas $\varphi$. 
+%\dl{It is not clear what is $\gamma$.}
+In addition to the other \FOL constructs, $\modelsml$ includes the \ML particular case:
+$$(\gamma, \rho) \modelsml \pi \text{ iff } \rho(\pi) = \gamma.$$
+
+\noindent
+Intuitively, a basic pattern $\pi$ is satisfied by a pair $(\gamma, \rho)$ if $\gamma$ \emph{matches} $\pi$ with $\rho$; here, the valuation $\rho$ can be thought of as the witness of the matching.
+%\dl{$\pi$ \emph{matches} $\gamma$?}
+For example, $\langle 7 - 3, 3 \rangle$ matches the basic pattern $\langle x - y, z \rangle$ with a valuation $\rho$ that maps $x$, $y$, and $z$ to $7$, $3$, and $3$, respectively: $\rho(\langle x - y, z \rangle) = \langle 7 - 3, 3 \rangle$.
+
+An \ML formula $\varphi$ is \emph{valid} in $\M$, written $\M \models \varphi$, iff for all $\gamma$ and $\rho:\Var\to\M$ we have $(\gamma, \rho)\modelsml\varphi$.
+
+
+Let $\M$ be a model which interprets the sort $\mathit{A\!Exp}$ as the set of integers, and the binary symbols $+$, $-$, \ldots as the usual operations over integers.
+Similarly, $\M$ interprets the predicate symbols $>$ and $\geq$ as the usual corresponding relations over integers.
+Also, consider the valuation $\rho:\Var \to \M$ with $\rho(x) = 7$, $\rho(y) = 3$, and $\rho(z) = 3$.
+Then, $(\langle 7 - 3, 3 \rangle, \rho) \modelsml \varphi$ because $\rho(\langle x - y, z \rangle) = \langle 7 - 3, 3 \rangle$ and $(\gamma, \rho) \modelsml x > y \land z \geq 0$ (since $7 > 3$ and $3 \geq 0$ in $\M$).
+
+It has been shown in ~\cite{rosu-stefanescu-2012-oopsla} that \ML can be encoded in \FOL.
+%We discuss here a variant of this encoding. 
+If $\varphi$ is an \ML-formula then its encoding $\varphi^{=?}$ in \FOL is the formula $(\exists z)\varphi'$,  where $\varphi'$ is obtained from $\varphi$ by replacing each basic pattern occurrence $\pi$ with $z=\pi$, and $z$ is a variable which does not appear in the free variables of $\varphi$.
+Here are a few examples of formulas and their encodings:\\
+
+\hspace*{-4ex}
+\begin{tabular}{ll}
+$\hspace{1cm}\varphi$ & $\hspace{1cm}\varphi^{=?}$\\[1ex]
+$(\pi_1\land \phi_1)\lor(\pi_2\land\phi_2)$ & $(\exists z) ((z=\pi_1\land \phi_1)\lor(z=\pi_2\land\phi_2))$\\
+$\neg\pi$ & $(\exists z)\neg(z=\pi)$\\
+%$\pi_1\land \neg\pi_2$ & $(\exists z)((z=\pi_1)\land\neg(z=\pi_2))$\\
+$\pi\lor\neg\pi $ & $(\exists z)(z=\pi\lor \neg(z=\pi))$\\[2ex]
+\end{tabular}
+
+\noindent
+The encoding of an \ML formula $\varphi$ has the following property~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}: \emph{for all $\rho$ and $\varphi$, $\rho \modelsfol \varphi^{=?}$ iff there is $\gamma$ such that $(\gamma, \rho) \modelsml \varphi$}.
+
+
+\paragraph{Reachability Logic}
+%\ML formulas denote sets of program configurations (or states). 
+An \RL formula (also called \emph{rule}) is a pair of \ML formulas, written $\rrule{\varphi}{\varphi'}$, which expresses reachability relationships between the two sets of configurations denoted by $\varphi$ and $\varphi'$.
+For example, the \RL formula
+$$\alpha \eqbydef \rrule{\langle x , y \rangle \land x \geq 0}{\langle x - y, y \rangle}$$
+\noindent
+expresses the fact that configurations which satisfy the $\langle x - y, y \rangle$ (e.g.  $\langle 7 - 3, 3\rangle$ with $\rho$ aforesaid), can be reached from configurations which satisfy $\langle x , y \rangle \land x \geq 0$ (e.g., $\langle 7, 3\rangle$ with the same $\rho$).
+
+By $\FreeVars(\rrule{\varphi}{\varphi'})$ we denote the union $\FreeVars(\varphi) \cup \FreeVars(\varphi')$. 
+Also, if $\S$ is a set of $\RL$ formulas then $\FreeVars(\S) \eqbydef \bigcup_{\rrule{\varphi}{\varphi'} \in \S} \FreeVars(\rrule{\varphi}{\varphi'})$.
+
+A set $\S$ of \RL formulas defines a transition system $(\Cfg, \tran{}{\S})$ over configurations: we say that $\gamma_0 \tran{}{\S} \gamma_1$ if there is $\rrule{\varphi_0}{\varphi_1} \in \S$ and there is a valuation $\rho':\Var \to \M$ such that $(\gamma_0, \rho') \modelsml \varphi_0$ and $(\gamma_1, \rho') \modelsml \varphi_1$. 
+We often use only $\tran{}{\S}$ to denote the transition system $(\Cfg, \tran{}{\S})$.
+Back to our example, the set $\S = \{ \alpha \}$ generates the transition $\langle 7, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3, 3\rangle$. 
+
+
+A pattern is \emph{$\S$-derivable} if there is a transition from one of its instances with $\S$. 
+For example, $\varphi_0 \eqbydef \langle x , y \rangle \land x \geq 7$ is $\{\alpha\}$-derivable because there is a transition from $\langle 7, 3\rangle$ (which satisfies $\varphi_0$ with $\rho$) to $\langle 7 - 3, 3\rangle$. 
+
+
+
+A set $\S$ of \RL formulas is \emph{total} if for all $\varphi$, $\gamma$, and $\rho$, if $\varphi$ is $\S$-derivable and $(\gamma, \rho) \modelsml\varphi$ then there is $\gamma'$ such that $\gamma \tran{}{\S} \gamma'$. 
+Note that $\{ \alpha \}$ is not total because of the condition $x \geq 0$ in its left hand side. 
+To make it total, one should add to $\{ \alpha \}$ another rule which handles the other possible case, namely $x < 0$.
+
+The satisfaction relation $\modelsrl$ of \RL is defined using \emph{paths}, which are (possibly infinite)
+sequences of transitions $\gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \gamma_2 \tran{}{\S} \cdots$.
+For example, $\langle 7, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 , 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 - 3 , 3\rangle $ is a finite path.
+Note that $\alpha$ cannot be applied anymore to $\langle 7 - 3 - 3 - 3 , 3\rangle$ because of the constraint $x \geq 0$.
+If none of the rules in $\S$ can be applied then we say that the configuration (e.g.  $\langle 7 - 3 - 3 - 3 , 3\rangle$) is \emph{terminating}.
+
+Paths can be infinite too, e.g., $\langle 7, 0\rangle \tran{}{\{\alpha\}} \langle 7 - 0, 0\rangle \tran{}{\{\alpha\}} \cdots$.
+A path $\tau$ is \emph{complete} if it is either finite and the last configuration in $\tau$ is terminating, or it is infinite.
+Both paths shown above are complete.
+Typically, we use $\tau$ to denote paths, i.e., $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \gamma_2 \tran{}{\S} \cdots$, and $\tau|_i$ to denote the sub-path of $\tau$ starting at position $i$, i.e., $\tau|_i \eqbydef \gamma_i \tran{}{\S} \gamma_{i+1} \tran{}{\S} \cdots$.
+We also say that $\tau$ \emph{starts from} from an \ML formula $\varphi$ if there is a valuation $\rho:\Var \to\M$ such that $(\gamma_0, \rho) \modelsml \varphi$.
+For example, $\langle 7, 0\rangle \tran{}{\{\alpha\}} \langle 7 - 0, 0\rangle \tran{}{\{\alpha\}} \cdots$ and $\langle 7, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 , 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 - 3 , 3\rangle $ start from  $\langle x , y \rangle \land x \geq 0$.
+
+
+In this paper we are only interested in the \emph{all-path} interpretation~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} of \RL formulas:
+a pair $(\tau,\rho)$  \emph{satisfies} an \RL formula $\rrule{\varphi}{\varphi'}$, written $(\tau,\rho)\models \rrule{\varphi}{\varphi'}$, iff $(\tau,\rho)$ starts from $\varphi$ (recall that $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \gamma_2 \tran{}{\S} \cdots$), and either there exists $i\ge 0$ such that $(\gamma_i,\rho)\modelsml\varphi'$, or $\tau$ is infinite; 
+${\tran{}{\S}}$ \emph{satisfies} $\rarule{\varphi}{\varphi'}$, written ${\tran{}{\S}}\modelsrl \rarule{\varphi}{\varphi'}$, iff $(\tau,\rho) \modelsrl \rarule{\varphi}{\varphi'}$ for all  $(\tau,\rho)$ starting from $\varphi$ with $\tau$ complete.
+We often write $\S\modelsrl \rarule{\varphi}{\varphi'}$ instead of ${\tran{}{\S}}\modelsrl \rarule{\varphi}{\varphi'}$.
+
+
+Let $\rrule{\varphi}{\varphi'}$ be the \RL formula:
+$$\rrule{\langle x, y \rangle \!\land\!x \geq y \!\land\! y > 0}{(\exists x')\langle x', y \rangle\!\land\!\mathit{mod}(x',x,y)},$$
+where $\mathit{mod}$ is a predicate symbol with interpretation: $\M_\mathit{mod}(r, x, y)$ holds iff $r$ is the remainder after division of $x$ by $y$.
+The path $\tau \eqbydef \langle 7, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3, 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 , 3\rangle \tran{}{\{\alpha\}} \langle 7 - 3 - 3 - 3 , 3\rangle$ is complete and starts from $\langle x, y \rangle \land x \geq y \land y > 0$ with a valuation $\rho:\Var \to \M$, which maps $x$ and $y$ to $7$ and $3$, respectively. 
+However, $(\tau, \rho) \not\models \rrule{\varphi}{\varphi'}$ because $(\langle 7 - 3 - 3 - 3 , 3\rangle, \rho) \not\modelsml \varphi'$ (since, in $\M$, $-2$ is not the remainder after division of $7$ by $3$).
+
+However, if $x \geq y$, the remainder after division of $x$ by $y$ can be obtained by repeated subtraction of $y$ from the initial $x$ if $y > 0$.
+Thus, let us consider a  version of $\alpha$:
+$$\alpha' \eqbydef \rrule{\langle x , y \rangle \land x \geq y \land y > 0}{\langle x - y, y \rangle}$$
+
+\noindent
+The finite path $\tau' \eqbydef \langle 7, 3\rangle \tran{}{\{\alpha'\}} \langle 7 - 3, 3\rangle \tran{}{\{\alpha'\}} \langle 7 - 3 - 3 , 3\rangle$ is complete and starts from $\langle x , y \rangle \land x \geq y \land y > 0$ with the same valuation $\rho$ as above.
+Also, there is a configuration $\langle 7 - 3 - 3 , 3\rangle$ in $\tau'$ such that $(\langle 7 - 3 - 3 , 3\rangle, \rho) \modelsml \varphi'$.
+More precisely, $(\langle 7-3 - 3 , 3\rangle, \rho) \modelsml (\exists x')\langle x', y \rangle \land \mathit{mod}(x',x,y)$ iff there is a valuation $\rho' : \Var \to \M$ such that $\rho'(y) = \rho(y)$ and $(\langle 7 - 3 - 3 , 3\rangle, \rho') \modelsml \langle x', y \rangle \land \mathit{mod}(x',x,y)$; 
+if we take $\rho'$ such that $\rho'(v) = \rho(v)$ for all $v\in \Var \setminus \{ x' \}$ and $\rho'(x') = 1$, then  $\rho'(\langle x', y \rangle) = \langle 1, 3 \rangle$ and $\M_\mathit{mod}(1, 7, 3)$ holds, which implies $(\langle 7 - 3 - 3 , 3\rangle, \rho') \modelsml \langle x', y \rangle \land \mathit{mod}(x',x,y)$.
+Therefore, we obtain $(\tau', \rho) \modelsrl \rrule{\varphi}{\varphi'}$.
+
+\paragraph{Language definitions} 
+In the example above, we have shown that the path $\tau'$, whose transitions are given by $\{ \alpha' \}$, satisfies the \RL formula $\rrule{\varphi}{\varphi'}$ with a valuation $\rho$.
+The system $\S=\{\alpha'\}$ can be seen as the operational semantics of a language  whose programs are pairs of (arithmetic) expressions.
+%\dl{The above description is confusing. Why not something like this:\\
+%The system $\S=\{\alpha'\}$ can be thought as the operational semantics of a language  whose programs are pairs of (arithmetic) expressions.
+%}
+Formally, we consider language definitions $((\Sigma, \Pi, \Cfg),\M, \S)$, where, for our simple language, $\Sigma$ is the signature containing the sorts $\Cfg$ and $\mathit{A\!Exp}$ (together with the corresponding operation symbols), $\Pi$ is the set of predicates including $\terminal{\_}>\terminal{\_}$ and $\terminal{\_}\geq\terminal{\_}$, $\M$ is a $(\Sigma, \Pi)$ model, and $\S = \{ \alpha' \}$.
+
+This notion of language definition is general, in the sense that it captures real language definitions, such as those defined in the \K framework, e.g., C~\cite{ellison-rosu-2012-popl,hathhorn-ellison-rosu-2015-pldi}, Java~\cite{bogdanas-rosu-2015-popl}, JavaScript~\cite{park-stefanescu-rosu-2015-pldi}, etc.
  
-\hfill August 26, 2015
-
-\subsection{Subsection Heading Here}
-Subsection text here.
+%\vr{need to say that this is a general notion of language definition and refer to real languages such as C and Java that fit this framework.}
 
 
-\subsubsection{Subsubsection Heading Here}
-Subsubsection text here.
+\paragraph{Derivatives of an \ML (and \RL) formula}
+A notion introduced in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} is that of \emph{derivative} of an \ML (and \RL) formula.
+If $\varphi$ is an \ML formula and $\S$ is a set of \RL formulas, then the derivative of $\varphi$ with $\S$ is defined as follows:
+$$
+\Delta_\S(\varphi)\eqbydef\{(\exists \FreeVars(\varphi_l,\varphi_r))(\varphi_l\land\varphi)^{=?}\land\varphi_r\mid\rrule{\varphi_l}{\varphi_r}\in\S\}.
+$$
+If $\rarule{\varphi}{\varphi'}$ is an \RL formula then
+$$
+\Delta_\S(\rarule{\varphi}{\varphi'}) \eqbydef \{\rarule{\varphi_1}{\varphi'}\mid\varphi_1\in\Delta_\S(\varphi)\}.
+$$
+Intuitively, the derivative of an \ML formula $\varphi$ encodes the concrete successors by $\tran{}{\S}$ of configurations matching $\varphi$.
+Derivatives can be computed for sets of \RL formulas $G$ too:  
+$$\Delta_\S(G) \eqbydef \bigcup_{\rrule{\varphi}{\varphi'}\in G} \Delta_\S(\rrule{\varphi}{\varphi'}).$$
+
+%\vr{it's hard to appeal to one's intution by using something not (yet) defined such as ``symbolic successors''. A better intution is that is encodes concrete sucessors by $\tran{}{\S}$ of configuration matching a given ML formula $\varphi$.}
+
+Let again $\alpha' \eqbydef \rrule{\langle x , y \rangle \land x \geq y \land y > 0}{\langle x - y, y \rangle}$
+%\dl{$\alpha'$ wad already defined}
+ and $\varphi \eqbydef \langle u, v \rangle \land u \geq v \land v > 0$.
+Then $\Delta_{\{ \alpha' \}}(\varphi)$ has only one element:\vspace{1ex}
+
+\noindent
+$(\exists x, y)((\langle x , y \rangle \land x \geq y \land y > 0) \land (\langle u, v \rangle \land u \geq v \land v > 0))^{=?}$\\
+\hspace*{7cm}$\land \langle x - y, y \rangle$,
+
+\noindent
+which, by the definition of the encoding, becomes:\vspace{1ex}
+
+\noindent
+$(\exists x, y) (\langle x , y \rangle = \langle u, v \rangle)  \land x \geq y \land y > 0 \land  u \geq v \land v > 0$\\
+\hspace*{7cm}$\land \langle x - y, y \rangle$.\vspace{1ex}
+
+\noindent
+This can be further simplified to $\varphi'\eqbydef\langle u - v, v \rangle \land  u \geq v \land v > 0$ using the fact that $\langle x , y \rangle = \langle u, v \rangle$ implies $x = u$ and $y = v$.
+The \ML formula $\varphi'$ specifies the configurations obtained from those satisfying $\varphi$ after applying $\alpha'$;
+for example, the configuration $\langle 7 - 3, 3 \rangle$ (which satisfies $\varphi'$ with a valuation $\rho$ s.t. $\rho(u)=7$, $\rho(v) = 3$) is a successor of $\langle 7, 3 \rangle$ (that satisfies $\varphi$ with the same $\rho$), i.e.,  $\langle 7, 3 \rangle \tran{}{\{\alpha'\}} \langle 7 - 3, 3 \rangle$.
+
+\begin{remark}
+\label{rem:der}
+%\paragraph{Remark}
+Note that in the example above the free variables in $\varphi$  are disjoint from those in $\alpha'$, i.e, $\{ u, v \} \cap \{ x, y \} = \emptyset$.
+If these sets are not disjoint, then there is no guarantee that the derivative encodes the set of all concrete successors of configurations that match $\varphi$.
+For instance, let $\varphi'' \eqbydef \langle u, x \rangle \land u \geq x \land x > 0$ (i.e.,  $\varphi''$ is $\varphi$ where variable $v$ was replaced by $x$).
+When computing the derivative of $\varphi''$ with $\{\alpha'\}$, the variable $x \in \FreeVars(\varphi'')$ is bound:\vspace{1ex}
+
+\noindent
+$(\exists x, y) (\langle x , y \rangle = \langle u, x \rangle)  \land x \geq y \land y > 0 \land  u \geq x \land x > 0$\\
+\hspace*{6.8cm}$\land \langle x - y, y \rangle$.
+
+\vspace{1ex}
+\noindent
+Again, this formula can be simplified to $\varphi''\eqbydef\langle u - u, u \rangle \land u > 0$,
+using the fact that $\langle x , y \rangle = \langle u, x \rangle$ implies $x = u$ and $y = x$.
+Here, there is no valuation $\rho'$ such that $(\langle 7 - 3, 3 \rangle, \rho') \models \varphi''$, and thus, 
+not all successors by $\tran{}{\{\alpha'\}}$ of $\langle 7, 3 \rangle$ are matched by the derivative.
+
+Therefore, when computing $\Delta_\S(\varphi)$, it is important that the free variables of $\varphi$ and those of $\S$ are in disjoint sets. 
+\end{remark}
+
+The issue described in \textsc{Remark}~\ref{rem:der} is also an issue in the verification procedure proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}: the procedure computes derivatives $\Delta_\S(\varphi)$ without checking (as it should) that $\FreeVars(\S)$ and $\FreeVars(\varphi)$ are disjoint.
+%\dl{But in ~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} is a global assumption abou that. Do you mean that the procedure should check that the assumption holds?}
+This is discussed in detail in the next section.
+
+%\vr{mention that this issue will show up later in the paper (where, how)}
 
 
-% An example of a floating figure using the graphicx package.
-% Note that \label must occur AFTER (or within) \caption.
-% For figures, \caption should occur after the \includegraphics.
-% Note that IEEEtran v1.7 and later has special internal code that
-% is designed to preserve the operation of \label within \caption
-% even when the captionsoff option is in effect. However, because
-% of issues like this, it may be the safest practice to put all your
-% \label just after \caption rather than within \caption{}.
+
+%In~\cite{arusoaie:hal-00766220}, the notion of derivative is used to define symbolic execution
+%(more precisely, symbolic paths are computed using derivatives), and to give a coinductive definition of the semantics of \RL.
+
+\subsection{A procedure for verifying Reachability Logic properties}
+\label{sec:prove}
+
+
+A procedure for verifying \RL formulas (Figure~\ref{fig:prove}), called \texttt{prove}, was introduced in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+The intent behind \texttt{prove} is to overcome the lack of strategies for applying the rules of the \RL proof system from~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}, and implicitly, to move forward towards automatisation.
+
+%As the \RL proof system, the procedure has a coinductive nature.
+In a nutshell, the procedure uses symbolic execution (i.e., run programs with symbolic values instead of concrete ones, and collect the constraints over symbolic values) combined with circular reasoning.
+Intuitively, given an \RL formula $\rarule{\varphi}{\varphi'}$, one can symbolically execute $\varphi$ and check whether every leaf node of the obtained symbolic execution tree implies $\varphi'$.
+The procedure uses derivatives to compute symbolic execution paths.
+%\vr{mention relationship between derivatives and symbolic execution.}
+An obvious problem of this approach is that the symbolic execution tree can be infinite due to loops or recursion.
+To overcome this problem \RL allows the use of helper formulas called \emph{circularities}, which generalise the notion of invariant.
+
+Instead of proving a single formula, \texttt{prove} attempts to prove a set of formulas (goals). 
+The procedure checks first whether a helper formula can be used (e.g., an \RL formula specifying a loop) to discharge the current goal, rather than performing symbolic execution blindly. 
+A goal can be used in the proof of a different goal or in its own proof, provided that at least one symbolic step has been performed from it.
+
+Note that a proof by simple induction on the inferences steps of the procedure does not work because of its circular nature, that is, it uses goals to prove other goals (line 4 in Figure~\ref{fig:prove}).
+This is sound only if a symbolic step from the current goal has been performed. 
+If this condition is not met then every goal can be proved using itself!
+For this reason, the soundness theorem assumes a successful execution starting with $\Delta_\S(\!G_0\!)$ instead of $G_0$.
+
+The procedure takes as input three sets of \RL formulas:
+the operational semantics $\S$, a set of goals $G_0$, and a recursive argument $G$ whose initial value is $\Delta_\S(G_0)$; and it returns either $\success$ or $\failure$.
+At each recursive call, a goal from $G$ is either eliminated and/or replaced by other goals. 
+If $\rarule{\varphi}{\varphi'} \in G$ is the current goal then it is processed as follows: if $M\models \varphi \implies \varphi'$ then the goal is eliminated from $G$; else, the procedure checks whether there is a circularity available in $G_0$ which is used to generate a new goal that replaces the current one; if no circularity is found, but $\varphi$ is $\S$-derivable,  then $\rarule{\varphi}{\varphi'}$ is replaced by a set of goals consisting in its symbolic successors; otherwise,  \texttt{prove} returns $\failure$. 
+The procedure succeeds when all the goals in $\Delta_\S(G_0)$ together with those generated during the execution are eliminated.
+%\vr{this is another example of imprecise statement. $G$ is something that changes during the execution of the procedure, so ``all goals in $G$ are eliminated'' is also a statement whose truth value changes during the execution of the procedure. we don't want that, do we?}
+If the procedure does not terminate or it returns $\failure$ then it means that $G_0$ does not contain enough information to prove the goals. 
+This is similar to proving invariants for loops in imperative programs, which requires users to provide strong-enough invariants.
+%\vr{by saying ``possibly'' and by giving only a vague explanation we give the impression that we don't really know what our procedure does. please be more precise.}
+
+
+Below, we show the soundness result and a sketch of the proof that was given in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+We illustrate by this the fact it is not a simple proof by induction on the recursive calls:
+even if they terminate, the calls do not induce a well-founded order over formulas ensuring a formula holds whenever the ``smaller'' formulas hold as well.
+Indeed, a formula may coinductively use itself in its own proof.
+%We also show the key assumptions under which the result holds.
+
+
+%\dl{Why? We should motivate why the reader has to read two proofs of the same theorem. }
+
+\begin{theorem}[Theorem 1 in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}]
+\label{th:sound}
+Let {\tt{prove}} be the procedure given in Figure~\ref{fig:prove}.
+Assume that $\S$ is total.
+Let \!$G_0$\! be such that for each $\varphi_c\!\!\tran{}{}\!\!\varphi'_c \!\in\!G_0$, $\varphi_c$ is $\S$-derivable and satisfies \!$\FreeVars(\varphi'_c)\!\subseteq\!\FreeVars(\varphi_c)$.
+If {\tt prove(}$\S\!,  G_0, \Delta_\S(G_0)${\tt )} returns  $\success$ then \!$\S\!\!\modelsrl\!G_0$.
+\end{theorem}
+
+
+\begin{figure}[t]
+\small
+\textbf{procedure} \texttt{prove}($\S,  G_0, G$)  
+\begin{itemize}
+\item[1:] \textbf{if} $G = \emptyset$ \textbf{then return} $\success$ 
+\item[2:] \quad \textbf{\textbf{else} \textbf{choose} $\rarule{\varphi}{\varphi'} \in G$}  
+\item[3:] \quad \quad \textbf{if} $M\modelsml \varphi \implies \varphi'$ \textbf{then return} \texttt{prove}($\S, G_0, G\setminus \{ \rarule{\varphi}{\varphi'} \}$)  
+\item[4:] \quad \quad \textbf{else} \textbf{if} there is $ \rarule{\varphi_c}{\varphi'_c} \in G_0$
+\item[] \quad\quad\quad\quad\quad\quad s. t. $M\modelsml\varphi\implies \overline{\varphi}_c$ 
+\textbf{then}   
+\item[5:] \qquad \qquad
+\textbf{return} \texttt{prove}($\S,G_0,G\setminus \{ \rarule{\varphi}{\varphi'} \}  \cup \Delta_{\rrule{\varphi_c}{\varphi'_c}}(\rarule{\varphi}{\varphi'}) $) 
+\item[6:] \quad \quad \textbf{else if}  $\varphi$ is $\S$-derivable \textbf{then}
+\item[7:] \qquad \qquad
+\textbf{return} \texttt{prove}($\S,G_0,G\setminus \{ \rarule{\varphi}{\varphi'}  \} \cup\Delta_{\S}(\rarule{\varphi}{\varphi'}) $)
+\item[8:] \quad \quad \textbf{else return} $\failure$.
+\vspace{-2ex}
+\end{itemize}
+\caption{\label{fig:prove} \RL verification procedure.  $\overline{\varphi}_c$ denotes $(\exists\FreeVars(\varphi_c))\varphi_c$.}
+\end{figure}
+
+
+\paragraph{Proof sketch}
+At each step of the procedure, the set $G$ of goals evolves from $\Delta_\S(G_0)$ to $\emptyset$ (if $\texttt{prove}$ terminates successfully). 
+Let $\F \eqbydef G_0 \bigcup_{i}G_i$, where $i$ represents the $i^{\mathit{th}}$ call of $\texttt{prove}$.
+The first call is made for $G_1 \eqbydef \Delta_\S(G_0)$.
+
+In order to prove that $\S\models G_0$ one has to prove that $\S\modelsrl\rrule{\varphi}{\varphi'}$ for all goals $\rrule{\varphi}{\varphi'} \in G_0$, that is, $(\tau, \rho)\models\rrule{\varphi}{\varphi'}$ for all $(\tau, \rho)$ starting from $\varphi$ with $\tau$ complete.
+
+We consider an arbitrary $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \cdots$ such that $\tau$ starts from $\varphi$ with a valuation $\rho:\Var \to \M$.
+If $\tau$ is infinite then, by definition, $(\tau, \rho)\models\rrule{\varphi}{\varphi'}$.
+There remains to show that $(\tau, \rho)\models\rrule{\varphi}{\varphi'}$ when the path is finite, i.e., $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \cdots \tran{}{\S} \gamma_n$. 
+This case  is proved using an intermediate lemma, which states the property for \emph{all} goals in $\F$, including the ones in $G_0$:
+
+\begin{lemma}[Lemma 8 in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}]
+\label{lem:main}
+For all $\tau$, for all $\rho$, for all $\rrule{\varphi}{\varphi'}\in\F$, if $\tau$ is finite and complete, and $(\tau,\rho)$ starts from $\varphi$ then $(\tau,\rho)\models \rrule{\varphi}{\varphi'}$.
+\end{lemma}
+
+\noindent
+The lemma works on the following assumption (from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}):\\[1ex]
+\hspace*{1ex}
+\begin{minipage}{\textwidth}
+\label{asm:disjoint}
+\it
+\begin{itemize}
+%\item[$(a_1)$] $\FreeVars(\varphi') \subseteq \FreeVars(\varphi)$  for every formula $\rrule{\varphi}{\varphi'}$
+\item[$(a_1)$] 
+``In what follows we consider only \ML formulas $\varphi$ with the following property: If $\varphi$ does not occur as a member of a rule in $\S$ and $\rrule{\varphi_l}{\varphi_r}\in \S$ then $\FreeVars(\varphi) \cap \FreeVars(\varphi_l, \varphi_r) = \emptyset$. This is not a real restriction since the free variables in rules can always be renamed.''\\
+\end{itemize}
+\end{minipage}
+
+%\vr{The free variables of the rules are renamed, not the rules themselves. The free variables in question are not just ``different'', they have to constitute disjoint sets. The assumption as formulated above seems  holds trivially - just rename variables in rules so that they are disjoint fromthe set of variables of the current goal, so that cannot be the actual assumption made in the paper. Please reformulate in a correct and precise manner the actual assumption from the paper proof. There, it may be have been stated imprecisely, which we can/should point out, and formulating it precisely is a  contribution of this paper.}
+
+\noindent
+It also uses two additional results (from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}):\\[1ex]
+%\hspace*{1ex}
+\begin{minipage}{\textwidth}
+\it
+\begin{enumerate}
+\item[$(1)$] \label{itm:or}  For all $\rrule{\varphi}{\varphi'}\in\F$ either $\M \models \varphi \implies \varphi'$ or $\varphi$ is $\S$-derivable.
+\item[$(2)$] \label{item:coverstep} For all $\gamma_0$, $\gamma_1$, $\varphi$, and $\rho$ such that $\gamma \tran{}{\{\alpha\}} \gamma'$ and $(\gamma, \rho)\modelsml\varphi$ there is $\varphi' \eqbydef \Delta_{\{\alpha\}}(\varphi)$ such that  $(\gamma', \rho)\modelsml\varphi'$.\\
+\end{enumerate}
+\end{minipage}
+
+\noindent
+The proof of the lemma is by induction on the number of transitions  ($n$) in $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \cdots \tran{}{\S} \gamma_n$. 
+Since $\tau$ is finite, proving $(\tau,\rho)\models \rrule{\varphi}{\varphi'}$ reduces to finding   $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi'$.
+
+In the base case $n = 0$ and $\tau \eqbydef \gamma_0$.
+Since $\rrule{\varphi}{\varphi'}\in\F$ the auxiliary result $(1)$ ensures that $\M \models \varphi \implies \varphi'$ or $\varphi$ is $\S$-derivable.
+From $(\tau,\rho)$ starts from $\varphi$ we obtain that $(\gamma_0, \rho) \models \varphi$.
+If $\M \models \varphi \implies \varphi'$, then we have $\gamma_0$ such that $(\gamma_0, \rho) \models \varphi'$.
+If $\varphi$ is $\S$-derivable, then we obtain a contradiction in our hypotheses: on the one hand, $\gamma_0$ is terminating because $\tau$ is complete, and on the other hand $\gamma_0$ is not terminating because there is $\gamma_1$ such that $\gamma_0 \tran{}{\S} \gamma_1$ which is implied by the totality of $\S$ and $(\gamma_0, \rho) \models \varphi$. 
+
+In the inductive case, we have $n  > 0$ and $\tau \eqbydef \gamma_0 \tran{}{\S} \gamma_1 \tran{}{\S} \cdots \tran{}{\S} \gamma_n$. 
+Note that $n > 0$ implies the fact that $\tau$ contains at least the first transition $\gamma_0 \tran{}{\S} \gamma_1$, i.e., there is $\alpha \in \S$ such that $\gamma_0 \tran{}{\{ \alpha \}} \gamma_1$. 
+
+Since $\rrule{\varphi}{\varphi'}\in\F (\eqbydef \bigcup_{i\geq 0}G_i)$ then $\rrule{\varphi}{\varphi'}$ was eliminated at some point, i.e, there is $i$ such that  $\rrule{\varphi}{\varphi'} \in G_i \setminus G_{i+1}$; We distinguish the three situations (corresponding to the inference steps of the procedure):
+\begin{itemize}
+\item $\M \models \varphi \implies \varphi'$. 
+Trivial:  $(\gamma_0, \rho) \models \varphi$ implies $(\gamma_0, \rho) \models \varphi'$.
+\item there is $ \rarule{\varphi_c}{\varphi'_c} \in G_0$ s. t. $M\modelsml\varphi\implies (\exists\FreeVars(\varphi_c))\varphi_c$. 
+
+From $(\gamma_0, \rho) \models \varphi$ and $M\modelsml\varphi\implies (\exists\FreeVars(\varphi_c))\varphi_c$ we get $(\gamma_0, \rho) \models (\exists\FreeVars(\varphi_c))\varphi_c$, i.e, there is $\rho'$ such that $\rho'(x) = \rho(x)$ for all $x \not\in \FreeVars(\varphi_c)$ and $(\gamma_0, \rho') \modelsml\varphi_c$.
+Then, by applying $(2)$ to $(\gamma_0, \rho') \modelsml\varphi_c$ and $\gamma_0 \tran{}{\S} \gamma_1$ there is $\varphi_1 \eqbydef \Delta_{\{\alpha\}}(\varphi_{c})$ and $(\gamma_1, \rho')\modelsml\varphi_1$.
+
+Next,  the inductive hypothesis is applied twice.
+
+First, the inductive hypothesis is applied for $\tau|_1$, which starts from $\varphi_1$,  and $\rrule{\varphi_1}{\varphi'_c} \in \Delta_\S(\rrule{\varphi_{c}}{\varphi_{c'}}) \subseteq \F$, and thus, there is $\gamma_j$ which satisfies $\varphi'_c$ with $\rho'$;
+Then, using the assumption $(a_1)$ from above, one can prove $(\gamma_j, \rho) \modelsml\Delta_{\rrule{\varphi_c}{\varphi'_c}}(\varphi)$.
+
+Second, we apply the inductive hypothesis for $\tau|_j$, which starts from $\Delta_{\rrule{\varphi_c}{\varphi'_c}}(\varphi)$, and $\Delta_{\rrule{\varphi_c}{\varphi'_c}}(\rrule{\varphi}{\varphi'}) \in \F$,  and thus, there is $\gamma_i$ such that $(\gamma_i, \rho)\modelsml \varphi'$.
+\item $\varphi$ is $\S$-derivable. 
+By applying $(2)$ for $(\gamma_0, \rho) \modelsml\varphi_c$ and $\gamma_0 \tran{}{\S} \gamma_1$, there is $\varphi_1 \eqbydef \Delta_{\{\alpha\}}(\varphi)$ and $(\gamma_1, \rho)\modelsml\varphi_1$.
+In this case we apply the inductive hypothesis for $\tau|_1$, which starts from  $\varphi_1 \eqbydef \Delta_{\{\alpha\}}(\varphi)$, and for $\rrule{\varphi_1}{\varphi'} \in \Delta_\S(G_0) \subseteq \F$, to obtain $\gamma_i$ such that $(\gamma_i, \rho)\modelsml \varphi'$.
+%\end{itemize}
+\end{itemize}
+
+%\paragraph{Remarks}
+\begin{remark}
+\label{rem:der2}
+Computing $\Delta_{\rrule{\varphi_c}{\varphi'_c}}(\varphi)$ (in the second case of the inductive step) requires that sets $\FreeVars(\varphi)$ and $\FreeVars(\varphi_c,\varphi'_c)$ are disjoint (cf. \textsc{Remark}~\ref{rem:der}).
+However, in the proof, there is no guarantee that this condition is met. %$\FreeVars(\varphi) \cap \FreeVars(\varphi_{c}, \varphi'_{c}) = \emptyset$.
+Note that assumption $(a_1)$
+%\dl{where is $(a_1)$ defined?}
+ is insufficient in this case because it takes into account only rules in $\S$ (i.e., if $\rrule{\varphi_l}{\varphi_r}\in\S$ then $\FreeVars(\varphi) \cap \FreeVars(\varphi_l, \varphi_r) = \emptyset$), but here $\rrule{\varphi_c}{\varphi'_c}$ is from $G_0$.
+In fact, $(a_1)$ is relevant only when applying the additional result $(2)$, since the rule $\alpha$ is from $\S$.
+Although the assumption $(a_1)$ states that {\it the free variables in rules can always be renamed}, in the proof from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} this is not handled explicitly.
+\end{remark}
+
+
+
+\section{A formal proof of soundness in Coq}
+\label{sec:proof}
+
+In this section we generalise the procedure by introducing non-determinism and then encode it as an inductive relation in Coq. 
+In spite of this generalisation, the formal proof of soundness follows the same pattern as the paper proof in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+
+Using Coq, we were able to find a flaw in the paper proof: the claim that all the goals in $\F$ are eliminated by one of the inference steps of the procedure (made in the proof of \textsc{Lemma}~\ref{lem:main}) does not hold. 
+More precisely, the claim holds only for goals from $\F\setminus G_0$ because the procedure is called with $G_1 \eqbydef \Delta_\S(G_0)$, that is, it operates only with goals from $G_1, G_2, \ldots$. 
+This flaw does not invalidate the final result, but it makes the proof incomplete: an additional case is needed to prove the conclusion of \textsc{Lemma}~\ref{lem:main} for the goals in $G_0$.
+Note that, in the proof of \textsc{Theorem}~\ref{th:sound}, the goals (of interest) for which we apply \textsc{Lemma}~\ref{lem:main} are exactly those from $G_0 \subseteq \F$.
+During the formalisation, we also realised that we need an extra hypothesis in the soundness theorem to fix the proof. 
+
+Unlike in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, in the Coq proof we explicitly handle the renaming of variables in \RL formulas. 
+Also, we reformulate several lemmas from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} (Lemmas 5, 7, and 8) such that they are self contained, and we update their proofs accordingly.
+
+
+In Section~\ref{sec:ml} we introduce a set of axioms that capture only those constructs of \ML needed in our proof, and in Section~\ref{sec:rl} we define \RL, derivatives, and related notions.
+In Section~\ref{sec:ps} we present the procedure as a set of inference rules, and then, its encoding in Coq. 
+We precisely show how the assumptions from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} regarding variable renamings and well-formedness of \RL formulas are dealt with.
+In Sections~\ref{sec:hl} and~\ref{sec:finite} we show the formalisation of the main lemmas and we emphasise the differences with respect to~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+Finally, in Section~\ref{sec:th} we present a complete formulation of the soundness theorem and its proof.
+
+\subsection{\ML in Coq}
+\label{sec:ml}
+
+%Our verification procedure uses a few syntactical constructs of \ML, namely variables, implication ($\implies$), and the existential quantifier ($\exists$).
+%It also makes use of a model $\M$ and the notion of validity in $\M$.
+%Additionally, the formalisation of the soundness theorem requires 
+%%\vr{please be precise here about whom requires what. E.g., I don't see why ``variables'' are required by the soundess theorem. But the theorem certainly needs a notion of satisfaction of RL fomulas, since its conclusion is about that. If you are going to state ``whom needs what'', you must be precise, otherwise, readers easily detect that we are not and get a reason for rejection for free.}
+% a way to identify concrete program states in the model, and the \ML satisfaction relation.
+%%However, the proof of the soundness does not depend on a particular model $\M$ or a specific representation for variables. 
+A definition of \ML such as in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} would require us to formalise many things (algebraic specifications, FOL,...), which are irrelevant in our proof.
+Instead, we introduce a set of axioms that capture only what is needed by the proof: variables, \ML implication ($\implies$), the existential quantifier ($\exists$), a model $\M$, a way to identify concrete program states in the model, and the \RL satisfaction relation.
+
+Variables (\coq{Var}), program configurations (\coq{State}), models (\coq{Model}), and valuations ($\coq{Valuation}$) are all parameters.
+From the \ML syntax we only keep $\lnot$, $\land$ (both used to express $\implies$), and $\exists$, together with the corresponding axioms about the satisfaction relation $\modelsml$.
+To avoid ambiguities, we distinguish the logical connectives and quantifiers of \ML ($\lnot$, $\land$, $\exists$, \ldots) from those of Coq by using a bold font for the latter ($\cnot$, $\cand$, $\cexists$, \ldots):\\
+
+
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lclcrcr}
+%\coqtt{Parameter} 
+\coq{Model} & \coqtt{:}& \coq{Type} &\hspace*{5ex}&
+%\coqtt{Parameter} 
+\coq{State} & \coqtt{:}& \coq{Type}\\
+%\coqtt{Parameter} 
+\coq{Var} & \coqtt{:}& \coq{Type} &\hspace*{5ex}&
+%\coqtt{Parameter} 
+\coq{MLFormula} & \coqtt{:}& \coq{Type}\\[1ex]
+\end{tabular}
+\end{minipage}
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+%\coqtt{Definition} 
+\coq{Valuation} & \coqtt{:}& \coq{Type} \coqtt{:=} \coq{Var} $\to$ \coq{Model}\\
+%\coqtt{Parameter} 
+\coq{$\modelsml$} & \coqtt{:}& \coq{State} $\to$ \coq{Valuation} $\to$ \coq{MLFormula} $\to$ \coq{Prop}\\[1ex]
+\end{tabular}
+\end{minipage}
+
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+%$\top$ & \coqtt{:}& \coq{MLFormula}\\
+ \coq{$\lnot$} & \coqtt{:}& \coq{MLFormula} $\to$ \coq{MLFormula} \\
+ \coq{$\land$} & \coqtt{:}& \coq{MLFormula} $\to$ \coq{MLFormula} $\to$ \coq{MLFormula}\\
+ \coq{$\exists$} & \coqtt{:}& \coqtt{list} \coq{Var} $\to$ \coq{MLFormula} $\to$ \coq{MLFormula}\\\\
+
+%$\models^\top$  & \coqtt{:}& $(\cforall \gamma, \rho) (\gamma, \rho) \modelsml \top$\\ 
+$\models^\lnot$  & \coqtt{:}& $\cforall \gamma~\rho~\varphi~.~(\gamma, \rho) \modelsml \lnot \varphi  \cequiv \cnot (\gamma, \rho) \modelsml \varphi$\\ 
+ $\models^\land$  & \coqtt{:}& $\cforall \gamma~\rho~\varphi~\varphi'~.~(\gamma, \rho) \modelsml \varphi \land \varphi' \cequiv (\gamma, \rho) \modelsml \varphi \cand (\gamma, \rho) \modelsml \varphi' $\\
+ $\models^\exists$  & \coqtt{:}& $\cforall \varphi~\gamma~\rho~V~.~(\gamma, \rho) \modelsml (\exists V)\varphi \cequiv  \cexists \rho'~.~\cforall v~.~v \not\in V \cimplies \rho'(v) = \rho(v)  \cand (\gamma, \rho') \models \varphi$\\[2ex]
+\end{tabular}
+\end{minipage}
+
+\noindent
+The \ML implication ($\implies$) is defined using $\lnot$ and $\land$:\\
+
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\varphi \implies \varphi'$ & $\eqbydef$ & $\lnot(\varphi \land \lnot \varphi')$\\
+\end{tabular}
+\end{minipage}
+
+\noindent
+Also, the validity of an \ML formula is defined as follows:\\
+
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\M \modelsml \varphi$ & $\eqbydef$ & $\cforall \gamma~\rho~.~ (\gamma,\rho)\models\varphi$\\[2ex]
+\end{tabular}
+\end{minipage}
+
+
+To collect the free variables of an \ML formula we use a function $\FreeVars$, which takes a formula $\varphi$ as an argument and returns the list of free variables occurring in $\varphi$.
+Because we do not instantiate the above axioms $\FreeVars$ is a parameter:\\
+
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\FreeVars$ & \coqtt{:}& \coq{MLFormula} $\to$ \coqtt{list} \coq{Var}\\[2ex]
+\end{tabular}
+\end{minipage}
+
+
+In the proofs of our lemmas we often have to build new valuations from existing ones.
+For that we use the following function: \\
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\varrho$ & \coqtt{:}& \coq{Valuation} $\to$ \coq{Valuation} $\to$ \coqtt{list} \coq{Var} $\to$ \coq{Valuation}\\[2ex]
+\end{tabular}
+\end{minipage}
+
+\noindent
+Intuitively, $\extend{\rho}{\rho'}{V}$ returns a new valuation which is equal to $\rho$ in all variables except for those in $V$, where $\extend{\rho}{\rho'}{V}$ is equal to $\rho'$.
+We capture this intuition in the following simple lemmas:\\
+
+\noindent
+ \begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\varrho^{\not\in}$ & \coqtt{:}& $\cforall x~\rho~\rho'~V~.~ x \not\in V \cimplies \extend{\rho}{\rho'}{V}(x) = \rho(x)$\\
+$\varrho^\in$ & \coqtt{:}& $\cforall x~\rho~\rho'~V~.~ x \in V \cimplies \extend{\rho}{\rho'}{V}(x) = \rho'(x)$\\[2ex]
+\end{tabular}
+\end{minipage}
+
+\noindent
+If an \ML formula $\varphi$ is satisfied by a pair $(\gamma, \rho)$, and none of its free variables are in $V$, then for any $\rho'$, the pair $(\gamma, \extend{\rho}{\rho'}{V})$ also satisfies $\varphi$, because on those variables $\extend{\rho}{\rho'}{V}$ has the same effect as $\rho$.
+Conversely, if $\varphi$ is satisfied by a pair $(\gamma, \rho')$, and all its free variables are included in $V$, then for any $\rho$, the pair $(\gamma, \extend{\rho}{\rho'}{V})$ also satisfies $\varphi$.
+Since the full definition of $\modelsml$ is abstract here, these properties are given as axioms:\\
+
+\noindent
+ \begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\models_{\varrho}^{\not\subseteq}$ & \coqtt{:} &$\cforall \varphi~\gamma~\rho~\rho'~V~.~(\cforall x~.~x \in \FreeVars(\varphi) \cimplies x \not\in V) \cand (\gamma, \rho)\modelsml \varphi \cimplies (\gamma, \extend{\rho}{\rho'}{V})\modelsml \varphi$\\[1ex]
+$\models_{\varrho}^\subseteq$ & \coqtt{:} &$\cforall \varphi~\gamma~\rho~\rho'~V~.~\FreeVars(\varphi) \subseteq V\cand (\gamma, \rho')\modelsml \varphi \cimplies (\gamma, \extend{\rho}{\rho'}{V})\modelsml \varphi$\\\\
+\end{tabular}
+\end{minipage}
+
+\noindent
+Another property which depends on $\modelsml$ is the one about the encoding of \ML formulas into \FOL: for all $\rho$ and $\varphi$, $\rho \modelsfol \varphi^{=?}$ iff there is $\gamma$ such that $(\gamma, \rho) \modelsml \varphi$.
+Here we do not define \FOL, but we use the fact that any \FOL formula is also an \ML formula. 
+Hence, the encoding will transform an ordinary \ML formula into an \ML formula without patterns, and the property above is axiomatised as:\\
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+%$\varphi^{=?}$ & \coqtt{:} & \coq{MLFormula} $\to$ \coq{MLFormula}\\
+$\models^{=?}$& \coqtt{:} & $\cforall \gamma'~\rho~\varphi~.~(\gamma', \rho) \modelsml \varphi^{=?} \cequiv (\cexists \gamma) (\gamma, \rho) \modelsml \varphi$ \\\\
+\end{tabular}
+\end{minipage}
+
+
+\subsection{\RL and derivatives}
+\label{sec:rl}
+
+By definition, an \RL formula is simply a pair of \ML formulas:\\
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+\coq{RLFormula}& $\eqbydef$& \coq{MLFormula} $*$ \coq{MLFormula}\\[1ex]
+\end{tabular}
+\end{minipage}
+
+\noindent
+For clarity, in Coq we use the notation $\rrule{\varphi}{\varphi'}$ instead of the pair notation $(\varphi, \varphi')$. 
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} the following assumption is made: for any \RL formula $\rrule{\varphi}{\varphi'}$ the condition $\FreeVars(\varphi') \subseteq \FreeVars(\varphi)$ holds. 
+Here, we introduce the notion of \emph{well-formed} \RL formula:\\
+
+\begin{minipage}{\textwidth}
+\begin{tabular}{lll}
+$\wf{\rrule{\varphi}{\varphi'}}$ & $\eqbydef$& $\FreeVars(\varphi') \subseteq \FreeVars(\varphi)$\\\\
+\end{tabular}
+\end{minipage}
+
+
+\noindent
+A set of \RL formulas $\S$ defines a transition system over states:\\
+
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\gamma \tran{}{\S} \gamma'$ &$\eqbydef$& $\cexists \varphi~\varphi'~\rho~.~\rrule{\varphi}{\varphi'} \in \S~\cand (\gamma, \rho) \modelsml \varphi \cand (\gamma', \rho) \modelsml \varphi'$ \\[2ex]
+\end{tabular}
+\end{minipage}
+
+\noindent
+In the rest of the paper we assume a given set of \RL formulas $\S$.
+The satisfaction relation $\modelsrl$ of \RL  is defined over execution paths $\tau$, which could be either finite or infinite. 
+Because of that, we formalise them as functions from \coq{nat} to \coqtt{option} \coq{State} (where \coqtt{option} \coq{State} is the extension of \coq{State} with an extra element \coqtt{None}).
+The $i^\mathit{th}$ element of a path $\tau$ is $\tau(i)$ and can be either a state $\gamma_i$ or \coqtt{None}. 
+The subpath of $\tau$ which starts at position $i$ is denoted $\tau|_i$.
+Also, a path is \emph{well-formed}, written $\coq{wfPath}(\tau)$, if every two consecutive states (say $\gamma_i$ and $\gamma_{i+1}$) are in the transition relation given by $\S$ ($\gamma_i \tran{}{\S} \gamma_{i+1}$), and for all $i$ and $j$ such that $i < j$, if $\tau(i) = \coqtt{None}$ then $\tau(j) = \coqtt{None}$.
+
+A path $\tau$ is infinite, written $\coq{infinite}(\tau)$, if for all $i$, $\tau(i) \neq \coqtt{None}$. 
+A configuration $\gamma$ is terminating, denoted as $\coq{terminating}(\gamma)$, if there is no $\gamma'$ such that $\gamma \tran{}{\S} \gamma'$.
+A well-formed path $\tau$ is complete and has $n$ transitions, written $\coq{complete}(\tau, n)$ if $\tau$ is finite and $\coq{terminating}(\tau(n))$.
+Also, a well-formed path $\tau$ is complete, denoted by $\coq{complete}(\tau)$, if $\coq{infinite}(\tau)$ or $\coq{complete}(\tau, n)$ for some natural number $n$.
+Note that, if the path $\tau$ is complete and well-formed then for all $i$ (if $\tau$ is finite then $i \leq n$) the subpath $\tau|_i$ is also complete and well-formed.
+This statement is assumed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} but in Coq we prove it explicitly.
+Finally, we say that $(\tau,\rho)$ \coq{startsFrom} $\varphi$ if  $(\tau(0), \rho) \modelsml \varphi$.
+
+%All these are defined below:\\[1ex]
 %
-% Reminder: the "draftcls" or "draftclsnofoot", not "draft", class
-% option should be used if it is desired that the figures are to be
-% displayed while in draft mode.
-%
-%\begin{figure}[!t]
-%\centering
-%\includegraphics[width=2.5in]{myfigure}
-% where an .eps filename suffix will be assumed under latex, 
-% and a .pdf suffix will be assumed for pdflatex; or what has been declared
-% via \DeclareGraphicsExtensions.
-%\caption{Simulation results for the network.}
-%\label{fig_sim}
-%\end{figure}
-
-% Note that the IEEE typically puts floats only at the top, even when this
-% results in a large percentage of a column being occupied by floats.
-
-
-% An example of a double column floating figure using two subfigures.
-% (The subfig.sty package must be loaded for this to work.)
-% The subfigure \label commands are set within each subfloat command,
-% and the \label for the overall figure must come after \caption.
-% \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
-% line do not exceed the text width or a line break will occur.
-%
-%\begin{figure*}[!t]
-%\centering
-%\subfloat[Case I]{\includegraphics[width=2.5in]{box}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{box}%
-%\label{fig_second_case}}
-%\caption{Simulation results for the network.}
-%\label{fig_sim}
-%\end{figure*}
-%
-% Note that often IEEE papers with subfigures do not employ subfigure
-% captions (using the optional argument to \subfloat[]), but instead will
-% reference/describe all of them (a), (b), etc., within the main caption.
-% Be aware that for subfig.sty to generate the (a), (b), etc., subfigure
-% labels, the optional argument to \subfloat must be present. If a
-% subcaption is not desired, just leave its contents blank,
-% e.g., \subfloat[].
-
-
-% An example of a floating table. Note that, for IEEE style tables, the
-% \caption command should come BEFORE the table and, given that table
-% captions serve much like titles, are usually capitalized except for words
-% such as a, an, and, as, at, but, by, for, in, nor, of, on, or, the, to
-% and up, which are usually not capitalized unless they are the first or
-% last word of the caption. Table text will default to \footnotesize as
-% the IEEE normally uses this smaller font for tables.
-% The \label must come after \caption as always.
-%
-%\begin{table}[!t]
-%% increase table row spacing, adjust to taste
-%\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-%\caption{An Example of a Table}
-%\label{table_example}
-%\centering
-%% Some packages, such as MDW tools, offer better commands for making tables
-%% than the plain LaTeX2e tabular which is used here.
-%\begin{tabular}{|c||c|}
-%\hline
-%One & Two\\
-%\hline
-%Three & Four\\
-%\hline
+%\noindent
+%\hspace{-2ex}\begin{minipage}{\textwidth}
+%\begin{tabular}{lll}
+%\coq{Path} &\hspace{-6ex}\coqtt{: }&\hspace{-6ex}\coq{nat} $\to$ \coq{State}\\
+%\coq{wfPath}($\tau$) &\hspace{-6ex}\coqtt{:=}&\hspace{-6ex} $(\cforall i, j) (i < j \cimplies \tau(i) = \coqtt{None} \cimplies \tau(j) = \coqtt{None}) \cand$\\
+%&&\hspace{-5ex} $(\cforall i) (\tau(i) \neq \coqtt{None} \cand \tau(i+1) \neq \coqtt{None})$\\
+%&&\hspace{-4ex}$\cimplies (\cexists \gamma, \gamma') (\tau(i) = \gamma \cand \tau(i+1) = \gamma' \land \gamma \tran{}{\S} \gamma')$\\
+%\coq{infinite}($\tau$) & \hspace{-3ex}\coqtt{:=} &\hspace{-3ex} $\coq{wfPath}(\tau) \cand (\cforall i) \tau(i) \neq \coqtt{None}$\\
+%\coq{hasLen}($\tau,n$) & \hspace{-3ex}\coqtt{:=} & \hspace{-3ex}$\coq{wfPath}(\tau) \cand \cnot \coq{infinite}(\tau) \cand$\\
+%&&$(\cexists n, \gamma) \tau(n) = \gamma \cand \tau(n+1) = \coqtt{None}$\\
+%\coq{terminating}($\gamma$)& \hspace{-3ex}\coqtt{:=} &\hspace{-3ex}$(\cforall \gamma') \cnot (\gamma\tran{}{\S} \gamma')$\\
+%\coq{complete}($\tau,n$) &\hspace{-3ex} \coqtt{:=} & \hspace{-3ex} $\coq{infinite}(\tau) \cor (\coq{hasLen}(\tau,n) \cand \coq{terminating}(\tau(n)))$\\[2ex]
 %\end{tabular}
-%\end{table}
+%\end{minipage}
 
 
-% Note that the IEEE does not put floats in the very first column
-% - or typically anywhere on the first page for that matter. Also,
-% in-text middle ("here") positioning is typically not used, but it
-% is allowed and encouraged for Computer Society conferences (but
-% not Computer Society journals). Most IEEE journals/conferences use
-% top floats exclusively. 
-% Note that, LaTeX2e, unlike IEEE journals/conferences, places
-% footnotes above bottom floats. This can be corrected via the
-% \fnbelowfloat command of the stfloats package.
+The satisfaction relation of \RL is defined for complete paths $\tau$: $(\tau,\rho)\modelsrl \rarule{\varphi}{\varphi'}$ iff $(\tau,\rho)$ \coq{startsFrom} $\varphi$ and, either there is $i\ge 0$ such that $(\tau(i),\rho)\modelsml\varphi'$ or $\coq{infinite}(\tau)$.
+Also, ${\tran{}{\S}}\modelsrl \rarule{\varphi}{\varphi'}$ iff $(\tau,\rho) \modelsrl \rarule{\varphi}{\varphi'}$ for all pairs $(\tau,\rho)$ starting from $\varphi$ with $\tau$ complete. Here are the exact definitions:\\
+
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lll}
+%\coq{startsFrom}($\tau, \rho, \rrule{\varphi}{\varphi'}$) &\hspace{-3ex}\coqtt{:=}&\hspace{-3ex}$(\cexists \gamma) \tau(1) = \gamma \cand (\gamma, \rho) \modelsml \varphi$\\\\
+$(\tau, \rho) \modelsrl \rrule{\varphi}{\varphi'}$ &\hspace{-3ex}$\eqbydef$&\hspace{-3ex}$(\tau, \rho) \coq{ startsFrom } \varphi ~\cand ((\cexists~i~n~\gamma'~.~i \leq n \cand \coq{complete}(\tau, n)~\cand$\\
+&& \hspace{31ex}$ \tau(i) = \gamma' \cand (\gamma', \rho) \modelsml \varphi')$\\
+&& \hspace{-1ex}$ \cor~\coq{infinite}(\tau))$\\[1ex]
+$\tran{}{\S}\modelsrl \rrule{\varphi}{\varphi'}$ &\hspace{-3ex}$\eqbydef$&\hspace{-3ex}$\cforall \tau~\rho~.~\coq{wfPath}(\tau)~\cand \coq{complete}(\tau)~\cand (\tau, \rho) \coq{ startsFrom } \varphi  \cand (\tau, \rho) \modelsrl \rrule{\varphi}{\varphi'} $\\[1ex]
+$\tran{}{\S}\modelsrl G$ &\hspace{-3ex}$\eqbydef$&\hspace{-3ex}$\cforall~\rrule{\varphi}{\varphi'}~.~\rrule{\varphi}{\varphi'} \in G \cimplies \tran{}{\S}\modelsrl\rrule{\varphi}{\varphi'}$\\\\[1ex]
+\end{tabular}
+\end{minipage}
 
 
+An \ML formula $\varphi$ is \emph{$\S$-derivable} if there are $\gamma$, $\rho$, and $\gamma'$ such that $(\gamma, \rho)\modelsml \varphi$ and $\gamma \tran{}{\S} \gamma'$. 
+The $\S$-derivability of an \ML formula must not be confused with the notion of \emph{$\S$-derivative}, i.e, the derivative with $\S$ of an \ML formula (Section~\ref{sec:intro}).
+To compute the $\S$-derivative of an  \ML formula in Coq, we use the following function:
+$$\Delta_{\rrule{\varphi_l}{\varphi_r}}(\varphi) \eqbydef (\exists \FreeVars(\varphi_l)) (\varphi_l \land \varphi)^{=?} \land \varphi_r.$$
+Note that, unlike in the definition of derivatives from Section~\ref{sec:intro}, here we quantify only the variables of $\varphi_l$ because $\coq{wf}(\rrule{\varphi_l}{\varphi_r})$, i.e., $\FreeVars(\varphi_r) \subseteq \FreeVars(\varphi_l)$.
+We use a similar notation for \RL formulas: 
+$$\Delta_{\rrule{\varphi_l}{\varphi_r}}(\rrule{\varphi}{\varphi'}) \eqbydef \rrule{(\exists \FreeVars(\varphi_l)) (\varphi_l \land \varphi)^{=?} \land \varphi_r}{\varphi'}.$$
+$\Delta_\S(\rrule{\varphi}{\varphi'})$ returns the list of $\S$-derivatives of $\rrule{\varphi}{\varphi'}$, and it is defined using $\Delta_{\rrule{\varphi_l}{\varphi_r}}(\rrule{\varphi}{\varphi'})$ for every rule in $\rrule{\varphi_l}{\varphi_r}\in\S$.\\
 
+Next, we introduce two relations $\approx$ and $\sim$, where the former is over \RL formulas, and the latter is over pairs of \ML formulas and valuations. 
 
-\section{Conclusion}
-The conclusion goes here.
+%\aa{``computing'' issue: discuss this with David}
+The relation $\approx$ is used to handle the renaming of free variables in \RL formulas that is required when computing derivatives.
+More precisely, instead of computing $\Delta_{\rrule{\varphi_l}{\varphi_r}}(\rrule{\varphi}{\varphi'})$ we compute $\Delta_{\rrule{\varphi_{l'}}{\varphi_{r'}}}(\rrule{\varphi}{\varphi'})$, where $\rrule{\varphi_{l'}}{\varphi_{r'}}$ is $\rrule{\varphi_l}{\varphi_r}$ with renamed free variables such that $\FreeVars(\varphi_{l'}) \cap \FreeVars(\varphi) = \emptyset$.
+This disjointness condition is essential for computing derivatives:  if this condition is not met, then there is no guarantee that the derivative above encodes the successors of configurations matching $\varphi$ (cf. \textsc{Remark}~\ref{rem:der}).
+%\vr{name the section and the remark in order to be able to refer to them.}
+The \RL formula $\rrule{\varphi_{l'}}{\varphi_{r'}}$ is a renamed version of $\rrule{\varphi_l}{\varphi_r}$ and we express that using $\approx$: $\rrule{\varphi_{l'}}{\varphi_{r'}} \approx \rrule{\varphi_l}{\varphi_r}$. 
 
+If two \RL formulas are related by $\approx$ then they denote the same set of transitions between configurations, but with different valuations. 
+For instance, the transition from $\langle 7, 3 \rangle$ to $\langle 7 - 3, 3 \rangle$ is given by both %\RL formulas
+ $\rrule{\varphi_0}{\varphi'_0} \eqbydef \rrule{\langle x , y \rangle}{\langle x - y, y \rangle}$ and $\rrule{\varphi_1}{\varphi'_1} \eqbydef \rrule{\langle u , v \rangle}{\langle u - v, v \rangle}$ with different valuations: a valuation $\rho$ such that $\rho(x) = 7$ and $\rho(y) = 3$ for the former, and a valuation $\rho'$ such that $\rho'(u) = 7$ and $\rho'(v) = 3$ for the latter.
+Thus, $\langle 7, 3 \rangle$ satisfies $\varphi_0$ with $\rho$ and $\varphi_1$ with $\rho'$,while $\langle 7-3, 3 \rangle$ satisfies $\varphi'_0$ with $\rho$ and $\varphi'_1$ with $\rho'$.
 
+To express the fact that two \RL formulas in relation $\approx$ denote the same transitions between configuration, but with different valuations, we use the relation $\sim$:\\[1ex]
 
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$(\varphi, \rho) \sim (\varphi', \rho')$ & $\eqbydef$ & $\cforall~\gamma~.~ (\gamma, \rho) \modelsml \varphi \cimplies (\gamma, \rho') \modelsml \varphi'$, \\\\
+\end{tabular}
+\end{minipage}
 
-% conference papers do not normally have an appendix
+\noindent
+and the following property:\\[1ex]
 
+\noindent
+\begin{minipage}{\textwidth}
+\begin{tabular}{lcl}
+$\approx^\sim$ & \coqtt{:} & $\cforall~\varphi_0~\varphi'_0~\varphi_1~\varphi'_1~.~\rrule{\varphi_0}{\varphi'_0} \approx \rrule{\varphi_1}{\varphi'_1} \implies$\\
+&& \hspace*{2ex}$\cforall~\rho~.~\exists~\rho'~.~(\varphi_0, \rho) \sim (\varphi_1, \rho') \cand (\varphi'_0, \rho) \sim (\varphi'_1, \rho')$\\\\
+\end{tabular}
+\end{minipage}
 
-% use section* for acknowledgment
-\section*{Acknowledgment}
+%\aa{explain $\approx$ and $\sim$ again.}
 
-
-The authors would like to thank...
-
-
-
-
-
-% trigger a \newpage just before the given reference
-% number - used to balance the columns on the last page
-% adjust value as needed - may need to be readjusted if
-% the document is modified later
-%\IEEEtriggeratref{8}
-% The "triggered" command can be changed if desired:
-%\IEEEtriggercmd{\enlargethispage{-5in}}
-
-% references section
-
-% can use a bibliography generated by BibTeX as a .bbl file
-% BibTeX documentation can be easily obtained at:
-% http://mirror.ctan.org/biblio/bibtex/contrib/doc/
-% The IEEEtran BibTeX style support page is at:
-% http://www.michaelshell.org/tex/ieeetran/bibtex/
-%\bibliographystyle{IEEEtran}
-% argument is your BibTeX string definitions and bibliography database(s)
-%\bibliography{IEEEabrv,../bib/paper}
+%When computing the derivative of an \ML formula $\varphi$ with a well-formed rule $\rrule{\varphi_l}{\varphi_r}$ one has to ensure that $\FreeVars(\varphi_l)$ and  $\FreeVars(\varphi)$ are disjoint sets (see last paragraph of Section~\ref{sec:intro}).
+%Otherwise, there is no guarantee that the derivative encodes the successors by $\tran{}{\{\rrule{\varphi_l}{\varphi_r}\}}$ of configurations matching $\varphi$.
+%In Coq, derivatives are computed using \RL formulas whose free variables have been renamed such that the disjointness condition is met.
+%Because the 
+%We use a relation $\approx$ that relates 
 %
-% <OR> manually copy in the resultant .bbl file
-% set second argument of \begin to the number of references
-% (used to reserve space for the reference number labels box)
-\begin{thebibliography}{1}
+%
+%%The proof from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} uses an assumption that ensures the disjointness of these sets. 
+%%Moreover, the assumption suggests that, if this condition is not met then the free variables in rules can always be renamed.
+%
+%
+%Here, derivatives are computed using \RL formulas whose free variables have been renamed such that the disjointness condition is met.
+%For example, instead of computing $\Delta_{\rrule{\varphi_l}{\varphi_r}}(\rrule{\varphi}{\varphi'})$ we compute $\Delta_{\rrule{\varphi_{l'}}{\varphi_{r'}}}(\rrule{\varphi}{\varphi'})$, where $\rrule{\varphi_{l'}}{\varphi_{r'}}$ is $\rrule{\varphi_l}{\varphi_r}$ with renamed free variables such that $\FreeVars(\varphi_{l'}) \cap \FreeVars(\varphi) = \emptyset$.
+%In Coq, we formalise this using the relation $\approx$: two \RL formulas are in the relation $\approx$ if they generate the same transitions.
+%Since $\rrule{\varphi_{l'}}{\varphi_{r'}}$ is just a renaming of $\rrule{\varphi_{l}}{\varphi_{r}}$ then $\rrule{\varphi_{l'}}{\varphi_{r'}} \approx\rrule{\varphi_l}{\varphi_r}$.
+%
+%
+%
+%This is formalised using a new relation $\approx$: 
+%
+%We do not need explicitly define $\approx$, but we use the following axiom which gives the link between $\approx$ and $\sim$:\\
+%Additionally, in the Coq proof we make use of a relation $\sim$ between pairs of \ML formulas and valuations: \\
+%
+%\noindent
+%\hspace*{-1ex} \begin{minipage}{\textwidth}
+%\begin{tabular}{lcl}
+%$(\varphi, \rho) \sim (\varphi', \rho')$ & \coqtt{:} & $(\cforall \gamma)  (\gamma, \rho) \modelsml \varphi \cimplies (\gamma, \rho') \modelsml \varphi'$ \\\\
+%\end{tabular}
+%\end{minipage}
+%
+%\noindent
+%Essentially, two pairs $(\varphi, \rho)$ and $(\varphi', \rho')$ are in relation if they match the same set of configurations.
+%
+%\vr{why are $\approx$ and $\sim$ in different subsections? this makes the reading harder. }
+%\noindent
+%\hspace*{-1ex} \begin{minipage}{\textwidth}
+%\begin{tabular}{lcl}
+%$\approx^\sim$ & \coqtt{:} & $(\cforall \varphi_0, \varphi'_0, \varphi_1, \varphi'_1)~\rrule{\varphi_0}{\varphi'_0} \approx \rrule{\varphi_1}{\varphi'_1} \implies$\\
+%&& \hspace*{2ex}$(\cforall \rho) (\exists \rho') (\varphi_0, \rho) \sim (\varphi_1, \rho') \cand (\varphi'_0, \rho) \sim (\varphi'_1, \rho')$\\\\
+%\end{tabular}
+%\end{minipage}
+%
+%\noindent
+%Essentially, $\approx^\sim$ expresses the fact that both the left hand sides and the right hand sides of two \RL formulas are in relation $\sim$  if the formulas are in relation $\approx$.
+%\vr{this does not explain the essential things: why do you need  $\approx$ and $\sim$ and the relation between them.}
+%For simplicity, we use the same notation for sets of \RL formulas, i.e., we write $\S \approx \S'$ iff for all $\alpha \in \S$ there is $\alpha' \in \S'$ such that $\alpha \approx \alpha'$, and for all $\alpha' \in \S'$ there is $\alpha \in \S$ such that $\alpha \approx \alpha'$.
+%\\
+%
 
-\bibitem{IEEEhowto:kopka}
-H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
-  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
-
-\end{thebibliography}
 
 
 
 
-% that's all folks
+\subsection{The procedure as a relation}
+\label{sec:ps}
+
+
+The inference steps that the procedure in Figure~\ref{fig:prove} performs are summarised below;
+for the moment, let us ignore the fact that $\texttt{prove}$ operates with sets of goals:\\
+
+
+
+\begin{center}
+\begin{tabular}{c}
+$\dfrac{\M\modelsml \varphi \implies \varphi'}{\S \modelsrl \rrule{\varphi}{\varphi'}}{[\textsc{impl}]}$\\\\
+$\dfrac{ \rrule{\varphi_c}{\varphi'_c} \in G_0 ~~~~ \M\modelsml \varphi \implies \overline{\varphi}_{c}~~~~ \S \modelsrl \Delta_{\{ \rrule{\varphi_c}{\varphi'_c} \}}(\rrule{\varphi}{\varphi'})}
+{ \S \modelsrl \rrule{\varphi}{\varphi'}}{[\textsc{circ}]}$\\\\
+$\dfrac{\varphi~\mathit{is}~\S\mathit{-derivable} ~~~~ \S \modelsrl \Delta_\S(\rrule{\varphi}{\varphi'})}{\S \modelsrl \rrule{\varphi}{\varphi'}}{[\textsc{symb}]}$\\\\
+\end{tabular}
+\end{center}
+
+\noindent
+The set $G_0$ is the initial set of goals and $\overline{\varphi}_{c} \eqbydef (\exists \FreeVars(\varphi_c))\varphi_c$. 
+The connection with the procedure is straightforward:
+ $[\textsc{impl}]$ says that if the current goal $ \rrule{\varphi}{\varphi'}$ can be proved by checking the implication $\M\modelsml \varphi \implies \varphi'$ then $\S \modelsrl \rrule{\varphi}{\varphi'}$ (see line 3 of the procedure); $[\textsc{circ}]$ captures the case when a circularity can be applied (lines 4 and 5); $[\textsc{symb}]$ corresponds to the case when the current goal is discharged to its symbolic successors (lines 6 and 7).
+Thus, the procedure can be thought of as a strategy which applies the above rules in a fixed order: $[\textsc{impl}]$, $[\textsc{circ}]$, $[\textsc{symb}]$.
+
+ 
+The procedure shown in Figure~\ref{fig:prove} might not terminate.
+Because all Coq functions are terminating, the procedure cannot be encoded as a Coq function.
+Also, the procedure operates with a set of goals instead of a single goal.
+In our formalisation, we adapt the inference steps above to work with lists of goals, since in Coq it is more convenient to work with lists rather than sets.
+One could claim that working with lists might restrict the generality of the procedure, but our encoding does not rely on list-specific features.
+Another aspect that we have to deal with within our Coq formalisation concerns the renaming of free variables in \RL formulas when computing derivatives. 
+Thus,  the inference steps [\textsc{circ}] and [\textsc{symb}] have to be changed such that they compute derivatives with conveniently renamed \RL formulas.
+
+%For this we use the relation $\approx$ 
+%\vr{finally, the reason for introducing $\approx$!}
+%and a condition which ensures that the sets of free variables are disjoint.
+%\vr{``the sets'' - which sets?}
+%Note that, unlike in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, here we handle variable renaming in \RL formulas explicitly.
+
+%Weneralise the procedure by introducing non-determinism and then encode it as an inductive relation in Coq
+In Coq, we introduce non-determinism by encoding the procedure as an inductive relation:\\
+
+\begin{center}
+\begin{tabular}{c}
+$\dfrac{\rrule{\varphi}{\varphi'} \in G ~~~~ \M\modelsml \varphi \implies \varphi'}{\coq{step}(G,G \setminus \{\rrule{\varphi}{\varphi'}\})}{[\textsc{impl}]}$\\\\
+$\dfrac{\rrule{\varphi}{\varphi'} \in G ~~~~
+\begin{aligned}
+\rrule{\varphi_c}{\varphi'_c} \in G_0~~~~~~~~\rrule{\varphi_c}{\varphi'_c} \approx \rrule{\varphi_{c'}}{\varphi'_{c'}}\\\M\modelsml \varphi \implies \overline{\varphi}_{c}~~~~~~~~\FreeVars(\varphi_{c'}) \cap \FreeVars(\varphi) = \emptyset
+\end{aligned}}
+{\coq{step}(G, G \setminus \{\rrule{\varphi}{\varphi'}\} \cup \{ \Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\rrule{\varphi}{\varphi'}) \})}{[\textsc{circ}]}$\\\\
+$\dfrac{\rrule{\varphi}{\varphi'} \in G ~~~~ \varphi~\mathit{is}~\S\mathit{-derivable} ~~~~ 
+\begin{aligned}
+\S \approx \S' ~~~~~~~~~~~~\\
+ \FreeVars(\varphi) \cap \FreeVars(\S') = \emptyset
+\end{aligned}
+}
+{\coq{step}(G, G \setminus \{\rrule{\varphi}{\varphi'}\} \cup \Delta_{\S'}(\rrule{\varphi}{\varphi'}))}{[\textsc{symb}]}$\\\\
+%$\dfrac{G \vdash G'' ~~~~ G'' \Vdash G'}{G\Vdash G'}{[\textsc{steps}]}$ \hspace{1cm} $\dfrac{}{\emptyset \Vdash \emptyset}{[\textsc{base}]}$
+\end{tabular}
+\end{center}
+
+\noindent
+Here, $\FreeVars(\S')$ denotes the list of free variables that occur in all the \RL formulas in $\S'$. 
+%$G$, $G_0$, $\S$, and $\S'$ are all lists of \RL formulas. 
+By abuse of notation we write $\rrule{\varphi}{\varphi'} \in G$ to denote the fact that $\rrule{\varphi}{\varphi'}$ is in list $G$.
+Intuitively, \coq{step} relates two lists of goals $G$ and $G'$, where $G$ contains the current goal $\rrule{\varphi}{\varphi'}$, and $G'$ contains the remaining goals from $G \setminus \{\rrule{\varphi}{\varphi'}\}$ and possibly the new goals generated by [\textsc{circ}] and [\textsc{step}].
+At each step, only a single goal is removed from $G$, but zero, one, or more goals can be added. 
+Note that, like in the original procedure (Figure~\ref{fig:prove}) which uses sets, it does not matter which goal is chosen from the list $G$, we only require that $\rrule{\varphi}{\varphi'} \in G$.
+Also, note that derivatives are always computed using equivalent (w.r.t. $\approx$) \RL formulas whose variables are conveniently renamed.
+
+A successful execution of the non-deterministic version of the procedure is defined using \coq{steps}:\\
+
+\begin{center}
+\begin{tabular}{c}
+$\dfrac{}{\coq{steps}(\emptyset)}{[\textsc{base}]}$ \hspace{1cm} $\dfrac{\coq{step}(G, G') ~~~~ \coq{steps}(G')}{\coq{steps}(G)}{[\textsc{steps}]}$ \\\\
+\end{tabular}
+\end{center}
+
+\noindent
+Intuitively, given a set of initial goals $G$, \coq{step} is applied multiple times until the goals in $G$, together with the intermediary ones generated by $[\textsc{circ}]$ and $[\textsc{symb}]$, are all eliminated by $[\textsc{impl}]$.
+
+
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, for a successful run of the procedure the set $\F\eqbydef G_0 \cup \bigcup_i G_i$ is defined, where $G_0$ is the initial set of goals, $G_1 = \Delta_\S(G_0)$, and $G_i$ ($i > 1$) are the sets of goals generated by each recursive call.
+In Coq, we define the following relation (which says when a goal $g$ is in $\F$):\\
+
+\begin{center}
+\begin{tabular}{c}
+$\dfrac{g \in G_0}{g \in \F}{[\textsc{in-$G_0$}]}$ \hspace{.4cm} $\dfrac{\coq{step}(G, G') ~~~~ g \in G\!\setminus\!G' ~~~~  G' \subseteq \F}{g \in \F}{[\textsc{in-step}]}$\\\\
+\end{tabular}
+\end{center}
+
+\noindent
+A goal $g \in \F$ if it is either in $G_0$, or there is step where $g$ was eliminated (i.e., $\coq{step}(G, G')$ with $g \in G\!\setminus\!G'$) and the remaining goals, including the ones introduced by this step, are also in $\F$.
+To ensure that this definition is consistent with the one in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, we prove the following technical lemma:
+%\vr{the appendix contains only this proof. I find it a bit useless.}
+\begin{lemma}
+\label{lem:ginf}
+For all lists of goals $G$, if $\coq{steps}(G)$ then $G \subseteq \F$.
+\end{lemma}
+
+\paragraph{Proof}
+We give the proof for the sake of completeness.
+It goes by induction on $\coq{steps}(G)$. 
+
+The [\textsc{base}] case is trivial  because $G = \emptyset \subseteq \F$.
+
+%\noindent
+If [\textsc{steps}] was applied, then we have $\coq{step}(G, G')$, $\coq{steps}(G')$, and, the inductive hypothesis $G' \subseteq \F$.
+We choose an arbitrary $g \in G$.
+If $g$ was eliminated by $\coq{step}(G, G')$ then $g \in G \setminus G'$, and we get $g \in \F$ by applying [\textsc{in-step}].
+Otherwise, if $g$ was not eliminated by $\coq{step}(G, G')$, we trivially show that $g \in G'$ using the definition of \coq{step}.
+Then, we use the inductive hypothesis $G' \subseteq \F$, and thus, $g \in \F$.
+Since $g$ was arbitrarily chosen then $G \subseteq \F$. $\square$\\
+
+
+In particular, if $G \eqbydef\Delta_\S(G_0)$ in \textsc{Lemma}~\ref{lem:ginf} then $\Delta_\S(G_0) \subseteq \F$.
+We note that $\coq{steps}$ and $\F$ encapsulate the entire execution of the procedure. 
+They also address the monolithic nature of the proof.
+
+
+\subsection{Helper lemmas}
+\label{sec:hl}
+In this section we present and prove two  lemmas that correspond to the additional results $(1)$ and $(2)$ shown in Section~\ref{sec:prove}.
+These lemmas have been also proved in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, but here we reformulate them more precisely.
+%For both of them we identify and explain the differences w.r.t~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+
+The first lemma states that every goal which is generated by a successful execution is either eliminated by $[\textsc{impl}]$, or its left hand side is $\S$-derivable.
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} this lemma is given inside the proof of another lemma, and inherently, it depends on several hypotheses of that lemma.
+Here, we disentangle the required hypotheses and we formulate it as a stand-alone lemma:
+%\vr{this looks like a not-so-significant detail. you could have kept it as a sublemma in Coq.}
+\begin{lemma}
+\label{lem:impl_or_der}
+For all \RL formulas $\rrule{\varphi}{\varphi'} \in \F$, if $\S$ is total, all goals in $G_0$ are $\S$-derivable, and there are $\gamma$ and $\rho$ such that $(\gamma, \rho)\modelsml \varphi$ then 
+$\M \modelsml \varphi \implies \varphi'$ or $\varphi$ is $\S$-derivable.
+\end{lemma}
+
+\paragraph{Proof.}
+If $\rrule{\varphi}{\varphi'} \in \F$ then either $\rrule{\varphi}{\varphi'} \in G_0$ (cf. [\textsc{in-$G_0$}]), or there is a step where $\rrule{\varphi}{\varphi'}$ is eliminated, i.e, $\coq{step}(G, G')$ with $\rrule{\varphi}{\varphi'} \in G\!\setminus\!G'$, and  $G' \subseteq \F$ (cf. [\textsc{in-step}]):
+
+\begin{itemize}
+\item $\rrule{\varphi}{\varphi'} \in G_0$: trivial, because all goals in $G_0$  are $\S$-derivable.
+\item %there is a step where $\rrule{\varphi}{\varphi'}$ is eliminated, i.e., $\coq{step}(G, G')$,  $\rrule{\varphi}{\varphi'} \in G\!\setminus\!G'$, and  $G' \subseteq \F$.
+In this case, $\rrule{\varphi}{\varphi'}$ was eliminated when applying one of the rules [\textsc{impl}], [\textsc{circ}], or [\textsc{symb}]:
+\begin{enumerate}
+\item [[\textsc{impl}\!\!]] : Trivial: $\M \modelsml \varphi \implies \varphi'$.
+\item [[\textsc{circ}\!\!]]: There is $\rrule{\varphi_c}{\varphi'_c} \in G_0$ such that $\M \modelsml \varphi \implies \overline{\varphi}_c$.
+We have to show that there are $\gamma_0$, $\gamma_1$, and $\rho'$ such that $(\gamma_0, \rho')\modelsml\varphi$ and $\gamma_0\tran{}{\S} \gamma_1$. 
+Let us choose $\gamma_0 \eqbydef \gamma$ and $\rho' \eqbydef \rho$. 
+We easily obtain $(\gamma, \rho)\modelsml \varphi$ from the hypothesis.
+In order to get a transition from $\gamma$ we use the fact that $\S$ is total:
+first, $\M \modelsml \varphi \implies \overline{\varphi}_c$ implies $(\gamma, \rho)\models \overline{\varphi}_c$, that is, there is a valuation $\rho''$ 
+such that $\rho''(x) = \rho(x)$ for all $x \not\in\FreeVars(\varphi_c)$ and $(\gamma, \rho'')\models \varphi_c$ (cf. $\models^\exists$); second, from $(\gamma, \rho'')\models \varphi_c$, $\varphi_c$ is $\S$-derivable (because $\rrule{\varphi_c}{\varphi'_c} \in G_0$), and $\S$ total we obtain $\gamma'$ such that $\gamma\tran{}{\S}\gamma'$.
+\item [[\textsc{symb}\!\!] ]: Trivial: $\varphi$ is $\S$-derivable. \hfill$\square$\\
+\end{enumerate}
+\end{itemize}
+
+%\noindent
+%The main difference between \textsc{Lemma}~\ref{lem:impl_or_der} and the corresponding one from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} is that here we explicitly provide in the hypothesis a configuration $\gamma$ and a valuation $\rho$ which together satisfy $\varphi$.
+%Note that these are crucial in the subcase of the proof where [\textsc{circ}] is applied.
+%%The existence of $(\gamma, \rho)$ is crucial in the proof. 
+%On the contrary, the proof from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} assumes the existence of $\gamma$ and $\rho$ based on the context where the lemma is used. Thus, that lemma holds only in that context.\\
+%\vr{I don't get the point of the previous paragraph.}
+
+The second lemma states that for every transition $\gamma \tran{}{\S} \gamma'$ which starts from $\varphi$ there is a symbolic successor $\varphi'$ of $\varphi$ such that $\gamma'$ is an instance of $\varphi'$. 
+The lemma can be generalised to  paths, that is, one can prove that for a concrete execution path there is a symbolic one which \emph{covers} it.
+There are two important conditions required by this lemma: all rules from $\S$ have distinct free variables from variables in $\varphi$ and all formulas from $\S$ and $G_0$ are well-formed.
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} these conditions hold thanks to assumption $(a_1)$. Here, we add these conditions as hypotheses:
+
+\begin{lemma}
+\label{lem:coverstep}
+For all transitions $\gamma \tran{}{\S} \gamma'$, for all valuations $\rho$, and for all formulas $\varphi$, if  $(\gamma,\rho)\modelsml \varphi$,   $f \in \S \cup G_0$ implies $\coq{wf}(f)$, and $\FreeVars(\S) \cap \FreeVars(\varphi) = \emptyset$,  
+then there are $\alpha \in \S$ and  $\varphi' \eqbydef \Delta_{\alpha} (\varphi)$ such that $(\gamma',\rho)\modelsml\varphi'$.
+\end{lemma}
+
+\paragraph{Proof}
+The proof is constructive in the sense that we explicitly provide $\alpha$ and $\varphi'$.
+The transition $\gamma \tran{}{\S} \gamma'$ implies that there is a rule $\rrule{\varphi_l}{\varphi_r}\in \S$ and a valuation $\rho'$ such that $(\gamma, \rho')\models\varphi_l$ and $(\gamma', \rho')\models\varphi_r$. 
+
+Let us choose $\alpha \eqbydef \rrule{\varphi_l}{\varphi_r} \in \S$ and $\varphi' \eqbydef \Delta_{\rrule{\varphi_l}{\varphi_r}} (\varphi)$.
+For the chosen $\varphi'$ we have to prove $(\gamma',\rho')\modelsml\varphi'$, that is, $(\gamma',\rho')\modelsml (\exists \FreeVars(\varphi_l)) (\varphi_l \land \varphi_r)^{=?} \land \varphi_r$.
+This is equivalent (cf. $\models^\exists$) to showing that there is a valuation $\rho'' : \Var \to \M$ such that $\rho''(x) = \rho'(x)$ for all $x \not\in\FreeVars(\varphi_l)$ and $(\gamma', \rho'')\modelsml(\varphi_l \land \varphi_r)^{=?} \land \varphi_r$.
+Let $\rho'' \eqbydef \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}$. 
+By $\varrho^{\not\in}$ we have $\rho''(x) = \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}(x) = \rho'(x)$ for all $x\not\in\FreeVars(\varphi_l)$.
+There remains to show that $(\gamma', \rho'')\modelsml(\varphi_l \land \varphi_r)^{=?} \land \varphi_r$, that is (cf. $\models^\land$), $(\gamma', \extend{\rho}{\rho'}{\FreeVars(\varphi_l)})\modelsml(\varphi_l \land \varphi_r)^{=?}$ and $(\gamma', \extend{\rho}{\rho'}{\FreeVars(\varphi_l)})\modelsml \varphi_r$.
+
+The first part is equivalent to showing that there is $\gamma_0$ such that $(\gamma_0, \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}) \modelsml \varphi_l \land \varphi_r$ (cf. $\models^{=?}$). 
+Let $\gamma_0 \eqbydef \gamma$. On one hand, from $(\gamma, \rho')\modelsml \varphi_l$ we obtain $(\gamma_0, \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}) \modelsml \varphi_l$ (cf. $\models_\varrho^{\subseteq}$), and on the other hand, from $(\gamma, \rho)\modelsml \varphi$ we obtain $(\gamma_0, \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}) \modelsml \varphi$ (cf. $\models_\varrho^{\not\subseteq}$).
+Then, using $\models^\land$ we obtain $(\gamma_0, \extend{\rho}{\rho'}{\FreeVars(\varphi_l)}) \modelsml \varphi_l \land \varphi_r$.
+
+Next, since $\rrule{\varphi_l}{\varphi_r} \in \S$ then $\coq{wf}(\rrule{\varphi_l}{\varphi_r})$, i.e, $\FreeVars(\varphi_r) \subseteq \FreeVars(\varphi_l)$.
+Therefore, using $\models_\varrho^{\subseteq}$ and the fact that $(\gamma', \rho')\modelsml \varphi_r$ we obtain $(\gamma', \extend{\rho}{\rho'}{\FreeVars(\varphi_l)})\modelsml \varphi_r$. \hfill$\square$\\
+
+
+
+
+
+
+
+\subsection{The soundness for finite paths}
+\label{sec:finite}
+
+The proof of the soundness theorem (sketched in Section~\ref{sec:prove}) depends on an intermediate technical lemma (\textsc{Lemma}~\ref{lem:main}).
+In this section we reformulate the lemma by adding all the hypotheses needed by its proof so that it does not rely on hidden assumptions. 
+Briefly, assuming a successful execution $\coq{steps}(\Delta_\S(G_0))$, the lemma states that for all complete finite paths $\tau$, and for all formulas $\rrule{\varphi}{\varphi'}\in\F$ such that $\tau$ starts from $\varphi$ with a valuation $\rho$, $(\tau, \rho)$ satisfies $\rrule{\varphi}{\varphi'}$.
+The lemma can be thought of as a version of soundness for finite paths, which involves all the goals in $\F$, not only those from $G_0$.
+Its proof is by induction on the number of the transitions from the path $\tau$.
+
+
+
+With respect to~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, there are several significant differences.
+First, the proof takes into account the fact that derivatives are computed with renamed \RL formulas.
+Second, we find and fix the flaw from the proof in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, 
+where a false assumption about the goals in $\F$ is made: given a successful execution of the procedure starting with $\Delta_\S(G_0)$, all the goals in $\F$ are eliminated by a step of the procedure.
+This cannot be true, since $\F$ includes $G_0$, but the procedure only processes goals starting with $\Delta_\S(G_0)$.
+The assumption does not invalidate the result from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, but it makes the proof incomplete. 
+In fact, the goals in $G_0$, which are of interest in the soundness theorem, are not handled.
+This flaw was detected only when formalising the proof in Coq. 
+To fix it, we add a new hypothesis: the free variables that occur in rules in $\S$ and those that occur in rules in $G_0$ constitute disjoint sets (i.e., $\FreeVars(\S) \cap \FreeVars(G_0) = \emptyset$).
+
+
+In the following, we formulate the lemma, and we emphasise the main changes that occur in this proof (w.r.t. to the one in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}) using {\hl{gray font}}. 
+
+
+
+
+\begin{lemma}
+\label{lem:finite}
+For all finite and complete paths $\tau$, for all valuations $\rho$, and for all formulas $\rrule{\varphi}{\varphi'}\in\F$, 
+if 
+$(\tau,\rho)$ \coq{startsFrom} $\varphi$, 
+$G_0 \neq \emptyset$, 
+$\coq{wfPath}(\tau)$, 
+$\coq{steps}(\Delta_\S(G_0))$, 
+$\S$ is \coq{total}, 
+the left hand sides of goals in $G_0$ are $\S$-derivable,
+all formulas in $\S \cup G_0$ are well formed,
+and $\FreeVars(\S) \cap \FreeVars(G_0) = \emptyset$,
+then $(\tau,\rho)\modelsrl \rrule{\varphi}{\varphi'}$.
+\end{lemma}
+
+\paragraph{Proof} 
+Let $n$ be the the number of transitions in $\tau$.
+The proof is by well-founded induction on $n$:\\
+
+\noindent
+\underline{Case $n = 0$}. Here, $\tau \eqbydef \gamma_0$ and $\coq{complete}(\tau, 0)$.
+We use \textsc{Lemma}~\ref{lem:impl_or_der} for $\rrule{\varphi}{\varphi'}\in\F$ and $(\gamma_0, \rho) \modelsml \varphi$  (implied by $(\tau,\rho)$ \coq{startsFrom} $\varphi$) to split the proof in two cases:  $\M \modelsml \varphi \implies \varphi'$ or $\varphi$ is $\S$-derivable: 
+\begin{itemize}
+\item If $\M \modelsml \varphi \implies \varphi'$ and $(\gamma_0, \rho) \modelsml \varphi$  then $(\gamma_0, \rho) \modelsml \varphi'$. 
+Finally, $(\tau,\rho)\modelsrl \rrule{\varphi}{\varphi'}$ is obtained directly using the definition of $\modelsrl$ with $i = 0$, $n = 0$, and $\gamma' = \gamma_0$.
+\item If $\varphi$ is $\S$-derivable then, by the definition of totality of $\S$ and $(\gamma_0, \rho) \modelsml \varphi$  there is $\gamma'$ such that $\gamma \tran{}{\S} \gamma'$. 
+On the other hand, $\coq{complete}(\tau, 0)$ implies $\coq{terminating}(\gamma_0)$, which, by definition, means that there is no $\gamma'$ such that $\gamma \tran{}{\S} \gamma'$. 
+Thus, we obtain a contradiction.
+\end{itemize}
+
+\noindent
+\underline{Case $n > 0$}. Let $\tau \eqbydef \gamma_0 \tran{}{\S} \cdots \tran{}{\S} \gamma_n$ and $\coq{complete}(\tau, n)$.
+The inductive hypothesis holds for all complete paths of length strictly less than $n$, that are well-formed and start from the left hand side of a goal in $\F$.
+We have to show that $(\tau,\rho)\modelsrl \rrule{\varphi}{\varphi'}$, that is, $(\tau, \rho)$ \coq{startsFrom} $\varphi$ and there is $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi'$.
+The first part is given already in the hypothesis of the lemma, so it remains to find $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi'$.
+
+\noindent
+If $\rrule{\varphi}{\varphi'} \in \F$ then either $\rrule{\varphi}{\varphi'} \in G_0$ (cf. [\textsc{in-$G_0$}]), or there is a step where $\rrule{\varphi}{\varphi'}$ is eliminated, i.e, $\coq{step}(G, G')$ with $\rrule{\varphi}{\varphi'} \in G\!\setminus\!G'$, and  $G' \subseteq \F$ (cf. [\textsc{in-step}]):
+
+\begin{itemize}
+\item 
+{\hl{
+This case was overlooked in the paper proof~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+Assume $\rrule{\varphi}{\varphi'}\in G_0$. 
+Since $\tau$ has length $n > 0$ then there is at least one transition $\gamma_0 \tran{}{\S} \gamma_1$ in $\tau$.
+Using \textsc{Lemma}~\ref{lem:coverstep} and $(\gamma_0, \rho) \modelsml \varphi$, there are $\alpha \in \S$ and  $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi)$ such that $(\gamma_1,\rho)\modelsml\varphi_1$.
+Note that \textsc{Lemma}~\ref{lem:coverstep} requires that $\rrule{\varphi}{\varphi'}$ is well-formed and $\FreeVars(\varphi) \cap \FreeVars(\S) = \emptyset$, all formulas in $\S$ are well-formed, and all the free variables occurring in them are different from those in $\varphi$. 
+All these can be trivially proved using the hypotheses of the lemma.
+First, from $\rrule{\varphi}{\varphi'}\in G_0$, and $\FreeVars(\S) \cap \FreeVars(G_0) = \emptyset$ we get $\FreeVars(\varphi) \cap \FreeVars(\S) = \emptyset$.
+Second, if $\tau$ is complete and well-formed then $\tau|_1$ is also complete and well-formed.
+Finally, since $\tau$ has length $n (> 0)$ then $\tau|_1$ has length $n - 1$. 
+
+The next step in the proof is to apply the inductive hypothesis for $\tau|_1$ and $\rrule{\varphi_1}{\varphi'}$. 
+For this, we show that $\tau|_1$ \coq{startsFrom} $\varphi_1$ and $\rrule{\varphi_1}{\varphi'} \in \F$.
+First, the fact that $\tau|_1$ \coq{startsFrom} $\varphi_1$ is implied by $(\gamma_1,\rho)\modelsml\varphi_1$.
+Second, since $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi) \in \Delta_\S(\varphi)$ and $\rrule{\varphi}{\varphi'} \in G_0$ then the \RL formula $\rrule{\varphi_1}{\varphi'} \in \Delta_\S(G_0) \subseteq \F$ (cf. \textsc{Lemma}~\ref{lem:ginf} with $G \eqbydef \Delta_\S(G_0)$).
+Now, by the inductive hypothesis,  $(\tau|_1, \rho) \modelsml \rrule{\varphi_1}{\varphi'}$, i.e., there is $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi'$.
+}}
+\item 
+If $\coq{step}(G, G')$, $\rrule{\varphi}{\varphi'} \in G \setminus G'$, and  $G' \subseteq \F$,
+ then $\rrule{\varphi}{\varphi'}$ was eliminated when applying one of the rules [\textsc{impl}], [\textsc{circ}], or [\textsc{step}]:
+
+\begin{enumerate}
+\item[[\textsc{impl\!\!}]] : $\rrule{\varphi}{\varphi'} \in G$ and  $\M\models \varphi \implies \varphi'$. 
+Trivial: from $(\gamma_0, \rho) \modelsml \varphi$  and $\M\models \varphi \implies \varphi'$ we have $(\gamma_0, \rho) \modelsml \varphi'$.
+
+\item[[\textsc{circ\!\!}]] : there are $\rrule{\varphi_c}{\varphi'_c} \in G_0$  and $\rrule{\varphi_{c'}}{\varphi'_{c'}}$ such that $\M\models \varphi \implies \overline{\varphi}_{c}$,  $\rrule{\varphi_c}{\varphi'_c} \approx \rrule{\varphi_{c'}}{\varphi'_{c'}}$, and $\FreeVars(\varphi_{c'}) \cap \FreeVars(\varphi) = \emptyset$.
+Since $(\gamma_0, \rho) \modelsml \varphi$ and $\M\models \varphi \implies \overline{\varphi}_{c}$ then $(\gamma_0, \rho) \modelsml  \overline{\varphi}_{c}$. 
+Using $\models^\exists$ we obtain a valuation $\rho' : \Var \to \M$ such that $\rho'(x) = \rho(x)$ for all $x \not\in \FreeVars(\varphi_{c'})$ and $(\gamma_0, \rho') \modelsml  \varphi_{c}$. 
+Because $n > 0$ the path $\tau$ contains at least the first transition $\gamma_0 \tran{}{\S} \gamma_1$. 
+Thus, by \textsc{Lemma}~\ref{lem:coverstep}, there are $\alpha \in \S$ and  $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi_{c})$ such that $(\gamma_1,\rho')\modelsml\varphi_1$.
+Since $(\gamma_1,\rho')\modelsml\varphi_1$ then $(\tau|_1, \rho')$ \coq{startsFrom} $\varphi_c$.
+Also, from $\rrule{\varphi_c}{\varphi'_c} \in G_0$ and $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi_{c}) \in \Delta_{\S}(\varphi_c)$ we obtain $\rrule{\varphi_1}{\varphi'_c} \in \Delta_\S(G_0) \subseteq \F$ (cf. \textsc{Lemma}~\ref{lem:ginf} with $G \eqbydef \Delta_\S(G_0)$).
+The inductive hypothesis applied for $(\tau|_1, \rho')$ (the length of $\tau|_1$ is $n - 1 < n$) and $\rrule{\varphi_1}{\varphi'_c}$, implies $(\tau|_1, \rho') \modelsrl \rrule{\varphi_1}{\varphi'_c}$, that is, there is $ \gamma_j$ such that $(\gamma_j, \rho') \modelsml \varphi'_c$.
+
+{\hlt{
+The next step in our proof is to show that $(\gamma_j, \rho) \modelsml \Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\varphi)$.
+With respect to~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, this part of the proof follows the same pattern, but it takes into account that the derivative is computed using a renaming of the circularity.
+Also, here we do not rely on assumption $(a_1)$ (Section~\ref{sec:prove}).
+
+By the definition of derivatives, we have to show $(\gamma_j, \rho) \modelsml (\exists (\FreeVars(\varphi_{c'})) (\varphi_{c'} \land \varphi)^{=?} \land \varphi'_{c'}$ (note that $\rrule{\varphi_{c'}}{\varphi'_{c'}} \approx \rrule{\varphi_{c}}{\varphi'_{c}}$ and $\FreeVars(\varphi_{c'}) \cap \FreeVars(\varphi_c) = \emptyset$).
+This reduces to showing that there is a valuation $\rho''$ such that $\rho''(x) = \rho(x)$ for all $x \not\in \FreeVars(\varphi_{c'})$ and $(\gamma_j, \rho'') \modelsml (\varphi_{c'} \land \varphi)^{=?} \land \varphi'_{c'}$ (cf. $\models^{\exists}$).
+
+Before providing $\rho''$, we apply $\approx^\sim$ for $\rrule{\varphi_c}{\varphi'_c} \approx \rrule{\varphi_{c'}}{\varphi'_{c'}}$ and $\rho'$ to obtain a valuation $\rho^*:\Var \to \M$ such that $(\varphi_c, \rho') \sim (\varphi_{c'}, \rho^*)$ and $(\varphi'_c, \rho') \sim (\varphi'_{c'}, \rho^*)$. 
+
+Next, we consider $\rho'' = \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}$. 
+The condition $\extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}(x) = \rho(x)$ for all $x \not\in \FreeVars(\varphi_{c'})$ is directly obtained using $\varrho^{\not\in}$.
+Therefore, there remains to prove $(\gamma_j, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml (\varphi_{c'} \land \varphi)^{=?} \land \varphi'_{c'}$, that is, $(\gamma_j, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml (\varphi_{c'} \land \varphi)^{=?}$ and 
+$(\gamma_j, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml \varphi'_{c'}$ (cf. $\models^{\land}$).
+The latter can be proved using $\models_{\varrho}^\subseteq$ in combination with $\FreeVars(\varphi'_{c'}) \subseteq \FreeVars(\varphi_{c'})$ (because $\rrule{\varphi_{c'}}{\varphi'_{c'}}$) is well-formed), and then using $(\varphi'_c, \rho') \sim (\varphi'_{c'}, \rho^*)$ and the fact that  $(\gamma_j, \rho') \modelsml \varphi'_c$.
+For the former,  $(\gamma_j, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml (\varphi_{c'} \land \varphi)^{=?}$, we use $\models^{=?}$ and we equivalently prove that there is $\gamma = \gamma_0$ such that $(\gamma_0, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml \varphi_{c'} \land \varphi$: first, $(\gamma_0, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml \varphi_{c'}$ is obtained using $\models_{\varrho}^\subseteq$, $(\varphi_c, \rho') \sim (\varphi_{c'}, \rho^*)$, and $(\gamma_0, \rho') \modelsml  \varphi_{c}$; 
+second, $(\gamma, \extend{\rho}{\rho^*}{\FreeVars(\varphi_{c'})}) \modelsml \varphi$ is given directly by $\models_{\varrho}^{\not\subseteq}$ and the fact that $(\gamma_0, \rho) \modelsml  \varphi$.
+}}
+
+Now, $(\gamma_j, \rho) \modelsml \Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\varphi)$ implies $(\tau|_j, \rho)$ \coq{startsFrom} $\Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\varphi)$. 
+Moreover, $\Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\rrule{\varphi}{\varphi'}) \in G'\subseteq \F$ because it has been just added to $G'$ by [\textsc{circ}].
+Thus, we apply the inductive hypothesis for $(\tau|_j, \rho)$ (the length of $\tau|_j$ is $n-j < n$) and $\Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\rrule{\varphi}{\varphi'})$ to obtain $(\tau|_j, \rho) \models \Delta_{\rrule{\varphi_{c'}}{\varphi'_{c'}}}(\rrule{\varphi}{\varphi'})$, i.e, 
+there is $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi'$. 
+
+\item [[\textsc{symb\!\!}]]
+The path $\tau$ contains at least the first transition $\gamma_0 \tran{}{\S} \gamma_1$ because $n > 0$. 
+
+{\hl{
+In~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, the next step in the proof is to apply \textsc{Lemma}~\ref{lem:coverstep} for $\gamma_0 \tran{}{\S} \gamma_1$ and $(\gamma_0, \rho) \modelsml \varphi$.
+Here, we show first that $\gamma_0 \tran{}{\S'} \gamma_1$. 
+By definition, the transition $\gamma_0 \tran{}{\S} \gamma_1$ implies that there is a rule $\rrule{\varphi_l}{\varphi_r}\in\S$ and a valuation $\rho'$ such that $(\gamma_0, \rho')\modelsml \varphi_l$ and $(\gamma_1, \rho')\modelsml \varphi_r$.
+Since $\S\approx\S'$ then for any $\rrule{\varphi_l}{\varphi_r}\in\S$ there is $\rrule{\varphi_{l'}}{\varphi_{r'}}\in\S'$ such that $\rrule{\varphi_l}{\varphi_r}\approx\rrule{\varphi_{l'}}{\varphi_{r'}}$.
+This implies that there is $\rho''$ such that $(\varphi_l, \rho') \sim (\varphi_{l'}, \rho'')$ and $(\varphi_r, \rho') \sim (\varphi_{r'}, \rho'')$ (cf. $\approx^\sim$).
+By the definition of $\sim$, we obtain $(\gamma_0, \rho'')\modelsml \varphi_{l'}$ and $(\gamma_1, \rho'')\modelsml \varphi_{r'}$; thus, 
+$\gamma_0 \tran{}{\rrule{\varphi_{l'}}{\varphi_{r'}}} \gamma_1$, i.e, $\gamma_0 \tran{}{\S'} \gamma_1$.
+}}
+
+Then, since $(\gamma_0, \rho) \modelsml \varphi$ and $\gamma_0 \tran{}{\S'} \gamma_1$, by \textsc{Lemma}~\ref{lem:coverstep} there are $\alpha \in \S'$ and  $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi)$ such that $(\gamma_1,\rho)\modelsml\varphi_1$.
+Note that \textsc{Lemma}~\ref{lem:coverstep} requires that $\rrule{\varphi}{\varphi'}$ is well-formed (from the inductive hypothesis), $\FreeVars(\varphi) \cap \FreeVars(\S') = \emptyset$ (again, from the inductive hypothesis), and all formulas in $\S'$ are well-formed (because those in $\S$ are well-formed).
+
+The next step in the proof is to apply the inductive hypothesis for $\tau|_1$ (which is well-formed and complete of length $n - 1$) and $\rrule{\varphi_1}{\varphi'}$. 
+%Note that the hypotheses of \textsc{Lemma}~\ref{lem:coverstep} are fulfilled (see case $\rrule{\varphi}{\varphi'}\in G_0$).
+On the one hand, we have $(\gamma_1,\rho)\modelsml\varphi_1$ and thus, $\tau|_1$ \coq{startsFrom} $\varphi_1$.
+On the other hand, since $\varphi_1 \eqbydef \Delta_{\alpha} (\varphi) \in \Delta_{\S'}(\varphi)$ then the \RL formula $\rrule{\varphi_1}{\varphi'} \in \Delta_{\S'}(G_0) \subseteq G' \subseteq \F$ because $\Delta_{\S'}(G_0)$ has been just added to $G'$ by $[\textsc{symb}]$.
+By the inductive hypothesis we obtain $(\tau|_1, \rho) \modelsml \rrule{\varphi_1}{\varphi'}$, i.e, there is $\gamma_i$ such that $(\gamma_i, \rho) \modelsml \varphi$.\hfill $\square$\\
+
+\end{enumerate}
+
+\end{itemize}
+
+
+
+\subsection{The soundness theorem}
+\label{sec:th}
+
+In this section we show the formalisation of the soundness theorem and its proof.
+Several assumptions from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} are here transformed in hypotheses: all formulas in $\S$ and $G_0$ are well formed and for all the goals $\rrule{\varphi}{\varphi'}$ in $G_0$  $\varphi$ is $\S$-derivable.
+Moreover, we add the additional hypothesis required by \textsc{lemma}~\ref{lem:finite}: $\FreeVars(\S)\cap\FreeVars(G_0) \!=\!\emptyset$.
+\begin{theorem}
+If $\S$ is total, all formulas in $\S\cup G_0$ are well-formed, the left hand sides of goals in $G_0$ are $\S$-derivable, $\FreeVars(\S)\cap\FreeVars(G_0) = \emptyset$, and $\coq{steps}(\Delta_\S(G_0))$ then $\tran{}{\S} \modelsrl G_0$.
+\end{theorem}
+
+\paragraph{Proof.}
+We arbitrarily choose $\rrule{\varphi}{\varphi'} \in G_0$.
+$\S\modelsrl \rrule{\varphi}{\varphi'}$  iff for all complete paths $\tau$ and all valuations $\rho:\Var\to\M$ with $(\tau, \rho) \coq{ startsFrom } \varphi$ we have $(\tau, \rho)\modelsrl\rrule{\varphi}{\varphi'}$.
+If $\tau$ is infinite, then, by definition, $(\tau, \rho)\modelsrl\rrule{\varphi}{\varphi'}$.
+If $\tau$ is finite of length $n$, then, by \textsc{lemma}~\ref{lem:finite} (note that $\rrule{\varphi}{\varphi'} \in G_0 \subseteq \F$ and $G_0 \neq \emptyset$), $(\tau, \rho)\modelsrl\rrule{\varphi}{\varphi'}$. 
+Since $\rrule{\varphi}{\varphi'}$ was arbitrarily chosen from  $G_0$, we have $\S \models G_0$.
+\hfill$\square$
+
+
+\paragraph{Overview of the formal proof}
+The formal proof of the soundness of the procedure was developed using version {\tt 8.4pl5} of the Coq proof assistant.
+The code can be found at: \url{https://fmse.info.uaic.ro/imgs/soundness-proof.tar.gz}.
+The archive also contains additional information about the code organisation and instructions for compilation.
+The Coq code is spread over several files.
+The main file is called {\tt sound.v} and it contains the definitions for $\coq{step}$ and $\coq{steps}$; it also includes several helper lemmas and, at the end of the file, the main lemmas and the soundness theorem shown in Section~\ref{sec:proof}.
+The axioms that we use for \ML (shown in Section~\ref{sec:ml}) can be found in {\tt ml.v}. 
+The definition of \RL, derivatives, and the other related notions from Section~\ref{sec:rl} are located in {\tt rl.v} and {\tt derivatives.v}.
+
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+In this paper we present the Coq formalisation of the soundness of a procedure for program verification that was proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+The procedure is formalised as an inductive relation, and, unlike in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, it explicitly handles the renaming of the free variables in \RL formulas when computing derivatives.
+We precisely formulate the intermediary lemmas and the soundness theorem, and then we prove them in Coq.
+During the development of the proof in Coq we discovered (and fixed) some flaws in the proof from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
+
+Alternative proofs for the soundness of the procedure
+from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} 
+can be found in~\cite{festschriftJM15-tr} and~\cite{arusoaie-lucanu-rusu-jsc2015-tr}.
+However, those are less suitable to be encoded in Coq: the proof in~\cite{festschriftJM15-tr} is more intuitive (it uses a digraph for visualisation) but not that precise, while the one in~\cite{arusoaie-lucanu-rusu-jsc2015-tr} uses coinduction; however, Coq's support for coinduction is not as good as the one for induction (e.g., no coinduction principle is generated automatically).
+
+
+
+
+\paragraph{Future work}
+In terms of future work  there are several directions to follow.
+The first one consists in extracting a certified OCaml program from our inductive relation, and then use it for verification within the \K framework. 
+This requires \RL-based semantics of languages in OCaml, which could be extracted from corresponding semantics in Coq, an effort already underway in the \K team, who are
+%Although there is a parser that can be used to parse \RL formulas given as \K rules, there is need for a different one to parse and translate the representation of \RL formulas supported by the OCaml program into \K rules.
+%An important issue with the translations is that one has to ensure that they are correct. 
+developing a Coq backend~\cite{moore-rosu-2015-tr} for \K .
+%With this backend one can translate existing \K semantics into Coq, and thus, use directly our Coq formalisation to prove \RL formulas.
+
+Another future work is related to a \emph{computational}  definition of derivatives, based  on rewriting, which is also proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}. It is there shown equivalent to the current (logical) definition of derivatives.
+%More precisely, it has been proved that, under reasonable assumptions, derivatives of an \RL formula can be computed using rewriting.
+A step further would be to formalise that proof of equivalence as well, thereby obtaining a more efficient certified program-verification procedure.
+%Note that this is orthogonal with the work presented in this paper.
+%\vr{too short/vague. please elaborate.}
+%\vr{any plans to use the extracted procedure? what would it imply?}
+
+%\appendix
+%\section{Appendix}
+%\label{appendix}
+%\vr{this appendix can be removed.}
+%%\textsc{Lemma}~\ref{lem:ginf}~~~\emph{For all lists of goals $G$, if $\coq{steps}(G)$ then $G \subseteq \F$.}
+%
+
+
+%
+%\aa{Check the references}
+%\dl{Pay attention to the diacritics (Rosu vs. Ro\c{s}u).}
+
+
+
+%\acks
+
+%This work was supported in part by the strategic grants POSDRU /159/1.5/S/137750, (``Project Doctoral and Postdoctoral programs support for increased competitiveness in Exact Sciences research'' co-financed by the European Social Fund within the Sectorial Operational Program Human Resources Development 2007-2013) and  POSCCE/161/15.06.2010, SMIS-CSNR 602-12516 (``An Executable Semantic Framework for Rigorous Design, Analysis and Testing of Systems'').
+
+% We recommend abbrvnat bibliography style.
+
+\bibliographystyle{plain}
+\bibliography{paper}
+% The bibliography should be embedded for final submission.
+
+%\begin{thebibliography}{}
+%\softraggedright
+%
+%\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
+%P. Q. Smith, and X. Y. Jones. ...reference text...
+%
+%\end{thebibliography}
 \end{document}
 
 
