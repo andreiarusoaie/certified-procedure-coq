@@ -648,10 +648,10 @@ is commonly done in soundness proofs. Therefore, even if the procedure is recurs
 %A proof in a research paper should keep a good balance between the correctness and the clarity. The soundness proof in \cite{lucanu-rusu-arusoaie-nowak-LRC2015} is monolithic, i.e. the soundness does not follow from the soundness of each derivation rule, as it
 %is commonly done in soundness proofs. Therefore, even if the procedure is recursive, the nature of the proof is not inductive; the entire execution of the procedure is needed to prove that the goals are valid. This makes the proof complex and hence the task of keeping a good balance between correctness and clarity is difficult. In order to keep the proof concise, some details are omitted but this could have hidden side effects that are not discussed by the proof.
 %}
-Clearly, a proof assistant is the solution here: it has no problem dealing with every detail because it keeps track rigorously of all cases, and thus, it  ensures that no corner case is overlooked; and keys lemmas and propositions still show the main steps of the reasoning process.
+Clearly, a proof assistant is the solution here: it has no problem dealing with every detail because it keeps track rigorously of all cases, and thus, it  ensures that no corner case is overlooked; and keys lemmas and propositions still show the main steps of the reasoning process. \\
 
 
-\paragraph{Contributions}
+{\bf Contributions}.
 %The main contribution is a generalisation of the procedure and a formal proof in Coq that it is sound.
 We first generalise the procedure by introducing non-determinism and then encode it as an inductive relation in Coq.
 Then, we formally prove that our generalised procedure is sound. 
@@ -675,16 +675,15 @@ However, why the variable renaming is sound is not established in the paper proo
 
 
 During the formalisation in Coq we were able to find and fix some other imprecisions in lemmas from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
-For instance, Lemmas 7 and 8 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}) only make sense in the context of the proof of Theorem 1 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}). 
+%For instance, Lemmas 7 and 8 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}) only make sense in the context of the proof of Theorem 1 (in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}). 
 Here, these lemmas were reformulated to be self-contained, including all implicit or sometimes missing hypotheses.
 %Also, Lemma 5 in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} requires an additional hypothesis.
 %In order to simplify the formalization we abstract away some details about \ML that were fully stated in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, but are in fact not relevant for soundness. F
-Last but not least, the Coq formalisation provides us with a certified program-verification procedure. Its use in practice depends on the availability in Coq of \RL-based semantics for languages; such an effort is already underway in the \K team~\cite{moore-rosu-2015-tr}.
+Last but not least, the Coq formalisation provides us with a certified program-verification procedure. Its use in practice depends on the availability in Coq of \RL-based semantics for languages; such an effort is already underway in the \K team~\cite{moore-rosu-2015-tr}.\\
 
 
 
-\paragraph{Related work} 
-
+{\bf Related work}.
 The closest related work is the formalisation in Coq of \RL reported in~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}.
 %Previous works~\cite{rosu-stefanescu-2012-icalp,rosu-stefanescu-2012-oopsla, rosu-stefanescu-ciobaca-moore-2013-lics, stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta} include sound and relatively complete proof systems for various versions of \RL.
 Our initial attempt to prove the soundness of the procedure from~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} consisted in reusing the mechanised proof reported in~\cite{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}. 
@@ -708,11 +707,9 @@ Most of them are based either on Hoare Logic or Separation Logic, and thus, they
 For instance, in \cite{weber04towards} the authors present three Hoare logics that correspond to different notions of correctness for the simple While language; for all three they prove the soundness and the relative completeness.
 However, compared to~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}, they do not provide a language-parametric program-verification automatic procedure.
 
-There is moreover a wide range of certified sound procedures for deciding various logical fragments, some of them formalised in Coq (e.g. \cite{DBLP:journals/corr/abs-1105-4537, DBLP:conf/types/Besson06}), others in Isabelle/HOL (e.g., \cite{ChaiebN-LPAR05}).
+There is moreover a wide range of certified sound procedures for deciding various logical fragments, some of them formalised in Coq (e.g. \cite{DBLP:journals/corr/abs-1105-4537, DBLP:conf/types/Besson06}), others in Isabelle/HOL (e.g., \cite{ChaiebN-LPAR05}).\\
 
-
-\paragraph{Outline.} 
-
+{\bf Outline.} 
 Section~\ref{sec:background} provides a short overview of \ML and \RL, and presents the verification procedure proposed in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015} together with the corresponding soundness result.
 Section~\ref{sec:proof} describes our formalisation in Coq of the soundness of the procedure.
 It mainly contains the definitions and lemmas needed by the soundness result, and it also highlights the differences between the Coq proof and the one in~\cite{lucanu-rusu-arusoaie-nowak-LRC2015}.
