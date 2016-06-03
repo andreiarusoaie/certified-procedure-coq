@@ -1,5 +1,6 @@
 Require Import ml.
 Require Import String.
+Require Import List.
 
 Module Lang <: Formulas.
 
@@ -13,10 +14,21 @@ Module Lang <: Formulas.
   | val : nat -> Exp
   | plus : Exp -> Exp -> Exp.
 
+  Eval compute in (exp_var (var "a" "exp")).
+  Eval compute in (plus (id "a") (exp_var (var "a" "exp"))).
+  Eval compute in (plus (id "a") (val 4)).
+
   Inductive Stmt : Type :=
   | assign : string -> Exp -> Stmt
   | seq : list Stmt -> Stmt
   | stmt_var : Var -> Stmt.
+
+  Eval compute in (assign "a" (val 10)).
+  Eval compute in (assign "a" (plus (id "a") (val 10))).
+  Eval compute in 
+      assign "a" (plus (id "a") (val 10)) :: (assign "a" (val 10)) :: nil.
+                   
+  
 
   (* configuration *)
   Inductive MapItem := item : string -> Exp -> MapItem.
@@ -24,11 +36,24 @@ Module Lang <: Formulas.
   | cfg : Stmt -> list MapItem -> Cfg
   | cfg_var : Var -> Cfg.
 
-  
+  Notation "A |-> B" := (item A B) (at level 100).
+  Eval compute in (cfg 
+                     (assign "a" (plus (id "a") (val 10))) 
+                     (("a" |-> (exp_var (var "A" "exp"))) :: nil)).
 
+
+
+
+
+  
   (* model and state *)
+  Inductive _exp : Type :=
+    | _nat : nat -> _exp
+    | _plus : _exp -> _exp -> _exp
+    | _id : string -> _exp.
+  
   Inductive _stmt : Type := 
-    | _assign : string -> nat -> _stmt
+    | _assign : string -> _exp -> _stmt
     | _seq : list _stmt -> _stmt.
    
   Definition _map_item := (string * nat)%type.
@@ -109,6 +134,39 @@ Module Lang <: Formulas.
     intros x; apply var_eq_true; trivial.
   Qed.
 
+
+
+
+
+
+  (* MLFormula *)
+  Inductive MLFormulaHelper : Type :=
+    | T : MLFormulaHelper
+    | pattern: Cfg -> MLFormulaHelper 
+    | NotML : MLFormulaHelper -> MLFormulaHelper 
+    | AndML : MLFormulaHelper -> MLFormulaHelper -> MLFormulaHelper 
+    | ExistsML : list Var -> MLFormulaHelper -> MLFormulaHelper
+    | enc : MLFormulaHelper -> MLFormulaHelper .
+
+  Definition MLFormula : Type := MLFormulaHelper.
+
+
+  Eval compute in pattern (cfg (assign "a" (plus (id "a") (val 10))) nil).
+  Eval compute in pattern 
+                    (cfg 
+                       (assign "a" (plus (id "a") (val 10))) 
+                       (("a" |-> (exp_var (var "A" "exp"))) :: nil)).
+  Eval compute in AndML T
+                        ( pattern 
+                            (cfg 
+                               (assign "a" (plus (id "a") (val 10))) 
+                               (("a" |-> (exp_var (var "A" "exp"))) :: nil))).
+  
+ 
+
+
+
+  (* Sat ML *)
   
 
 
