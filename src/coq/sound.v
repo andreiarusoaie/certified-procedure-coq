@@ -37,7 +37,7 @@ Module Type Soundness
   | der :
       forall S', 
         In g G -> SDerivable (lhs g) -> 
-        RL_alpha_equiv_S S S' -> disjoint_vars_rules S' g ->
+        RL_alpha_equiv_S R.S S' -> disjoint_vars_rules S' g ->
         G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S' g) ->
       step G G' g.
 
@@ -277,7 +277,7 @@ Module Type Soundness
       wfPath tau ->
       startsFrom tau rho phi ->
       (exists phi1,
-         In phi1 (SynDerML phi S) /\
+         In phi1 (SynDerML phi R.S) /\
          SatRL (Path_i tau 1) rho (phi1 => phi')) ->
       SatRL tau rho (phi => phi').
   Proof.
@@ -374,9 +374,9 @@ Module Type Soundness
   (* helper *)
   Lemma der_in_Delta :
     forall phi phi' alpha,
-      In alpha S ->
+      In alpha R.S ->
       In (phi => phi') G0 ->
-      In (SynDerML' phi alpha => phi') (Delta S G0).
+      In (SynDerML' phi alpha => phi') (Delta R.S G0).
   Proof.
     intros phi phi' alpha H0 H1.
     induction G0.
@@ -566,13 +566,13 @@ Module Type Soundness
       wfPath tau ->
       inF (phi => phi') ->
       completeN tau n ->
-      steps (Delta S G0) ->
+      steps (Delta R.S G0) ->
       startsFrom tau rho phi ->
       total ->
       (forall p p', In (p => p') G0 -> SDerivable p) ->
       (forall F, In F G0 -> wfFormula F) ->
-      (forall F, In F S -> wfFormula F) ->
-      (forall g, In g G0 -> disjoint_vars_rules S g) ->
+      (forall F, In F R.S -> wfFormula F) ->
+      (forall g, In g G0 -> disjoint_vars_rules R.S g) ->
       SatRL tau rho (phi => phi').
   Proof.
     induction n using custom_lt_wf_ind.
@@ -629,11 +629,11 @@ Module Type Soundness
         
         (* apply cover_step *)
         assert (H6 : exists (alpha : RLFormula) (phi' : MLFormula),
-                       In alpha S /\
+                       In alpha R.S /\
                        phi' = SynDerML' phi alpha /\ SatML gamma' rho phi').
         apply cover_step with (gamma := gamma); trivial.
         intros F HF.
-        assert (HF' : In F S); trivial.
+        assert (HF' : In F R.S); trivial.
         apply D in H3.
         unfold disjoint_vars_rules in H3.
         apply H3 in HF.
@@ -656,7 +656,7 @@ Module Type Soundness
         apply H with (tau := (Path_i tau 1)) (m := n); trivial.
         apply wf_subpath; trivial.
         subst phi1.
-        apply G_in_F with (G := (Delta S G0)); trivial.
+        apply G_in_F with (G := (Delta R.S G0)); trivial.
         apply der_in_Delta; trivial.
         unfold startsFrom.
         exists gamma'.
@@ -715,7 +715,7 @@ Module Type Soundness
            {
              apply H with (m := n); trivial.
              - apply wf_subpath; trivial.
-             - apply G_in_F with (G := (Delta S G0)); trivial.
+             - apply G_in_F with (G := (Delta R.S G0)); trivial.
                subst phic_1.
                apply der_in_Delta; trivial.
                destruct c; simpl; trivial.
@@ -898,7 +898,7 @@ Module Type Soundness
            unfold TS in H10.
            destruct H10 as (phi_l & phi_r & rho' & H10 & h1 & h2).
            unfold RL_alpha_equiv_S in H6.
-           assert (H10': In (phi_l => phi_r) S); trivial.
+           assert (H10': In (phi_l => phi_r) R.S); trivial.
            apply H6 in H10.
            destruct H10 as (F' & HS' & E).
            assert (H10 : TS S' gamma gamma').
@@ -995,11 +995,11 @@ Module Type Soundness
    ***************************)
 
   Theorem sound : total ->
-                  (forall g, In g G0 -> disjoint_vars_rules S g) ->
+                  (forall g, In g G0 -> disjoint_vars_rules R.S g) ->
                   (forall p p', In (p => p') G0 -> SDerivable p) ->
                   (forall F, In F G0 -> wfFormula F) ->
-                  (forall F, In F S -> wfFormula F) ->
-                  steps (Delta S G0) ->
+                  (forall F, In F R.S -> wfFormula F) ->
+                  steps (Delta R.S G0) ->
                   SatTS_G G0.
   Proof.
     intros T D Ax WFF1 WFF2 H g H0 tau rho H1 H2 H3.
@@ -1080,7 +1080,7 @@ Module Type Soundness
                    | None =>
                      if derivTest (lhs g)
                      then prove ((remove RLFormula_eq_dec g G)
-                                   ++ (SynDerRL (renameFreshSet S g) g)) n'
+                                   ++ (SynDerRL (renameFreshSet R.S g) g)) n'
                      else failure
                  end
         end
@@ -1163,8 +1163,8 @@ Module Type Soundness
           rewrite Hc in H1.
           case_eq (derivTest (lhs g)); intros D; rewrite D in H1.
           
-          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL (renameFreshSet S g) g)) (g := g).
-          apply der with (S' := (renameFreshSet S g)); trivial.
+          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL (renameFreshSet R.S g) g)) (g := g).
+          apply der with (S' := (renameFreshSet R.S g)); trivial.
           simpl; left; trivial.
           apply deriv_test; trivial.
           apply rename_fresh_set.
@@ -1178,11 +1178,11 @@ Module Type Soundness
   
   Theorem sound_prove : 
     forall n, total ->
-              (forall g, In g G0 -> disjoint_vars_rules S g) ->
+              (forall g, In g G0 -> disjoint_vars_rules R.S g) ->
               (forall p p', In (p => p') G0 -> SDerivable p) ->
               (forall F, In F G0 -> wfFormula F) ->
-              (forall F, In F S -> wfFormula F) ->
-              prove (Delta S G0) n = success ->
+              (forall F, In F R.S -> wfFormula F) ->
+              prove (Delta R.S G0) n = success ->
               SatTS_G G0.
   Proof.
     intros; apply sound; trivial.
