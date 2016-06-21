@@ -38,7 +38,9 @@ Module Lang <: Formulas.
   | mapitem_var : MapItemVar -> MapItem
   | item : string -> Exp -> MapItem.
 
-  Inductive CfgVar : Type := cfg_v : string -> CfgVar.
+  Inductive CfgVar : Type := 
+  | cfg_v : string -> CfgVar
+  | z : CfgVar .
   Inductive Cfg := 
   | cfg : Stmt -> list MapItem -> Cfg
   | cfg_var : CfgVar -> Cfg.
@@ -92,6 +94,8 @@ Module Lang <: Formulas.
   Definition var_eq_cfg (X Y : CfgVar) : bool := 
     match X, Y with 
       | cfg_v x, cfg_v y => if string_dec x y then true else false
+      | z, z => true
+      | _, _ => false
     end.
 
 
@@ -129,11 +133,29 @@ Module Lang <: Formulas.
         rewrite H0 in H.
         inversion H.
       + unfold var_eq_cfg in H.
-        case_eq v; intros v0 Hv0; subst.
-        case_eq v'; intros v0' Hv0'; subst.
-        case_eq (string_dec v0 v0'); intros; subst; trivial.
-        rewrite H0 in H.
-        inversion H.
+        case_eq v; intros c.
+        * intros Hc.
+          subst.
+          case_eq v'; intros c'.
+          intros Hc'.
+          subst.
+          case_eq (string_dec c c'); intros.
+          subst. trivial.
+          rewrite H0 in H.
+          inversion H.
+          case_eq v'; intros c0.
+          subst.
+          inversion H.
+          subst.
+          inversion H.
+        * subst. 
+          case_eq v'.
+          intros s Hs.
+          subst.
+          inversion H.
+          intros Hs'.
+          subst.
+          trivial.
     - subst.
       unfold var_eq.
       case_eq b; intros e He.
@@ -143,8 +165,12 @@ Module Lang <: Formulas.
         contradiction n; trivial.
       + unfold var_eq_mapitem; case_eq e; intros s Hs; case_eq (string_dec s s); intros; trivial.
         contradiction n; trivial.
-      + unfold var_eq_cfg; case_eq e; intros s Hs; case_eq (string_dec s s); intros; trivial.
-        contradiction n; trivial.
+      + unfold var_eq_cfg; case_eq e.
+        * intros s Hs. case_eq (string_dec s s); intros; trivial.
+          contradiction n; trivial.
+        * intros Hs.
+          subst.
+          trivial.
   Qed.
 
   Lemma var_eq_false:
@@ -177,16 +203,13 @@ Module Lang <: Formulas.
 
 
   (* MLFormula *)
-  Inductive MLFormulaHelper : Type :=
-    | T : MLFormulaHelper
-    | pattern: Cfg -> MLFormulaHelper 
-    | NotML : MLFormulaHelper -> MLFormulaHelper 
-    | AndML : MLFormulaHelper -> MLFormulaHelper -> MLFormulaHelper 
-    | ExistsML : list Var -> MLFormulaHelper -> MLFormulaHelper
-    | enc : MLFormulaHelper -> MLFormulaHelper .
-
-  Definition MLFormula : Type := MLFormulaHelper.
-
+  Inductive MLFormula : Type :=
+    | T : MLFormula
+    | pattern: Cfg -> MLFormula 
+    | NotML : MLFormula -> MLFormula
+    | AndML : MLFormula -> MLFormula -> MLFormula
+    | ExistsML : list Var -> MLFormula -> MLFormula
+    | enc : MLFormula -> MLFormula .
 
   Eval compute in pattern (cfg (assign "a" (plus (id "a") (val 10))) nil).
   Eval compute in pattern 
@@ -198,11 +221,21 @@ Module Lang <: Formulas.
                             (cfg 
                                (assign "a" (plus (id "a") (val 10))) 
                                (("a" |-> (exp_var (exp_v "A"))) :: nil))).
+  (* Valuation *)
+  Definition Valuation : Type := Var -> Model. 
 
-
+Print Exp.
+Print ExpVar.
+Print Var.
+Print Model.
+Print _exp.
   (* Sat ML *)
-  
+  Fixpoint applyValExpVar (rho : Valuation) (v : ExpVar) : _nat := 
+  match v with 
+  | exp_v v' => 
 
+  Fixpoint applyValExp (rho : Valuation) (e : Exp) : _exp :=
+    match e with
+    | exp_var v => applyValExpVar rho v
 
 End Lang.
-
