@@ -56,7 +56,7 @@ Module Lang <: Formulas.
   | var_cfg : CfgVar -> Var.
 
   
-  (* model and state *)
+  (* model and state: equiv classes? *)
   Inductive _exp : Type :=
     | _nat : nat -> _exp
     | _plus : _exp -> _exp -> _exp
@@ -168,7 +168,7 @@ Module Lang <: Formulas.
   Lemma var_eq_refl : 
     forall x, var_eq x x = true.
   Proof.
-    intros x; apply var_eq_true; trivial.
+    intros x; rewrite var_eq_true; trivial.
   Qed.
 
 
@@ -192,22 +192,17 @@ Module Lang <: Formulas.
   Eval compute in pattern 
                     (cfg 
                        (assign "a" (plus (id "a") (val 10))) 
-                       (("a" |-> (exp_var (var "A" "exp"))) :: nil)).
+                       (("a" |-> (exp_var (exp_v "A"))) :: nil)).
   Eval compute in AndML T
                         ( pattern 
                             (cfg 
                                (assign "a" (plus (id "a") (val 10))) 
-                               (("a" |-> (exp_var (var "A" "exp"))) :: nil))).
-  
- 
-
+                               (("a" |-> (exp_var (exp_v "A"))) :: nil))).
 
 
   (* Sat ML *)
   
 
 
-End Lang.  
+End Lang.
 
-      
-                       
