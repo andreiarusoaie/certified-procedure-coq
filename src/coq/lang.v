@@ -222,7 +222,8 @@ Module Lang <: Formulas.
                                (assign "a" (plus (id "a") (val 10))) 
                                (("a" |-> (exp_var (exp_v "A"))) :: nil))).
   (* Valuation *)
-  Definition Valuation : Type := Var -> Model. 
+  Definition Valuation (v : Var) : Model :=
+  
 
 Print Exp.
 Print ExpVar.
