@@ -42,7 +42,8 @@ Module Lang <: Formulas.
   | I : Var
   | X : Var
   | Y : Var
-  | S : Var.
+  | S : Var
+  | ZZ : Var.
           
   
   Inductive Exp : Type := 
@@ -156,6 +157,7 @@ Module Lang <: Formulas.
       | X, X => true
       | Y, Y => true
       | S, S => true
+      | ZZ, ZZ => true
       | _, _ => false
     end.
 
@@ -203,9 +205,14 @@ Module Lang <: Formulas.
 
     (* custom: add these by need; 
        TODO: create separate type decls for basic ops and preds.
-    *)                                            
-    | gteML : Var -> Z -> MLFormula.
+     *)
+    | cfg_eq : Cfg -> Cfg -> MLFormula
+    | gteML : Exp -> Exp -> MLFormula.
+  
 
+  Definition ImpliesML (phi phi' : MLFormula) : MLFormula :=
+    NotML (AndML phi (NotML phi')) .
+  
   Notation "A >>= B" := (gteML A B) (at level 100).
   
   Eval compute in pattern
@@ -231,7 +238,7 @@ Module Lang <: Formulas.
                    ((n |-> (! N)) :: nil))).
 
   Eval compute in AndML
-                    (N >>= 0)
+                    (! N >>= (val 0))
                     (pattern (cfg 
                         (i <- (val 0) ; (s <- (val 0)) ;
                         (while (leq ($ i) ($ n))
@@ -341,8 +348,249 @@ Module Lang <: Formulas.
                    end
     end.
 
+  Print _exp .
+  
+  Fixpoint red_exp (e : _exp) : option Z :=
+    match e with
+      | _int z' => Some z'
+      | _plus e1 e2 => match (red_exp e1), (red_exp e2) with
+                         | Some z1, Some z2 => Some (Z.add z1 z2)
+                         | _, _ => None
+                       end
+      | _ => None
+    end.
+
+  Fixpoint SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
+    match phi with
+      | T => True
+      | pattern pi => (applyVal rho pi) = Some gamma
+      | NotML phi' => ~ (SatML gamma rho phi')
+      | AndML phi1 phi2 => SatML gamma rho phi1 /\ SatML gamma rho phi2
+      | ExistsML xs phi' => exists rho',
+                            (forall x, ~ In x xs -> rho' x = rho x) /\
+                            SatML gamma rho' phi'
+      | cfg_eq c1 c2 => (applyVal rho c1) = (applyVal rho c2)
+      | gteML e1 e2 => match (applyValExp rho e1), (applyValExp rho e2) with
+                         | Some v1, Some v2 => match (red_exp v1), (red_exp v2) with
+                                                 | Some z1, Some z2 => (Z.ge z1 z2)
+                                                 | _, _ => False
+                                               end
+                                                   
+                         | _, _ => False
+                       end
+    end.
+
+    Lemma SatML_Exists :
+      forall phi gamma rho V,
+        SatML gamma rho (ExistsML V phi) <->
+        exists rho',
+          (forall v, ~In v V -> rho v = rho' v) /\
+          SatML gamma rho' phi.
+    Proof.
+      intros phi gamma rho V.
+      split; intros H.
+      - simpl in H.
+        destruct H as (rho' & H1 & H2).
+        exists rho'.
+        split; trivial.
+        intros.
+        apply H1 in H.
+        rewrite H; trivial.
+      - simpl.
+        destruct H as (rho' & H1 & H2).
+        exists rho'.
+        split; trivial.
+        intros x0 Hxo.
+        apply H1 in Hxo.
+        rewrite Hxo; trivial.
+    Qed.
+
+
+    Lemma SatML_And :
+      forall gamma rho phi phi',
+        SatML gamma rho (AndML phi phi') <->
+        SatML gamma rho phi /\ SatML gamma rho phi'.
+    Proof.
+      intros gamma rho phi phi'; split; intros H.
+      - simpl in H; trivial.
+      - simpl; trivial.
+    Qed.
+      
+    Lemma SatML_Not :
+      forall gamma rho phi,
+        SatML gamma rho (NotML phi) <-> ~ SatML gamma rho phi.
+    Proof.
+      intros gamma rho phi; split; intros H.
+      - simpl in H. trivial.
+      - simpl; trivial.
+    Qed.
+
+  (* Validity in ML *)
+  Definition ValidML (phi : MLFormula) : Prop :=
+    forall gamma rho, SatML gamma rho phi.
+
+
+
+  Print MLFormula.
+  (* Free variables *)
+
+  Fixpoint in_list (v : Var) (l : list Var) : bool :=
+    match l with
+      | nil => false
+      | v' :: ls => if (var_eq v v') then true else (in_list v ls)
+    end.
+
+  Eval compute in (in_list A (nil)).
+  Eval compute in (in_list A (A :: nil)).
+  Eval compute in (in_list A (B :: nil)).
+  Eval compute in (in_list A (B :: A :: nil)).
 
   
   
+  Fixpoint append_set (l1 : list Var) (l2 : list Var) : list Var :=
+    match l2 with
+      | nil => l1
+      | j :: ls => if (in_list j l1) then (append_set l1 ls) else (append_set (j :: l1) ls)
+    end.
 
+  Eval compute in (append_set (nil) (nil) ).
+  Eval compute in (append_set (A :: nil) (nil) ).
+  Eval compute in (append_set (nil) (A :: nil) ).
+  Eval compute in (append_set (A :: nil) (A :: nil) ).
+  Eval compute in (append_set (A :: B:: nil) (A :: nil) ).
+  Eval compute in (append_set (A :: nil) (B :: A :: nil) ).
+
+  Fixpoint minus_elem (l1 : list Var) (v : Var) : list Var :=
+    match l1 with
+      | nil => nil
+      | (v' :: l) => if (var_eq v' v) then minus_elem l v else (v' :: (minus_elem l v))
+    end.
+  
+  Fixpoint minus_set (l1 : list Var) (l2 : list Var) : list Var :=
+    match l2 with
+      | nil => l1
+      | v :: l => minus_set (minus_elem l1 v) l
+    end.
+  
+  Eval compute in (minus_set (nil) (nil) ).
+  Eval compute in (minus_set (A :: nil) (nil) ).
+  Eval compute in (minus_set (nil) (A :: nil) ).
+  Eval compute in (minus_set (A :: nil) (A :: nil) ).
+  Eval compute in (minus_set (A :: B:: nil) (A :: nil) ).
+  Eval compute in (minus_set (C :: A :: nil) (B :: A :: nil) ).
+
+  Print Exp.
+  Fixpoint getFreeVarsExp (e : Exp) : list Var :=
+    match e with
+      | var_exp v => (v :: nil)
+      | plus e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
+      | _ => nil
+    end.
+
+  Eval compute in (getFreeVarsExp ($ a)).
+  Eval compute in (getFreeVarsExp (val 2)).
+  Eval compute in (getFreeVarsExp (! A)).
+  Eval compute in (getFreeVarsExp (plus (! A) (! A))).  
+
+  Fixpoint getFreeVarsMapItem (mi : MapItem) : list Var :=
+    match mi with
+      | var_mi v => (v :: nil)
+      | item h e => (getFreeVarsExp e)
+    end.
+
+  Eval compute in (getFreeVarsMapItem ((n |-> (! N)))).
+  
+  Fixpoint getFreeVarsItems (it : list MapItem) : list Var :=
+    match it with
+      | nil => nil
+      | v :: its => append_set (getFreeVarsMapItem v) (getFreeVarsItems its)
+    end.
+
+  Eval compute in (getFreeVarsItems ((n |-> (! N)) :: nil)).
+
+  Print BExp.
+  Fixpoint getFreeVarsBExp (be : BExp) : list Var :=
+    match be with
+      | var_bexp vb => (vb :: nil)
+      | leq e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
+      | _ => nil
+    end.
+
+  Print Stmt.
+  Fixpoint getFreeVarsStmt (st : Stmt) : list Var :=
+    match st with
+      | assign i' e => getFreeVarsExp e
+      | var_stmt st => (st :: nil)
+      | ifelse be s1 s2 => append_set (append_set (getFreeVarsBExp be) (getFreeVarsStmt s1)) (getFreeVarsStmt s2)
+      | while be st => append_set (getFreeVarsBExp be) (getFreeVarsStmt st)
+      | seq s1 s2 => append_set (getFreeVarsStmt s1) (getFreeVarsStmt s2)
+      | _ => nil
+    end.
+  
+  Fixpoint getFreeVarsCfg (c : Cfg) : list Var :=
+    match c with
+      | var_cfg v => (v :: nil)
+      | cfg st mi => append_set (getFreeVarsStmt st) (getFreeVarsItems mi)
+    end.
+  
+  Fixpoint getFreeVars (phi : MLFormula) : list Var :=
+    match phi with
+      | T => nil
+      | pattern pi => (getFreeVarsCfg pi)
+      | NotML phi' => getFreeVars phi'
+      | AndML phi1 phi2 => append_set (getFreeVars phi1) (getFreeVars phi2)
+      | ExistsML Vs phi' => minus_set (getFreeVars phi') Vs
+      | gteML e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
+      | cfg_eq c1 c2 => append_set (getFreeVarsCfg c1) (getFreeVarsCfg c2)
+    end.
+
+  Eval compute in 
+      getFreeVars (AndML
+                     (! N >>= (val 0))
+                     (pattern (cfg 
+                                 (i <- (val 0) ; (s <- (val 0)) ;
+                                  (while (leq ($ i) (! B))
+                                         ((s <- (plus (! A) ($ i))) ;
+                                          (i <- (plus ($ i) (val 1))))
+                                  ))
+                                 ((n |-> (! N)) :: nil))))  .
+                   
+  (* existential closure *)
+  Definition EClos (phi : MLFormula) := (ExistsML (getFreeVars phi) phi).
+
+  Fixpoint encoding (phi : MLFormula) : MLFormula :=
+    match phi with
+      | T => T
+      | pattern pi => (cfg_eq (var_cfg ZZ) pi)
+      | NotML phi' => NotML (encoding phi')
+      | AndML phi1 phi2 => AndML (encoding phi1) (encoding phi2)
+      | ExistsML V phi' => ExistsML V (encoding phi')
+      | cc => cc
+    end.
+
+  Eval compute in encoding (AndML
+                     (! N >>= (val 0))
+                     (pattern (cfg 
+                                 (i <- (val 0) ; (s <- (val 0)) ;
+                                  (while (leq ($ i) (! B))
+                                         ((s <- (plus (! A) ($ i))) ;
+                                          (i <- (plus ($ i) (val 1))))
+                                  ))
+                                 ((n |-> (! N)) :: nil)))).
+
+   Lemma Proposition1 :
+     forall gamma' phi rho,
+       SatML gamma' rho (encoding phi) <->
+       exists gamma, SatML gamma rho phi.
+   Proof.
+     intros; split; intros H.
+     - exists gamma'.
+       induction phi.
+       + simpl. trivial.
+       + unfold encoding in H.
+         unfold SatML in H.
+         simpl.
+         case_eq (rho ZZ); intros e H0; rewrite H0 in H.
+         * 
+     
 End Lang.
