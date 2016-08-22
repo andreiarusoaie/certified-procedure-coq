@@ -20,11 +20,8 @@ Module Type Formulas.
   (* ML syntax - axiomatisation *)
   Parameter MLFormula : Type .
   Parameter AndML : MLFormula -> MLFormula -> MLFormula .
-  Parameter NotML : MLFormula -> MLFormula.
   Parameter ExistsML : list Var -> MLFormula -> MLFormula .
-  Definition ImpliesML (phi phi' : MLFormula) : MLFormula :=
-    NotML (AndML phi (NotML phi')) .
-
+  Parameter ImpliesML : MLFormula -> MLFormula ->  MLFormula.
 
   (* ML semantics - axiomatisation *)
   Parameter SatML : State -> Valuation -> MLFormula -> Prop .
@@ -41,9 +38,10 @@ Module Type Formulas.
       SatML gamma rho (AndML phi phi') <->
       SatML gamma rho phi /\ SatML gamma rho phi'.
 
-  Axiom SatML_Not :
-    forall gamma rho phi,
-      SatML gamma rho (NotML phi) <-> ~ SatML gamma rho phi.
+  Axiom SatML_Implies :
+    forall gamma rho phi phi',
+      SatML gamma rho (ImpliesML phi phi') <->
+      (SatML gamma rho phi -> SatML gamma rho phi').
 
   (* Validity in ML *)
   Definition ValidML (phi : MLFormula) : Prop :=

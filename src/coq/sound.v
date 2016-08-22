@@ -71,18 +71,12 @@ Module Type Soundness
       SatML gamma rho phi ->
       SatML gamma rho phi'.
   Proof.
-    intros gamma rho phi phi' H H'.
+    intros.
     unfold ValidML in H.
-    unfold ImpliesML in H.
-    assert (H0 : SatML gamma rho (NotML (AndML phi (NotML phi')))); trivial.
-    clear H.
-    rewrite SatML_Not in H0.
-    rewrite SatML_And in H0.
-    apply not_and_or in H0.
-    destruct H0 as [H0 | H0].
-    - contradiction.
-    - rewrite SatML_Not in H0.
-      apply NNPP; trivial.
+    assert (H' : SatML gamma rho phi -> SatML gamma rho phi').
+    apply SatML_Implies.
+    apply H.
+    apply H'; trivial.    
   Qed.
     
 
