@@ -34,22 +34,32 @@ Module Lang <: Formulas.
   | y : ID
   | s : ID.
 
-  Inductive Var : Type :=
-  | A : Var
-  | B : Var
-  | C : Var
-  | N : Var
-  | I : Var
-  | X : Var
-  | Y : Var
-  | S : Var
-  | ZZ : Var.
-          
+  Inductive VarExp : Type :=
+  | N : VarExp
+  | I : VarExp
+  | X : VarExp
+  | Y : VarExp
+  | S : VarExp.
+  Inductive VarBExp : Type :=
+  | B : VarBExp.
+  Inductive VarStmt : Type :=
+  | St : VarStmt
+  | S1 : VarStmt
+  | S2 : VarStmt.
+  Inductive VarMI : Type :=
+  | M : VarMI .
+  Inductive VarMList : Type :=
+  | Rest : VarMList .
+  Inductive VarCfg : Type :=
+  | C : VarCfg.
+  Inductive SpecialVar : Type :=
+  | ZZ : SpecialVar.
+  
   
   Inductive Exp : Type := 
   | id : ID -> Exp
   | val : Z -> Exp
-  | var_exp : Var -> Exp
+  | var_exp : VarExp -> Exp
   | plus : Exp -> Exp -> Exp.
   
 
@@ -57,24 +67,24 @@ Module Lang <: Formulas.
   Notation "! A" := (var_exp A) (at level 100).
   Eval compute in ($ a).
   Eval compute in (val 2).
-  Eval compute in (! A).
-  Eval compute in (plus (! A) ($ a)).  
+  Eval compute in (! N).
+  Eval compute in (plus (! N) ($ a)).  
 
 
   Inductive BExp : Type :=
   | TT : BExp
   | FF : BExp
-  | var_bexp : Var -> BExp
+  | var_bexp : VarBExp -> BExp
   | leq : Exp -> Exp -> BExp .
 
   Eval compute in TT.
   Eval compute in (val 4).
-  Eval compute in (leq (! A) (val 3)).
+  Eval compute in (leq (! N) (val 3)).
   
 
   Inductive Stmt : Type :=
   | assign : ID -> Exp -> Stmt
-  | var_stmt : Var -> Stmt
+  | var_stmt : VarStmt -> Stmt
   | ifelse : BExp -> Stmt -> Stmt -> Stmt
   | while : BExp -> Stmt -> Stmt
   | skip : Stmt
@@ -85,7 +95,7 @@ Module Lang <: Formulas.
   Notation "A ; B" := (seq A B) (at level 100).
   
   Eval compute in  (i <- (val 0)).
-  Eval compute in (var_stmt S).
+  Eval compute in (var_stmt St).
   Eval compute in (ifelse (leq ($ i) ($ n))  (assign s (plus ($ s) ($ i))) skip) .
   Eval compute in (i <- (val 0) ; (s <- (val 0))).
   Eval compute in (i <- (val 0) ; (s <- (val 0)) ;
@@ -97,11 +107,11 @@ Module Lang <: Formulas.
 
   (* configuration *)
   Inductive MapItem := 
-  | var_mi : Var -> MapItem
+  | var_mi : VarMI -> MapItem
   | item : ID -> Exp -> MapItem.
 
   Inductive Cfg := 
-  | var_cfg : Var -> Cfg
+  | var_cfg : VarCfg -> Cfg
   | cfg : Stmt -> list MapItem -> Cfg .
 
 (*  Notation "A |-> B" := (item_z A B) (at level 100). *)
@@ -146,18 +156,48 @@ Module Lang <: Formulas.
 
 
 
+  Inductive Var : Type :=
+  | evar : VarExp -> Var
+  | bvar : VarBExp -> Var
+  | svar : VarStmt -> Var
+  | mivar : VarMI -> Var
+  | lvar : VarMList -> Var
+  | cvar : VarCfg -> Var
+  | spvar : SpecialVar -> Var.
+  
   (* var equality *)
+  Print VarCfg.
   Definition var_eq (X Y : Var) : bool := 
     match X, Y with
-      | A, A => true
-      | B, B => true
-      | C, C => true
-      | N, N => true
-      | I, I => true
-      | X, X => true
-      | Y, Y => true
-      | S, S => true
-      | ZZ, ZZ => true
+      | evar e1, evar e2 => match e1, e2 with
+                              | N, N => true
+                              | I, I => true
+                              | X, X => true
+                              | Y, Y => true
+                              | S, S => true
+                              | _, _ => false
+                            end
+      | bvar b1, bvar b2 => match b1, b2 with
+                              | B, B => true
+                            end
+      | svar s1, svar s2 => match s1, s2 with
+                              | St, St => true
+                              | S1, S1 => true
+                              | S2, S2 => true
+                              | _, _ => false
+                            end
+      | mivar m1, mivar m2 => match m1, m2 with
+                              | M, M => true
+                            end
+      | lvar l1, lvar l2 => match l1, l2 with
+                              | Rest, Rest => true
+                            end
+      | cvar c1, cvar c2 => match c1, c2 with
+                              | C, C => true
+                            end
+      | spvar c1, spvar c2 => match c1, c2 with
+                                | ZZ, ZZ => true
+                              end
       | _, _ => false
     end.
 
@@ -166,9 +206,10 @@ Module Lang <: Formulas.
   Proof.
     intros a b.
     split; intros H.
-    - case_eq a; intros Ha; case_eq b; intros Hb; rewrite Ha, Hb in H; simpl in H;
-      try inversion H; trivial.
-    - rewrite H; case_eq b; intros Hb; simpl; trivial.
+    - case_eq a; intros va Ha; case_eq b; intros vb Hb; rewrite Ha, Hb in H;
+      case_eq va; intros Hva; case_eq vb; intros Hvb; rewrite Hva, Hvb in H;
+      simpl in H; try inversion H; trivial.
+    - rewrite H. case_eq b; intros v Hv; case_eq v; intros Hv'; trivial.
   Qed.
 
 
@@ -182,8 +223,9 @@ Module Lang <: Formulas.
       apply var_eq_true in H'.
       rewrite H in H'.
       inversion H'.
-    - case_eq a; intros Ha; case_eq b; intros Hb; simpl; trivial;
-      rewrite Ha, Hb in *; try contradict H; trivial.
+    - case_eq a; intros a' Ha; case_eq b; intros b' Hb; simpl;
+      case_eq a'; intros Ha'; case_eq b'; intros Hb'; subst; trivial;
+      try contradict H; trivial.
  Qed.
 
   Lemma var_eq_refl : 
@@ -199,19 +241,16 @@ Module Lang <: Formulas.
   Inductive MLFormula : Type :=
     | T : MLFormula
     | pattern: Cfg -> MLFormula 
-    | NotML : MLFormula -> MLFormula
     | AndML : MLFormula -> MLFormula -> MLFormula
+    | ImpliesML : MLFormula -> MLFormula -> MLFormula
     | ExistsML : list Var -> MLFormula -> MLFormula
 
     (* custom: add these by need; 
        TODO: create separate type decls for basic ops and preds.
      *)
-    | cfg_eq : Cfg -> Cfg -> MLFormula
+    | encoding : MLFormula -> MLFormula
     | gteML : Exp -> Exp -> MLFormula.
-  
-
-  Definition ImpliesML (phi phi' : MLFormula) : MLFormula :=
-    NotML (AndML phi (NotML phi')) .
+ 
   
   Notation "A >>= B" := (gteML A B) (at level 100).
   
@@ -257,7 +296,7 @@ Module Lang <: Formulas.
     match e with
       | id j => Some (_id j)
       | val v => Some (_int v)
-      | var_exp v => match (rho v) with
+      | var_exp v => match (rho (evar v)) with
                        | to_m_exp e => Some e
                        | _ => None
                      end
@@ -272,7 +311,7 @@ Module Lang <: Formulas.
     match b with
       | TT => Some (_bool true)
       | FF => Some (_bool false)
-      | var_bexp v => match (rho v) with
+      | var_bexp v => match (rho (bvar v)) with
                         | to_m_bexp b' => Some b'
                         | _ => None
                       end
@@ -302,7 +341,7 @@ Module Lang <: Formulas.
                        | _, _ => None
                      end
       | skip => Some _skip
-      | var_stmt s' => match (rho s') with
+      | var_stmt s' => match (rho (svar s')) with
                          | to_m_stmt s' => Some s'
                          | _ => None
                        end
@@ -311,7 +350,7 @@ Module Lang <: Formulas.
 
   Fixpoint applyValMapItem (rho : Valuation) (mi : MapItem) : option _map_item :=
     match mi with
-      | var_mi v => match (rho v) with
+      | var_mi v => match (rho (mivar v)) with
                       | to_m_map_item m => Some m
                       | _ => None
                     end
@@ -338,7 +377,7 @@ Module Lang <: Formulas.
   
   Fixpoint applyVal (rho : Valuation) (c : Cfg) : option State := 
     match c with
-      | var_cfg v => match (rho v) with
+      | var_cfg v => match (rho (cvar v)) with
                        | to_m_state s' => Some s'
                        | _ => None
                      end
@@ -360,16 +399,20 @@ Module Lang <: Formulas.
       | _ => None
     end.
 
-  Fixpoint SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
+
+
+   Fixpoint SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
     match phi with
       | T => True
-      | pattern pi => (applyVal rho pi) = Some gamma
-      | NotML phi' => ~ (SatML gamma rho phi')
+      | pattern pi => (applyVal rho pi) = Some gamma (* rho(pi) = gamma *) 
       | AndML phi1 phi2 => SatML gamma rho phi1 /\ SatML gamma rho phi2
+      | ImpliesML phi1 phi2 => SatML gamma rho phi1 -> SatML gamma rho phi2
       | ExistsML xs phi' => exists rho',
                             (forall x, ~ In x xs -> rho' x = rho x) /\
                             SatML gamma rho' phi'
-      | cfg_eq c1 c2 => (applyVal rho c1) = (applyVal rho c2)
+
+      (* custom? *)
+      | encoding phi' => exists gamma', SatML gamma' rho phi'
       | gteML e1 e2 => match (applyValExp rho e1), (applyValExp rho e2) with
                          | Some v1, Some v2 => match (red_exp v1), (red_exp v2) with
                                                  | Some z1, Some z2 => (Z.ge z1 z2)
@@ -379,6 +422,9 @@ Module Lang <: Formulas.
                          | _, _ => False
                        end
     end.
+
+
+  
 
     Lemma SatML_Exists :
       forall phi gamma rho V,
@@ -415,15 +461,18 @@ Module Lang <: Formulas.
       - simpl in H; trivial.
       - simpl; trivial.
     Qed.
-      
-    Lemma SatML_Not :
-      forall gamma rho phi,
-        SatML gamma rho (NotML phi) <-> ~ SatML gamma rho phi.
+
+    Lemma SatML_Implies :
+      forall gamma rho phi phi',
+        SatML gamma rho (ImpliesML phi phi') <->
+        SatML gamma rho phi -> SatML gamma rho phi'.
     Proof.
-      intros gamma rho phi; split; intros H.
-      - simpl in H. trivial.
+      intros gamma rho phi phi'; split; intros H.
+      - simpl in H; trivial.
       - simpl; trivial.
     Qed.
+      
+
 
   (* Validity in ML *)
   Definition ValidML (phi : MLFormula) : Prop :=
@@ -440,10 +489,10 @@ Module Lang <: Formulas.
       | v' :: ls => if (var_eq v v') then true else (in_list v ls)
     end.
 
-  Eval compute in (in_list A (nil)).
-  Eval compute in (in_list A (A :: nil)).
-  Eval compute in (in_list A (B :: nil)).
-  Eval compute in (in_list A (B :: A :: nil)).
+  Eval compute in (in_list (evar N) (nil)).
+  Eval compute in (in_list (evar N) ((evar N) :: nil)).
+  Eval compute in (in_list (evar N) ((evar N) :: nil)).
+  Eval compute in (in_list (evar N) ((evar S) :: (evar N) :: nil)).
 
   
   
@@ -454,11 +503,11 @@ Module Lang <: Formulas.
     end.
 
   Eval compute in (append_set (nil) (nil) ).
-  Eval compute in (append_set (A :: nil) (nil) ).
-  Eval compute in (append_set (nil) (A :: nil) ).
-  Eval compute in (append_set (A :: nil) (A :: nil) ).
-  Eval compute in (append_set (A :: B:: nil) (A :: nil) ).
-  Eval compute in (append_set (A :: nil) (B :: A :: nil) ).
+  Eval compute in (append_set ((evar N) :: nil) (nil) ).
+  Eval compute in (append_set (nil) ((evar N) :: nil) ).
+  Eval compute in (append_set ((evar N) :: nil) ((evar N) :: nil) ).
+  Eval compute in (append_set ((evar N) :: (evar S) :: nil) ((evar N) :: nil) ).
+  Eval compute in (append_set ((evar N) :: nil) ((evar S) :: (evar N) :: nil) ).
 
   Fixpoint minus_elem (l1 : list Var) (v : Var) : list Var :=
     match l1 with
@@ -473,28 +522,28 @@ Module Lang <: Formulas.
     end.
   
   Eval compute in (minus_set (nil) (nil) ).
-  Eval compute in (minus_set (A :: nil) (nil) ).
-  Eval compute in (minus_set (nil) (A :: nil) ).
-  Eval compute in (minus_set (A :: nil) (A :: nil) ).
-  Eval compute in (minus_set (A :: B:: nil) (A :: nil) ).
-  Eval compute in (minus_set (C :: A :: nil) (B :: A :: nil) ).
+  Eval compute in (minus_set ((evar N) :: nil) (nil) ).
+  Eval compute in (minus_set (nil) ((evar N) :: nil) ).
+  Eval compute in (minus_set ((evar N) :: nil) ((evar N) :: nil) ).
+  Eval compute in (minus_set ((evar N) :: (evar S) :: nil) ((evar N) :: nil) ).
+  Eval compute in (minus_set ((evar I) :: (evar N) :: nil) ((evar S) :: (evar N) :: nil) ).
 
   Print Exp.
   Fixpoint getFreeVarsExp (e : Exp) : list Var :=
     match e with
-      | var_exp v => (v :: nil)
+      | var_exp v => ((evar v) :: nil)
       | plus e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
       | _ => nil
     end.
 
   Eval compute in (getFreeVarsExp ($ a)).
   Eval compute in (getFreeVarsExp (val 2)).
-  Eval compute in (getFreeVarsExp (! A)).
-  Eval compute in (getFreeVarsExp (plus (! A) (! A))).  
+  Eval compute in (getFreeVarsExp (!  N)).
+  Eval compute in (getFreeVarsExp (plus (! N) (! N))).  
 
   Fixpoint getFreeVarsMapItem (mi : MapItem) : list Var :=
     match mi with
-      | var_mi v => (v :: nil)
+      | var_mi v => ((mivar v) :: nil)
       | item h e => (getFreeVarsExp e)
     end.
 
@@ -511,7 +560,7 @@ Module Lang <: Formulas.
   Print BExp.
   Fixpoint getFreeVarsBExp (be : BExp) : list Var :=
     match be with
-      | var_bexp vb => (vb :: nil)
+      | var_bexp vb => ((bvar vb) :: nil)
       | leq e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
       | _ => nil
     end.
@@ -520,7 +569,7 @@ Module Lang <: Formulas.
   Fixpoint getFreeVarsStmt (st : Stmt) : list Var :=
     match st with
       | assign i' e => getFreeVarsExp e
-      | var_stmt st => (st :: nil)
+      | var_stmt st => ((svar st) :: nil)
       | ifelse be s1 s2 => append_set (append_set (getFreeVarsBExp be) (getFreeVarsStmt s1)) (getFreeVarsStmt s2)
       | while be st => append_set (getFreeVarsBExp be) (getFreeVarsStmt st)
       | seq s1 s2 => append_set (getFreeVarsStmt s1) (getFreeVarsStmt s2)
@@ -529,7 +578,7 @@ Module Lang <: Formulas.
   
   Fixpoint getFreeVarsCfg (c : Cfg) : list Var :=
     match c with
-      | var_cfg v => (v :: nil)
+      | var_cfg v => ((cvar v) :: nil)
       | cfg st mi => append_set (getFreeVarsStmt st) (getFreeVarsItems mi)
     end.
   
@@ -537,11 +586,11 @@ Module Lang <: Formulas.
     match phi with
       | T => nil
       | pattern pi => (getFreeVarsCfg pi)
-      | NotML phi' => getFreeVars phi'
       | AndML phi1 phi2 => append_set (getFreeVars phi1) (getFreeVars phi2)
+      | ImpliesML phi1 phi2 => append_set (getFreeVars phi1) (getFreeVars phi2)
       | ExistsML Vs phi' => minus_set (getFreeVars phi') Vs
       | gteML e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
-      | cfg_eq c1 c2 => append_set (getFreeVarsCfg c1) (getFreeVarsCfg c2)
+      | encoding phi' => (getFreeVars phi') (* the encoding doesn't affect the free variable set *)
     end.
 
   Eval compute in 
@@ -549,48 +598,648 @@ Module Lang <: Formulas.
                      (! N >>= (val 0))
                      (pattern (cfg 
                                  (i <- (val 0) ; (s <- (val 0)) ;
-                                  (while (leq ($ i) (! B))
-                                         ((s <- (plus (! A) ($ i))) ;
+                                  (while (leq ($ i) (! N))
+                                         ((s <- (plus (! S) ($ i))) ;
                                           (i <- (plus ($ i) (val 1))))
                                   ))
-                                 ((n |-> (! N)) :: nil))))  .
+                                 ((n |-> (! I)) :: nil))))  .
                    
   (* existential closure *)
   Definition EClos (phi : MLFormula) := (ExistsML (getFreeVars phi) phi).
 
-  Fixpoint encoding (phi : MLFormula) : MLFormula :=
-    match phi with
-      | T => T
-      | pattern pi => (cfg_eq (var_cfg ZZ) pi)
-      | NotML phi' => NotML (encoding phi')
-      | AndML phi1 phi2 => AndML (encoding phi1) (encoding phi2)
-      | ExistsML V phi' => ExistsML V (encoding phi')
-      | cc => cc
+
+
+            
+  (* Modify valuation on set *)
+  Definition modify_val_on_var(rho rho' : Valuation) (x : Var) : Valuation :=
+    fun z => if (var_eq x z) then rho' x else rho z .
+  Fixpoint modify_val_on_set(rho rho' : Valuation) (X : list Var) : Valuation :=
+    match X with
+      | nil => rho
+      | cons x' Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x'
     end.
 
-  Eval compute in encoding (AndML
-                     (! N >>= (val 0))
-                     (pattern (cfg 
-                                 (i <- (val 0) ; (s <- (val 0)) ;
-                                  (while (leq ($ i) (! B))
-                                         ((s <- (plus (! A) ($ i))) ;
-                                          (i <- (plus ($ i) (val 1))))
-                                  ))
-                                 ((n |-> (! N)) :: nil)))).
+  (* helper *)
+  Lemma modify_in :
+    forall V x rho rho',
+      In x V -> (modify_val_on_set rho rho' V) x = rho' x.
+  Proof.
+    induction V; intros.
+    - contradiction.
+    - simpl in *.
+      destruct H as [H | H].
+      + subst.
+        unfold modify_val_on_var.
+        rewrite var_eq_refl.
+        reflexivity.
+      + unfold modify_val_on_var.
+        case_eq (var_eq a0 x0); intros H'.
+        * apply var_eq_true in H'.
+          subst.
+          reflexivity.
+        * apply IHV; trivial.
+  Qed.
+    
 
-   Lemma Proposition1 :
-     forall gamma' phi rho,
-       SatML gamma' rho (encoding phi) <->
-       exists gamma, SatML gamma rho phi.
-   Proof.
-     intros; split; intros H.
-     - exists gamma'.
-       induction phi.
-       + simpl. trivial.
-       + unfold encoding in H.
-         unfold SatML in H.
-         simpl.
-         case_eq (rho ZZ); intros e H0; rewrite H0 in H.
-         * 
-     
+  (* helper *)
+  Lemma modify_not_in :
+    forall V x rho rho',
+      ~ In x V -> (modify_val_on_set rho rho' V) x = rho x.
+  Proof.
+    induction V; intros.
+    - simpl.
+      reflexivity.
+    - simpl in *.
+      apply not_or_and in H.
+      destruct H as (H & H').
+      unfold modify_val_on_var.
+      case_eq (var_eq a0 x0); intros H''.
+      + apply var_eq_true in H''.
+        subst.
+        contradict H.
+        reflexivity.
+      + apply IHV; trivial.
+  Qed.
+
+  
+  Definition modify_val_on_ZZ(rho : Valuation) (m : State) : Valuation :=
+    fun z => if (var_eq z (spvar ZZ)) then to_m_state m else rho z .
+
+
+  Lemma Proposition1 :
+    forall phi gamma' rho,
+      SatML gamma' rho (encoding phi) <->
+      exists gamma, SatML gamma rho phi.
+  Proof.
+    intros.
+    split; intros.
+    - simpl in H.
+      destruct H as (gamma & H).
+      exists gamma; trivial.
+    - simpl; trivial.
+  Qed.
+
+  Lemma modify_cfg :
+    forall c rho rho' V,
+      applyVal (modify_val_on_set rho rho' V) c = applyVal rho' c.
+  Proof.
+    admit.
+  Qed.
+
+
+  Lemma incl_nil :
+    forall (X: list Var), incl X nil -> X = nil.
+  Proof.
+    intros X H.
+    induction X; trivial.
+    unfold incl in H.
+    unfold incl in IHX.
+    assert (H' : In a0 (a0 :: X0)).
+    - simpl.
+      left; trivial.
+    - apply H in H'.
+      contradiction.
+  Qed.
+  
+  Lemma append_left :
+    forall B A a,
+      In a A -> In a (append_set A B).
+  Proof.
+    intros B.
+    induction B; intros A a H.
+    - simpl.
+      trivial.
+    - simpl.
+      case_eq (in_list a0 A); intros H'.
+      + apply IHB; trivial.
+      + apply IHB.
+        simpl. right. trivial.
+  Qed.
+
+  Lemma append_right :
+    forall B A a,
+      In a B -> In a (append_set A B).
+  Proof.
+    intros B.
+    induction B; intros A a Ha.
+    - contradiction.
+    - simpl in Ha.
+      destruct Ha as [Ha | Ha].
+      + subst.
+        simpl.
+        case_eq (in_list a A); intros H.
+        * apply append_left.
+          induction A.
+          simpl in H.
+          inversion H.
+          simpl.
+          simpl in H.
+          case_eq (var_eq a a0); intros H'.
+          left.
+          apply var_eq_true in H'.
+          subst; trivial.
+          rewrite H' in H.
+          right.
+          apply IHA; trivial.
+        * apply append_left.
+          simpl. left. trivial.
+      + simpl.
+        case_eq (in_list a0 A); intros H; apply IHB; trivial.
+  Qed.
+        
+  
+  Lemma append_set_nil :
+    forall B A,
+      append_set A B = nil -> A = nil /\ B = nil .
+  Proof.
+    intros B.
+    induction B.
+    - intros A H.
+      split; trivial.
+    - intros A H.
+      simpl in H.
+      case_eq (in_list a0 A); intros H'.
+      + rewrite H' in H.
+        apply IHB in H.
+        destruct H as (H & H'').
+        subst.
+        simpl in H'.
+        inversion H'.
+      + rewrite H' in H.
+        apply IHB in H.
+        destruct H as (H & H'').
+        inversion H.
+  Qed.  
+
+  
+  Lemma incl_append_left :
+    forall V A B,
+      incl (append_set A B) V -> incl A V.
+  Proof.
+    induction V; intros.
+    - apply incl_nil in H.
+      apply append_set_nil in H.
+      destruct H as (H & H').
+      subst.
+      unfold incl.
+      intros a H.
+      trivial.
+    - unfold incl in H.
+      unfold incl.
+      intros a Ha.
+      apply append_left with (B := B0) in Ha.
+      apply H in Ha.
+      trivial.
+  Qed.
+
+  Lemma incl_append_right :
+    forall V A B,
+      incl (append_set A B) V -> incl B V.
+  Proof.
+    induction V; intros.
+    - apply incl_nil in H.
+      apply append_set_nil in H.
+      destruct H as (H & H').
+      subst.
+      unfold incl.
+      intros a H.
+      trivial.
+    - unfold incl in H.
+      unfold incl.
+      intros a Ha.
+      apply append_right with (A := A) (B := B0) in Ha.
+      apply H in Ha.
+      trivial.
+  Qed.
+
+
+  Lemma incl_exp :
+    forall e rho rho' V,
+      incl (getFreeVarsExp e) V ->
+      applyValExp rho' e = applyValExp (modify_val_on_set rho rho' V) e.
+  Proof.
+    induction e; intros.
+    - simpl in *. trivial.
+    - simpl in *. trivial.
+    - simpl in *.
+      unfold incl in H.
+      assert (H' : In (evar v) (evar v :: nil)).
+      simpl. left. trivial.
+      apply H in H'.
+      apply modify_in with (rho := rho) (rho' := rho') in H'.
+      rewrite H'.
+      trivial.
+    - simpl in *.
+      rewrite IHe1 with (rho := rho) (V := V).
+      rewrite IHe2 with (rho := rho) (V := V).
+      + trivial.
+      + unfold incl in *.
+        intros a Ha.
+        apply H.
+        apply append_right.
+        trivial.
+      + unfold incl in *.
+        intros a Ha.
+        apply H.
+        apply append_left.
+        trivial.
+  Qed.
+
+  Lemma incl_bexp :
+    forall b rho rho' V,
+      incl (getFreeVarsBExp b) V ->
+      applyValBExp rho' b = applyValBExp (modify_val_on_set rho rho' V) b.
+  Proof.
+    intros b.
+    induction b; intros.
+    - simpl. trivial.
+    - simpl. trivial.
+    - simpl in *.
+      assert (H' : In (bvar v) (bvar v :: nil)).
+      simpl. left. trivial.
+      apply H in H'.
+      apply modify_in with (rho := rho) (rho' := rho') in H'.
+      rewrite H'.
+      trivial.
+    - simpl in *.
+      rewrite incl_exp with (rho := rho) (V := V).
+      rewrite incl_exp with (rho := rho) (V := V) (e := e0).
+      trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+  Qed.
+
+  Lemma incl_stmt :
+    forall s rho rho' V,
+      incl (getFreeVarsStmt s) V ->
+      applyValStmt rho' s = applyValStmt (modify_val_on_set rho rho' V) s.
+  Proof.
+    intros s.
+    induction s; intros.
+    - simpl in *.
+      rewrite incl_exp with (rho := rho) (V := V); trivial.
+    - simpl in *.
+      assert (H' : In (svar v) (svar v :: nil)).
+      simpl. left. trivial.
+      apply H in H'.
+      apply modify_in with (rho := rho) (rho' := rho') in H'.
+      rewrite H'.
+      trivial.
+    - simpl in *.
+      rewrite <- incl_bexp.
+      rewrite <- IHs1.
+      rewrite <- IHs2.
+      trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H.
+      apply incl_append_left in H; trivial.
+    - simpl in *.
+      rewrite <- incl_bexp.
+      rewrite <- IHs.
+      trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+    - simpl in *.
+      trivial.
+    - simpl in *.
+      rewrite <- IHs1.
+      rewrite <- IHs2.
+      reflexivity.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+  Qed.
+
+  Lemma incl_mapitem :
+    forall mi rho rho' V,
+      incl (getFreeVarsMapItem mi) V ->
+      applyValMapItem rho' mi = applyValMapItem (modify_val_on_set rho rho' V) mi.
+  Proof.
+    induction mi; intros.
+    - simpl in *.
+      assert (H' : In (mivar v) (mivar v :: nil)).
+      simpl. left. trivial.
+      apply H in H'.
+      apply modify_in with (rho := rho) (rho' := rho') in H'.
+      rewrite H'.
+      trivial.
+    - simpl in *.
+      rewrite <- incl_exp; trivial.
+  Qed.
+
+  Lemma incl_list :
+    forall l rho rho' V,
+      incl (getFreeVarsItems l) V ->
+      applyValList rho' l = applyValList (modify_val_on_set rho rho' V) l.
+  Proof.
+    induction l; intros.
+    - simpl in *. trivial.
+    - simpl in *.
+      rewrite <- incl_mapitem.
+      rewrite <- IHl.
+      trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+  Qed.
+
+
+  Lemma incl_cfg :
+    forall c rho rho' V,
+      incl (getFreeVars (pattern c)) V ->
+      applyVal rho' c = applyVal (modify_val_on_set rho rho' V) c.
+  Proof.
+    intros c. induction c; intros.
+    - simpl in *.
+      assert (H' : In (cvar v) (cvar v :: nil)).
+      simpl. left. trivial.
+      apply H in H'.
+      apply modify_in with (rho := rho) (rho' := rho') in H'.
+      rewrite H'.
+      trivial.
+    - simpl in *.
+      rewrite <- incl_stmt.
+      rewrite <- incl_list.
+      trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+  Qed.      
+  
+  Lemma in_append_iff :
+    forall B A x,
+      In x (append_set A B) <-> In x A \/ In x B.
+  Proof.
+    split.
+    - revert  B0 A x0.
+      induction B0.
+      + intros.
+        simpl in *.
+        left. trivial.
+      + intros A x H.
+        simpl in H.
+        case_eq (in_list a0 A); intro H'.
+        * rewrite H' in H.
+          apply IHB0 in H.
+          destruct H as [H | H].
+          left. trivial.
+          right.
+          simpl.
+          right. trivial.
+        * rewrite H' in H.
+          apply IHB0 in H.
+          destruct H as [H | H].
+          simpl in H.
+          destruct H as [H | H].
+          subst.
+          right.
+          simpl.
+          left.
+          reflexivity.
+          left.
+          assumption.
+          right.
+          simpl.
+          right.
+          assumption.
+    - intros.
+      destruct H as [H | H].
+      apply append_left; trivial.
+      apply append_right; trivial.
+  Qed.
+      
+  
+  Lemma minus_elem_helper :
+    forall A x y, In x A -> x <> y -> In x (minus_elem A y).
+  Proof.
+    induction A.
+    - simpl. trivial.
+    - intros x y H H'.
+      simpl.
+      destruct H as [H | H].
+      case_eq (var_eq a0 y); intros K.
+      + apply IHA; trivial.
+        simpl in H.
+        subst.
+        apply var_eq_true in K.
+        subst.
+        contradict H'.
+        reflexivity.
+      + subst.
+        simpl.
+        left. reflexivity.
+      + case_eq (var_eq a0 y); intros K.
+        * apply IHA; trivial.
+        * simpl.
+          right.
+          apply IHA; trivial.
+  Qed.
+  
+  Lemma minus_set_helper:
+    forall B A x,
+      In x A -> ~ In x B -> In x (minus_set A B).
+  Proof.
+    induction B0.
+    - intros.
+      simpl.
+      assumption.
+    - induction A.
+      + intros.
+        contradiction.
+      + intros x H H'.
+        destruct H as [H | H].
+        subst.
+        case_eq (var_eq x a0); intros Ha.
+        * contradict H'.
+          simpl.
+          left.
+          apply var_eq_true in Ha.
+          subst.
+          reflexivity.
+        * simpl.
+          rewrite Ha.
+          apply IHB0.
+          simpl. left. reflexivity.
+          unfold not.
+          intros.
+          apply H'.
+          simpl.
+          right. assumption.
+        * simpl.
+          case_eq (var_eq a1 a0); intros Ha.
+          simpl in H'.
+          apply not_or_and in H'.
+          destruct H' as (H' & H'').
+          apply IHB0; trivial.
+          apply var_eq_true in Ha.
+          subst.
+          apply minus_elem_helper; trivial.
+          unfold not in H'.
+          unfold not.
+          intros.
+          apply H'.
+          subst.
+          reflexivity.
+          simpl in H'.
+          apply not_or_and in H'.
+          destruct H' as (H' & H'').
+          apply IHB0; trivial.
+          simpl.
+          right.
+          apply minus_elem_helper; trivial.
+          unfold not in *.
+          intros.
+          apply H'.
+          subst.
+          trivial.
+  Qed.
+          
+          
+  Lemma modify_Sat :
+    forall phi V gamma rho rho',
+      incl (getFreeVars phi) V ->
+      (SatML gamma rho' phi <->
+      SatML gamma (modify_val_on_set rho rho' V) phi).
+  Proof.
+    induction phi; intros.
+    - simpl. split; intros; trivial.
+    - simpl in *.
+      split.
+      intros H';
+      rewrite <- incl_cfg with (rho := rho) (V := V); trivial.
+      rewrite <- incl_cfg with (rho := rho) (V := V); trivial.
+    - split.
+      + intros H1.
+        simpl in *.
+        destruct H1 as (H1 & H2).
+        split.
+        apply IHphi1; trivial.
+        apply incl_append_left in H; trivial.
+        apply IHphi2; trivial.
+        apply incl_append_right in H; trivial.
+      + intros H1.
+        simpl in *.
+        destruct H1 as (H1 & H2).
+        split.
+        rewrite IHphi1 with (rho := rho) (V := V); trivial.
+        apply incl_append_left in H; trivial.
+        apply IHphi2 with (rho := rho) (V := V); trivial.
+        apply incl_append_right in H; trivial.
+    - split.
+      + intros H1.
+        simpl in *.
+        intros H2.
+        rewrite <- IHphi1 in H2.
+        apply IHphi2.
+        apply incl_append_right in H; trivial.
+        apply H1; trivial.
+        apply incl_append_left in H; trivial.
+      + simpl in *. intros.
+        rewrite IHphi2 with (V := V).
+        rewrite IHphi1 with (rho := rho) (V := V) in H1 .
+        apply H0; trivial.
+        apply incl_append_left in H; trivial.
+        apply incl_append_right in H; trivial.
+    - simpl in *.
+      split; intros.
+      + destruct H0 as (mu & H0 & H1).
+        exists (modify_val_on_set (modify_val_on_set rho rho' V) mu (append_set V l)).
+        split.
+        * intros x H2.
+          assert (H3 : In x V \/ ~ In x V).
+          apply classic.
+          destruct H3 as [H3 | H3].
+          assert (H4: In x (append_set V l)).
+          apply append_left; trivial.
+          apply modify_in with (rho := (modify_val_on_set rho rho' V)) (rho' := mu) in H4.
+          rewrite H4.
+          rewrite modify_in; trivial.
+          apply H0; trivial.
+          assert (H4: ~ In x (append_set V l)).
+          unfold not.
+          intros H5.
+          apply in_append_iff in H5.
+          destruct H5 as [H5 | H5]; contradiction.
+          rewrite modify_not_in; trivial.
+        * apply IHphi; trivial.
+          unfold incl in *.
+          intros a Ha.
+          assert (H2: In a l \/ ~ In a l).
+          apply classic.
+          destruct H2 as [H2 | H2].
+          rewrite in_append_iff.
+          right. trivial.
+          assert (H3: In a (minus_set (getFreeVars phi) l)).
+          apply minus_set_helper; trivial.
+          apply H in H3.
+          rewrite in_append_iff.
+          left. trivial.
+      + destruct H0 as (mu & H0 & H1).
+        exists (modify_val_on_set rho' mu (append_set V l)).
+        {
+          split.
+          - intros x Hx.
+            assert (H2 : In x V \/ ~ In x V).
+            apply classic.
+            destruct H2 as [H2 | H2].
+            assert (H3: In x (append_set V l)).
+            apply append_left; trivial.
+            apply modify_in with (rho := rho') (rho' := mu) in H3.
+            rewrite H3.
+            apply H0 in Hx.
+            rewrite Hx.
+            apply modify_in; trivial.
+            assert (H4: ~ In x (append_set V l)).
+            unfold not.
+            intros H5.
+            apply in_append_iff in H5.
+            destruct H5 as [H5 | H5]; contradiction.
+            rewrite modify_not_in; trivial.
+          - apply IHphi; trivial.
+            unfold incl in *.
+            intros y Hy.
+            assert (H2: In y (minus_set (getFreeVars phi) l) \/
+                        ~ In y (minus_set (getFreeVars phi) l)).
+            apply classic.
+            destruct H2 as [H2 | H2]; trivial.
+            + apply H in H2.
+              apply append_left; trivial.
+            + assert (H3 : In y l \/ ~ In y l).
+              apply classic.
+              destruct H3 as [H3 | H3].
+              * apply append_right. trivial.
+              * contradict H2.
+                apply minus_set_helper; trivial.
+        }
+    - simpl in *.
+      split; intros H'; destruct H' as (gamma' & H'); exists gamma'.
+      + rewrite <- IHphi with (V := V); trivial.
+      + rewrite IHphi with (V := V) (rho := rho); trivial.
+    - simpl in *.
+      rewrite incl_exp with (rho := rho) (V := V).
+      rewrite incl_exp with (rho := rho) (V := V) (e := e0).
+      split; intros H'; trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.
+  Qed.
+
+
+  
+  Lemma modify_Sat1 :
+    forall phi V gamma rho rho',
+      SatML gamma rho' phi ->
+      incl (getFreeVars phi) V ->
+      SatML gamma (modify_val_on_set rho rho' V) phi.
+  Proof.
+    intros.
+    apply modify_Sat; trivial.
+  Qed.
+  
+  Lemma modify_Sat2 :
+    forall gamma rho rho' phi V,
+      SatML gamma rho phi ->
+      (forall x, In x (getFreeVars phi) -> ~ In x V) ->
+      SatML gamma (modify_val_on_set rho rho' V) phi.
+  Proof.
+  Admitted.
+         
 End Lang.
