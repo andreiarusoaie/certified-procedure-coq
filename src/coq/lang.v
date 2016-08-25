@@ -679,13 +679,6 @@ Module Lang <: Formulas.
     - simpl; trivial.
   Qed.
 
-  Lemma modify_cfg :
-    forall c rho rho' V,
-      applyVal (modify_val_on_set rho rho' V) c = applyVal rho' c.
-  Proof.
-    admit.
-  Qed.
-
 
   Lemma incl_nil :
     forall (X: list Var), incl X nil -> X = nil.
@@ -812,6 +805,233 @@ Module Lang <: Formulas.
       trivial.
   Qed.
 
+  Lemma in_append_iff :
+    forall B A x,
+      In x (append_set A B) <-> In x A \/ In x B.
+  Proof.
+    split.
+    - revert  B0 A x0.
+      induction B0.
+      + intros.
+        simpl in *.
+        left. trivial.
+      + intros A x H.
+        simpl in H.
+        case_eq (in_list a0 A); intro H'.
+        * rewrite H' in H.
+          apply IHB0 in H.
+          destruct H as [H | H].
+          left. trivial.
+          right.
+          simpl.
+          right. trivial.
+        * rewrite H' in H.
+          apply IHB0 in H.
+          destruct H as [H | H].
+          simpl in H.
+          destruct H as [H | H].
+          subst.
+          right.
+          simpl.
+          left.
+          reflexivity.
+          left.
+          assumption.
+          right.
+          simpl.
+          right.
+          assumption.
+    - intros.
+      destruct H as [H | H].
+      apply append_left; trivial.
+      apply append_right; trivial.
+  Qed.
+      
+  
+  Lemma minus_elem_helper :
+    forall A x y, In x A -> x <> y -> In x (minus_elem A y).
+  Proof.
+    induction A.
+    - simpl. trivial.
+    - intros x y H H'.
+      simpl.
+      destruct H as [H | H].
+      case_eq (var_eq a0 y); intros K.
+      + apply IHA; trivial.
+        simpl in H.
+        subst.
+        apply var_eq_true in K.
+        subst.
+        contradict H'.
+        reflexivity.
+      + subst.
+        simpl.
+        left. reflexivity.
+      + case_eq (var_eq a0 y); intros K.
+        * apply IHA; trivial.
+        * simpl.
+          right.
+          apply IHA; trivial.
+  Qed.
+
+  Lemma minus_elem_helper' :
+    forall A x y,
+      In x (minus_elem A y) -> In x A /\ x <> y.
+  Proof.
+    intros A.
+    induction A; intros.
+    - simpl in H.
+      contradiction.
+    - simpl in *.
+      case_eq (var_eq a0 y0); intros H0; rewrite H0 in *.
+      apply IHA in H.
+      destruct H as (H & H').
+      split.
+      + right. trivial.
+      + trivial.
+      + simpl in H.
+        destruct H as [H | H].
+        * split.
+          left. trivial.
+          subst.
+          apply var_eq_false.
+          trivial.
+        * apply IHA in H.
+          destruct H as (H & H').
+          split; trivial.
+          right. trivial.
+  Qed.
+  
+  
+  
+  Lemma minus_set_helper:
+    forall B A x,
+      In x A -> ~ In x B -> In x (minus_set A B).
+  Proof.
+    induction B0.
+    - intros.
+      simpl.
+      assumption.
+    - induction A.
+      + intros.
+        contradiction.
+      + intros x H H'.
+        destruct H as [H | H].
+        subst.
+        case_eq (var_eq x a0); intros Ha.
+        * contradict H'.
+          simpl.
+          left.
+          apply var_eq_true in Ha.
+          subst.
+          reflexivity.
+        * simpl.
+          rewrite Ha.
+          apply IHB0.
+          simpl. left. reflexivity.
+          unfold not.
+          intros.
+          apply H'.
+          simpl.
+          right. assumption.
+        * simpl.
+          case_eq (var_eq a1 a0); intros Ha.
+          simpl in H'.
+          apply not_or_and in H'.
+          destruct H' as (H' & H'').
+          apply IHB0; trivial.
+          apply var_eq_true in Ha.
+          subst.
+          apply minus_elem_helper; trivial.
+          unfold not in H'.
+          unfold not.
+          intros.
+          apply H'.
+          subst.
+          reflexivity.
+          simpl in H'.
+          apply not_or_and in H'.
+          destruct H' as (H' & H'').
+          apply IHB0; trivial.
+          simpl.
+          right.
+          apply minus_elem_helper; trivial.
+          unfold not in *.
+          intros.
+          apply H'.
+          subst.
+          trivial.
+  Qed.
+
+
+  Lemma minus_nil :
+    forall SET,
+      minus_set nil SET = nil.
+  Proof.
+    induction SET; simpl in *; trivial.
+  Qed.            
+  
+  Lemma minus_set_helper':
+    forall B A x,
+      In x (minus_set A B) -> In x A /\ ~ In x B.
+  Proof.
+    intros B.
+    induction B; intros A x Hx.
+    - simpl in *.
+      split; trivial.
+      unfold not.
+      intros; trivial.
+    - simpl in *.
+      induction A.
+      + simpl in *.
+        rewrite minus_nil in Hx.
+        contradiction.
+      + simpl in *.
+        split; case_eq (var_eq a1 a0); intros Ha; rewrite Ha in *.
+        * apply IHA in Hx.
+          destruct Hx as (Hx & Hx').
+          right. trivial.
+        * apply IHB in Hx.
+          destruct Hx as (Hx & Hx').
+          simpl in Hx.
+          destruct Hx as [Hx | Hx].
+          left. trivial.
+          apply minus_elem_helper' in Hx.
+          destruct Hx as (Hx & Hx'').
+          right. trivial.
+        * apply IHB in Hx.
+          destruct Hx as (Hx & Hx').
+          simpl in Hx.
+          apply minus_elem_helper' in Hx.
+          destruct Hx as (Hx & Hx'').
+          apply and_not_or.
+          split; trivial.
+          apply var_eq_true in Ha.
+          unfold not in *.
+          intros.
+          apply Hx''.
+          subst. trivial.
+        * apply IHB in Hx.
+          destruct Hx as (Hx & Hx').
+          apply and_not_or.
+          split; trivial.
+          simpl in Hx.
+          destruct Hx as [Hx | Hx].
+          subst.
+          unfold not.
+          intros.
+          subst.
+          apply var_eq_false in Ha.
+          apply Ha. trivial.
+          apply minus_elem_helper' in Hx.
+          destruct Hx as (Hx & Hx'').
+          unfold not in *.
+          intros.
+          apply Hx''.
+          subst.
+          reflexivity.
+  Qed.
+        
 
   Lemma incl_exp :
     forall e rho rho' V,
@@ -964,137 +1184,69 @@ Module Lang <: Formulas.
       apply incl_append_right in H; trivial.
       apply incl_append_left in H; trivial.
   Qed.      
-  
-  Lemma in_append_iff :
-    forall B A x,
-      In x (append_set A B) <-> In x A \/ In x B.
+
+
+
+  Lemma not_incl_exp:
+    forall e rho rho' V,
+      (forall x, In x (getFreeVarsExp e) -> ~ In x V) ->
+      applyValExp rho e = applyValExp (modify_val_on_set rho rho' V) e.
   Proof.
-    split.
-    - revert  B0 A x0.
-      induction B0.
-      + intros.
-        simpl in *.
-        left. trivial.
-      + intros A x H.
-        simpl in H.
-        case_eq (in_list a0 A); intro H'.
-        * rewrite H' in H.
-          apply IHB0 in H.
-          destruct H as [H | H].
-          left. trivial.
-          right.
-          simpl.
-          right. trivial.
-        * rewrite H' in H.
-          apply IHB0 in H.
-          destruct H as [H | H].
-          simpl in H.
-          destruct H as [H | H].
-          subst.
-          right.
-          simpl.
-          left.
-          reflexivity.
-          left.
-          assumption.
-          right.
-          simpl.
-          right.
-          assumption.
-    - intros.
-      destruct H as [H | H].
-      apply append_left; trivial.
-      apply append_right; trivial.
+    intros e. induction e; intros; simpl in *; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. trivial.
+    - rewrite <- IHe1, <- IHe2; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
   Qed.
+
+  Lemma not_incl_bexp:
+    forall b rho rho' V,
+      (forall x, In x (getFreeVarsBExp b) -> ~ In x V) ->
+      applyValBExp rho b = applyValBExp (modify_val_on_set rho rho' V) b.
+  Proof.
+    intros b. induction b; intros; simpl in *; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. trivial.
+    - rewrite <- not_incl_exp, <- not_incl_exp; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
+  Qed.
+
+  Lemma not_incl_stmt:
+    forall s rho rho' V,
+      (forall x, In x (getFreeVarsStmt s) -> ~ In x V) ->
+      applyValStmt rho s = applyValStmt (modify_val_on_set rho rho' V) s.
+  Proof.
+    intros s. induction s; intros; simpl in *; trivial.
+    - rewrite <- not_incl_exp; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. trivial.
+    - rewrite <- not_incl_bexp.
+      rewrite <- IHs1, <- IHs2; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left. apply append_right. trivial.
+      intros x Hx. apply H. apply append_left. apply append_left. trivial.
+    - rewrite <- not_incl_bexp.
+      rewrite <- IHs; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
+    - rewrite <- IHs1, <- IHs2; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
+  Qed.
+
+  
+  Lemma not_incl_cfg:
+    forall c rho rho' V,
+      (forall x, In x (getFreeVarsCfg c) -> ~ In x V) ->
+      applyVal rho c = applyVal (modify_val_on_set rho rho' V) c.
+  Admitted.
+
+  
       
-  
-  Lemma minus_elem_helper :
-    forall A x y, In x A -> x <> y -> In x (minus_elem A y).
-  Proof.
-    induction A.
-    - simpl. trivial.
-    - intros x y H H'.
-      simpl.
-      destruct H as [H | H].
-      case_eq (var_eq a0 y); intros K.
-      + apply IHA; trivial.
-        simpl in H.
-        subst.
-        apply var_eq_true in K.
-        subst.
-        contradict H'.
-        reflexivity.
-      + subst.
-        simpl.
-        left. reflexivity.
-      + case_eq (var_eq a0 y); intros K.
-        * apply IHA; trivial.
-        * simpl.
-          right.
-          apply IHA; trivial.
-  Qed.
-  
-  Lemma minus_set_helper:
-    forall B A x,
-      In x A -> ~ In x B -> In x (minus_set A B).
-  Proof.
-    induction B0.
-    - intros.
-      simpl.
-      assumption.
-    - induction A.
-      + intros.
-        contradiction.
-      + intros x H H'.
-        destruct H as [H | H].
-        subst.
-        case_eq (var_eq x a0); intros Ha.
-        * contradict H'.
-          simpl.
-          left.
-          apply var_eq_true in Ha.
-          subst.
-          reflexivity.
-        * simpl.
-          rewrite Ha.
-          apply IHB0.
-          simpl. left. reflexivity.
-          unfold not.
-          intros.
-          apply H'.
-          simpl.
-          right. assumption.
-        * simpl.
-          case_eq (var_eq a1 a0); intros Ha.
-          simpl in H'.
-          apply not_or_and in H'.
-          destruct H' as (H' & H'').
-          apply IHB0; trivial.
-          apply var_eq_true in Ha.
-          subst.
-          apply minus_elem_helper; trivial.
-          unfold not in H'.
-          unfold not.
-          intros.
-          apply H'.
-          subst.
-          reflexivity.
-          simpl in H'.
-          apply not_or_and in H'.
-          destruct H' as (H' & H'').
-          apply IHB0; trivial.
-          simpl.
-          right.
-          apply minus_elem_helper; trivial.
-          unfold not in *.
-          intros.
-          apply H'.
-          subst.
-          trivial.
-  Qed.
           
-          
-  Lemma modify_Sat :
+  Lemma modify_Sat_right :
     forall phi V gamma rho rho',
       incl (getFreeVars phi) V ->
       (SatML gamma rho' phi <->
@@ -1231,15 +1383,169 @@ Module Lang <: Formulas.
       SatML gamma (modify_val_on_set rho rho' V) phi.
   Proof.
     intros.
-    apply modify_Sat; trivial.
+    apply modify_Sat_right; trivial.
   Qed.
   
+
+ 
+  Lemma modify_Sat_left :
+    forall phi gamma rho rho' V,
+      (forall x, In x (getFreeVars phi) -> ~ In x V) ->
+      (SatML gamma rho phi <->
+       SatML gamma (modify_val_on_set rho rho' V) phi).
+  Proof.
+    induction phi.
+    - intros. simpl.
+      split; trivial.
+    - split; intros.
+      + simpl in *.
+        rewrite <- H0.
+        rewrite <- not_incl_cfg; trivial.
+      + simpl in *.
+        rewrite <- H0.
+        rewrite <- not_incl_cfg; trivial.
+    - split; intros; simpl in *; destruct H0 as (H0 & H1); split.
+      + rewrite <- IHphi1; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_left; trivial.
+        apply H; trivial.
+      + rewrite <- IHphi2; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_right; trivial.
+        apply H; trivial.
+      + rewrite IHphi1 with (rho' := rho') (V := V); trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_left; trivial.
+        apply H; trivial.
+      + rewrite IHphi2 with (rho' := rho') (V := V); trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_right; trivial.
+        apply H; trivial.
+    - split; intros; simpl in *; intros.
+      + rewrite <- IHphi2.
+        apply H0.
+        rewrite <- IHphi1 in H1; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_left; trivial.
+        apply H; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_right; trivial.
+        apply H; trivial.
+      + rewrite IHphi2 with (rho' := rho') (V := V).
+        apply H0.
+        rewrite <- IHphi1; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_left; trivial.
+        apply H; trivial.
+        intros x Hx.
+        assert (H2 : In x (append_set (getFreeVars phi1) (getFreeVars phi2))).
+        apply append_right; trivial.
+        apply H; trivial.
+    - split; simpl in *; intros H0; destruct H0 as (mu & H0 & H1).
+      + exists (modify_val_on_set mu (modify_val_on_set rho rho' V) (minus_set V l)).
+        split.
+        * intros x Hx.
+          assert (H2: In x V \/ ~ In x V).
+          apply classic.
+          destruct H2 as [H2 | H2].
+          assert (H': In x (minus_set V l)).
+          apply minus_set_helper; trivial.
+          rewrite modify_in; trivial.
+          assert (H': ~ In x (minus_set V l)).
+          unfold not.
+          intros HH.
+          apply H2.
+          apply minus_set_helper' in HH.
+          destruct HH as (HH & HH').
+          contradiction.
+          rewrite modify_not_in; trivial.
+          rewrite modify_not_in; trivial.
+          apply H0; trivial.          
+        * rewrite <- IHphi; trivial.
+          intros x Hx.
+          unfold not.
+          intros HH.
+          assert (H2: In x V /\ ~ In x l).
+          apply minus_set_helper' in HH.
+          destruct HH as (HH & HH').
+          split; trivial.
+          destruct H2 as (H2 & H3).
+          assert (~ In x V).
+          apply H.
+          apply minus_set_helper; trivial.
+          contradiction.
+      + exists (modify_val_on_set mu rho (minus_set V l)).
+        split.
+        * intros x Hx.
+          assert (H2: In x V \/ ~ In x V).
+          apply classic.
+          destruct H2 as [H2 | H2].
+          assert (H': In x (minus_set V l)).
+          apply minus_set_helper; trivial.
+          rewrite modify_in; trivial.
+          assert (H': ~ In x (minus_set V l)).
+          unfold not.
+          intros HH.
+          apply H2.
+          apply minus_set_helper' in HH.
+          destruct HH as (HH & HH').
+          contradiction.
+          rewrite modify_not_in; trivial.
+          apply H0 in Hx.
+          rewrite Hx.
+          apply modify_not_in; trivial.
+        * rewrite <- IHphi; trivial.
+          intros x Hx.
+          unfold not.
+          intros KH.
+          apply minus_set_helper' in KH.
+          destruct KH.
+          assert (KK : In x (minus_set (getFreeVars phi) l)).
+          apply minus_set_helper; trivial.
+          apply H in KK.
+          contradiction.
+    - split; intros; simpl in *;
+        destruct H0 as (gamma' & H0);
+        exists gamma'.
+      rewrite <- IHphi; trivial.
+      rewrite IHphi with (rho' := rho') (V := V); trivial.
+    - split; intros.
+      + simpl in *.
+        rewrite <- not_incl_exp.
+        rewrite <- not_incl_exp; trivial.
+        intros x Hx.
+        apply H.
+        apply append_right. trivial.
+        intros x Hx.
+        apply H.
+        apply append_left. trivial.
+      + simpl in *.
+        rewrite not_incl_exp with (rho' := rho') (V := V).
+        rewrite not_incl_exp with (rho' := rho') (V := V) (e := e0); trivial.
+        intros x Hx.
+        apply H.
+        apply append_right. trivial.
+        intros x Hx.
+        apply H.
+        apply append_left. trivial.
+  Qed.
+
+
   Lemma modify_Sat2 :
     forall gamma rho rho' phi V,
       SatML gamma rho phi ->
       (forall x, In x (getFreeVars phi) -> ~ In x V) ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
   Proof.
-  Admitted.
+    intros.
+    apply modify_Sat_left; trivial.
+  Qed.
          
 End Lang.
