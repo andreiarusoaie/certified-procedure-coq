@@ -24,22 +24,25 @@ Open Scope string_scope.
             Stmt Stmt
    *)
 
-  Inductive ID : Type :=
-  | a : ID
-  | b : ID
-  | c : ID
-  | n : ID
-  | i : ID
-  | x : ID
-  | y : ID
-  | s : ID.
+  Inductive Id : Type :=
+  | a : Id
+  | b : Id
+  | c : Id
+  | n : Id
+  | i : Id
+  | x : Id
+  | y : Id
+  | s : Id.
 
+
+  Inductive VarID : Type :=
+  | X : VarID
+  | Y : VarID .
   Inductive VarExp : Type :=
   | N : VarExp
   | I : VarExp
-  | X : VarExp
-  | Y : VarExp
-  | S : VarExp.
+  | S : VarExp
+  | S' : VarExp.
   Inductive VarBExp : Type :=
   | B : VarBExp.
   Inductive VarStmt : Type :=
@@ -48,12 +51,16 @@ Open Scope string_scope.
   | S2 : VarStmt.
   Inductive VarMI : Type :=
   | M : VarMI .
-  Inductive VarMList : Type :=
-  | Rest : VarMList .
+  Inductive VarMIList : Type :=
+  | Rest : VarMIList .
   Inductive VarCfg : Type :=
   | C : VarCfg.
   
   
+  Inductive ID : Type :=
+  | idc : Id -> ID
+  | ivar : VarID -> ID .
+
   Inductive Exp : Type := 
   | id : ID -> Exp
   | val : Z -> Exp
@@ -63,10 +70,10 @@ Open Scope string_scope.
 
   Notation "$ A" := (id A) (at level 100).
   Notation "! A" := (var_exp A) (at level 100).
-  Eval compute in ($ a).
+  Eval compute in ($ (idc a)).
   Eval compute in (val 2).
   Eval compute in (! N).
-  Eval compute in (plus (! N) ($ a)).  
+  Eval compute in (plus (! N) ($ (idc a))).  
 
 
   Inductive BExp : Type :=
@@ -92,14 +99,14 @@ Open Scope string_scope.
   Notation "A <- B " := (assign A B) (at level 100).
   Notation "A ; B" := (seq A B) (at level 100).
   
-  Eval compute in  (i <- (val 0)).
+  Eval compute in  ((idc i) <- (val 0)).
   Eval compute in (var_stmt St).
-  Eval compute in (ifelse (leq ($ i) ($ n))  (assign s (plus ($ s) ($ i))) skip) .
-  Eval compute in (i <- (val 0) ; (s <- (val 0))).
-  Eval compute in (i <- (val 0) ; (s <- (val 0)) ;
-                   (while (leq ($ i) ($ n))
-                          ((s <- (plus ($ s) ($ i))) ;
-                           (i <- (plus ($ i) (val 1))))
+  Eval compute in (ifelse (leq ($ (idc i)) ($ (idc n)))  (assign (idc s) (plus ($ (idc s)) ($ (idc i)))) skip) .
+  Eval compute in ((idc i) <- (val 0) ; ((idc s) <- (val 0))).
+  Eval compute in ((idc i) <- (val 0) ; ((idc s) <- (val 0)) ;
+                   (while (leq ($ (idc i)) ($ (idc n)))
+                          (((idc s) <- (plus ($ (idc s)) ($ (idc i)))) ;
+                           ((idc i) <- (plus ($ (idc i)) (val 1))))
                    )).
   
 
@@ -108,28 +115,35 @@ Open Scope string_scope.
   | var_mi : VarMI -> MapItem
   | item : ID -> Exp -> MapItem.
 
+  Inductive MIList :=
+  | Nil : MIList
+  | Cons : MapItem -> MIList -> MIList
+  | list_var : VarMIList -> MIList.
+
+  Notation "A ;; B" := (Cons A B) (at level 100).
+  
   Inductive Cfg := 
   | var_cfg : VarCfg -> Cfg
-  | cfg : Stmt -> list MapItem -> Cfg .
+  | cfg : Stmt -> MIList -> Cfg .
 
 (*  Notation "A |-> B" := (item_z A B) (at level 100). *)
   Notation "A |-> B" := (item A B) (at level 100).
   Eval compute in (cfg 
 
-                     (i <- (val 0) ; (s <- (val 0)) ;
-                   (while (leq ($ i) ($ n))
-                          ((s <- (plus ($ s) ($ i))) ;
-                           (i <- (plus ($ i) (val 1))))
+                     ((idc i) <- (val 0) ; ((idc s) <- (val 0)) ;
+                   (while (leq ($ (idc i)) ($ (idc n)))
+                          (((idc s) <- (plus ($ (idc s)) ($ (idc i)))) ;
+                           ((idc i) <- (plus ($ (idc i)) (val 1))))
                    ))
                      
-                   ((n |-> (! N)) :: nil)).
+                   (((idc n) |-> (! N)) ;; Nil)).
 
   
   (* model and state: equiv classes? *)
   Inductive _exp : Type :=
     | _int : Z -> _exp
     | _plus : _exp -> _exp -> _exp
-    | _id : ID -> _exp. 
+    | _id : Id -> _exp. 
 
   Inductive _bexp : Type :=
   | _bool : bool -> _bexp
@@ -138,43 +152,50 @@ Open Scope string_scope.
   
   Inductive _stmt : Type :=
   | _skip : _stmt
-  | _assign : ID -> _exp -> _stmt
+  | _assign : Id -> _exp -> _stmt
   | _ifelse : _bexp -> _stmt -> _stmt -> _stmt 
   | _while : _bexp -> _stmt -> _stmt 
   | _seq : _stmt -> _stmt -> _stmt.
    
-  Definition _map_item := (ID * _exp)%type.
+  Definition _map_item := (Id * _exp)%type.
   Definition State : Type := (_stmt * list _map_item)%type.
   Inductive Model' : Type := 
+    | to_m_id : Id -> Model'
     | to_m_exp : _exp -> Model'
     | to_m_bexp : _bexp -> Model'
     | to_m_stmt : _stmt -> Model'
     | to_m_map_item : _map_item -> Model'
+    | to_m_list : list _map_item -> Model'
     | to_m_state : State -> Model'.
   Definition Model := Model'.
   
 
   Inductive Var' : Type :=
+  | idvar : VarID -> Var'
   | evar : VarExp -> Var'
   | bvar : VarBExp -> Var'
   | svar : VarStmt -> Var'
   | mivar : VarMI -> Var'
-  | lvar : VarMList -> Var'
+  | lvar : VarMIList -> Var'
   | cvar : VarCfg -> Var'.
   Definition Var := Var'.
 
   (* Valuation *)
   Definition Valuation := Var -> Model .
-  
+
   (* var equality *)
   Definition var_eq (X Y : Var) : bool := 
     match X, Y with
+      | idvar v1, idvar v2 => match v1, v2 with
+                              | X, X => true
+                              | Y, Y => true
+                              | _, _ => false
+                              end
       | evar e1, evar e2 => match e1, e2 with
                               | N, N => true
                               | I, I => true
-                              | X, X => true
-                              | Y, Y => true
                               | S, S => true
+                              | S', S' => true
                               | _, _ => false
                             end
       | bvar b1, bvar b2 => match b1, b2 with
@@ -252,44 +273,41 @@ Open Scope string_scope.
   Definition encoding := encoding'.
   
   Notation "A >>= B" := (gteML A B) (at level 100).
-  
-  Eval compute in pattern
+
+  Definition SUM := pattern
                     (cfg 
 
-                     (i <- (val 0) ; (s <- (val 0)) ;
-                   (while (leq ($ i) ($ n))
-                          ((s <- (plus ($ s) ($ i))) ;
-                           (i <- (plus ($ i) (val 1))))
+                     ((idc i) <- (val 0) ; ((idc s) <- (val 0)) ;
+                   (while (leq ($ (idc i)) ($ (idc n)))
+                          (((idc s) <- (plus ($ (idc s)) ($ (idc i)))) ;
+                           ((idc i) <- (plus ($ (idc i)) (val 1))))
                    ))
                      
-                   ((n |-> (! N)) :: nil)).
+                   (((idc n) |-> (! N)) ;; Nil)).
+  Eval compute in SUM.
 
-  Eval compute in AndML T
-                     (pattern (cfg 
+  Eval compute in AndML T SUM.
 
-                     (i <- (val 0) ; (s <- (val 0)) ;
-                   (while (leq ($ i) ($ n))
-                          ((s <- (plus ($ s) ($ i))) ;
-                           (i <- (plus ($ i) (val 1))))
-                   ))
-                     
-                   ((n |-> (! N)) :: nil))).
+  Eval compute in AndML SUM (! N >>= (val 0)).
 
-  Eval compute in AndML
-                    (! N >>= (val 0))
-                    (pattern (cfg 
-                        (i <- (val 0) ; (s <- (val 0)) ;
-                        (while (leq ($ i) ($ n))
-                           ((s <- (plus ($ s) ($ i))) ;
-                            (i <- (plus ($ i) (val 1))))
-                        ))
-                     ((n |-> (! N)) :: nil))).
-
-
+Print ID.
   (* apply valuations *)
+  Fixpoint applyValID (rho : Valuation) (i : ID) : option Id :=
+    match i with
+      | idc j => Some j
+      | ivar v => match (rho (idvar v)) with
+                       | to_m_id e => Some e
+                       | _ => None
+                     end
+    end.
+
+  
   Fixpoint applyValExp (rho : Valuation) (e : Exp) : option _exp :=
     match e with
-      | id j => Some (_id j)
+      | id j => match (applyValID rho j) with
+                  | Some id' => Some (_id id')
+                  | _ => None
+                end
       | val v => Some (_int v)
       | var_exp v => match (rho (evar v)) with
                        | to_m_exp e => Some e
@@ -319,9 +337,9 @@ Open Scope string_scope.
 
   Fixpoint applyValStmt (rho: Valuation)(st : Stmt) : option _stmt :=
     match st with
-      | assign x' e' => match (applyValExp rho e') with
-                          | Some e'' => Some (_assign x' e'')
-                          | _ => None
+      | assign x' e' => match (applyValID rho x'), (applyValExp rho e') with
+                          | Some x'', Some e'' => Some (_assign x'' e'')
+                          | _, _ => None
                         end
       | ifelse b' s1 s2 => match (applyValBExp rho b'), (applyValStmt rho s1), (applyValStmt rho s2) with
                              | Some b'', Some s1', Some s2' => Some (_ifelse b'' s1' s2')
@@ -342,28 +360,31 @@ Open Scope string_scope.
                        end
     end.
   
-
+Check item.
   Fixpoint applyValMapItem (rho : Valuation) (mi : MapItem) : option _map_item :=
     match mi with
       | var_mi v => match (rho (mivar v)) with
                       | to_m_map_item m => Some m
                       | _ => None
                     end
-      | item i' v => match (applyValExp rho v) with
-                       | Some e' => Some  (i, e')
-                       | _ => None
+      | item i' v => match (applyValID rho i'), (applyValExp rho v) with
+                       | Some i'', Some e' => Some  (i'', e')
+                       | _, _ => None
                      end
     end.
 
 
-
-  Fixpoint applyValList (rho: Valuation) (l : list MapItem) : option (list _map_item) :=
+  Fixpoint applyValList (rho: Valuation) (l : MIList) : option (list _map_item) :=
     match l with
-      | nil => None
-      | e :: l' => match (applyValMapItem rho e), (applyValList rho l') with
+      | Nil => None
+      | Cons e l' => match (applyValMapItem rho e), (applyValList rho l') with
                      | Some v', Some l'' =>  Some (v' :: l'')
                      | _, _ => None
-                   end
+                     end
+      | list_var lv => match (rho (lvar lv)) with
+                         | to_m_list xv => Some xv
+                         | _ => None
+                       end
     end.
       
   
@@ -531,14 +552,15 @@ Open Scope string_scope.
     end.
 
   Eval compute in (getFreeVarsMapItem ((n |-> (! N)))).
-  
-  Fixpoint getFreeVarsItems (it : list MapItem) : list Var :=
+
+  Fixpoint getFreeVarsItems (it : MIList) : list Var :=
     match it with
-      | nil => nil
-      | v :: its => append_set (getFreeVarsMapItem v) (getFreeVarsItems its)
+      | Nil => nil
+      | Cons v its => append_set (getFreeVarsMapItem v) (getFreeVarsItems its)
+      | list_var lv => ((lvar lv) :: nil)
     end.
 
-  Eval compute in (getFreeVarsItems ((n |-> (! N)) :: nil)).
+  Eval compute in (getFreeVarsItems ((n |-> (! N)) ;; Nil)).
 
 
   Fixpoint getFreeVarsBExp (be : BExp) : list Var :=
@@ -585,7 +607,7 @@ Open Scope string_scope.
                                          ((s <- (plus (! S) ($ i))) ;
                                           (i <- (plus ($ i) (val 1))))
                                   ))
-                                 ((n |-> (! I)) :: nil))))  .
+                                 ((n |-> (! I)) ;; Nil))))  .
                    
   (* existential closure *)
   Definition EClos (phi : MLFormula) := (ExistsML (getFreeVars phi) phi).
@@ -1140,6 +1162,13 @@ Open Scope string_scope.
       trivial.
       apply incl_append_right in H; trivial.
       apply incl_append_left in H; trivial.
+    - simpl in *.
+      rewrite modify_in; trivial.
+      unfold incl in H.
+      apply H.
+      simpl.
+      left.
+      reflexivity.
   Qed.
 
 
@@ -1238,6 +1267,8 @@ Open Scope string_scope.
       rewrite <- IHl; trivial.
       intros x Hx. apply H. apply append_right; trivial.
       intros x Hx. apply H. apply append_left; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. reflexivity.
   Qed.
 
 
