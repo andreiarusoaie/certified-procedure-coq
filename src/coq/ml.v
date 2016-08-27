@@ -60,7 +60,7 @@ Module Type Formulas.
   
   (* Encoding main property *)
   Axiom Proposition1 :
-    forall gamma' phi rho,
+    forall phi gamma' rho,
       SatML gamma' rho (encoding phi) <->
       exists gamma, SatML gamma rho phi.
 

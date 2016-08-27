@@ -6,7 +6,7 @@ Require Import ZArith.
 
 Module Lang <: Formulas.
 
-  Open Scope string_scope.
+Open Scope string_scope.
 
   (* syntax *)
   (*
@@ -147,26 +147,29 @@ Module Lang <: Formulas.
    
   Definition _map_item := (ID * _exp)%type.
   Definition State : Type := (_stmt * list _map_item)%type.
-  Inductive Model : Type := 
-    | to_m_exp : _exp -> Model
-    | to_m_bexp : _bexp -> Model
-    | to_m_stmt : _stmt -> Model
-    | to_m_map_item : _map_item -> Model
-    | to_m_state : State -> Model.
+  Inductive Model' : Type := 
+    | to_m_exp : _exp -> Model'
+    | to_m_bexp : _bexp -> Model'
+    | to_m_stmt : _stmt -> Model'
+    | to_m_map_item : _map_item -> Model'
+    | to_m_state : State -> Model'.
+  Definition Model := Model'.
+  
 
+  Inductive Var' : Type :=
+  | evar : VarExp -> Var'
+  | bvar : VarBExp -> Var'
+  | svar : VarStmt -> Var'
+  | mivar : VarMI -> Var'
+  | lvar : VarMList -> Var'
+  | cvar : VarCfg -> Var'
+  | spvar : SpecialVar -> Var'.
+  Definition Var := Var'.
 
-
-  Inductive Var : Type :=
-  | evar : VarExp -> Var
-  | bvar : VarBExp -> Var
-  | svar : VarStmt -> Var
-  | mivar : VarMI -> Var
-  | lvar : VarMList -> Var
-  | cvar : VarCfg -> Var
-  | spvar : SpecialVar -> Var.
+  (* Valuation *)
+  Definition Valuation := Var -> Model .
   
   (* var equality *)
-  Print VarCfg.
   Definition var_eq (X Y : Var) : bool := 
     match X, Y with
       | evar e1, evar e2 => match e1, e2 with
@@ -201,6 +204,7 @@ Module Lang <: Formulas.
       | _, _ => false
     end.
 
+  
   Lemma var_eq_true : 
     forall a b, var_eq a b = true <-> a = b.
   Proof.
@@ -234,23 +238,24 @@ Module Lang <: Formulas.
     intros x; rewrite var_eq_true; trivial.
   Qed.
 
-
-
-
-  (* MLFormula *)
-  Inductive MLFormula : Type :=
-    | T : MLFormula
-    | pattern: Cfg -> MLFormula 
-    | AndML : MLFormula -> MLFormula -> MLFormula
-    | ImpliesML : MLFormula -> MLFormula -> MLFormula
-    | ExistsML : list Var -> MLFormula -> MLFormula
-
-    (* custom: add these by need; 
+  Inductive MLFormula' : Type :=
+  | T : MLFormula'
+  | pattern: Cfg -> MLFormula'
+  | AndML' : MLFormula' -> MLFormula' -> MLFormula'
+  | ImpliesML' : MLFormula' -> MLFormula' -> MLFormula'
+  | ExistsML' : list Var -> MLFormula' -> MLFormula'
+                                           
+  (* custom: add these by need; 
        TODO: create separate type decls for basic ops and preds.
-     *)
-    | encoding : MLFormula -> MLFormula
-    | gteML : Exp -> Exp -> MLFormula.
- 
+   *)
+  | encoding' : MLFormula' -> MLFormula'
+  | gteML : Exp -> Exp -> MLFormula'.
+
+  Definition AndML := AndML'.
+  Definition ImpliesML := ImpliesML'.
+  Definition ExistsML := ExistsML'.
+  Definition MLFormula := MLFormula'.
+  Definition encoding := encoding'.
   
   Notation "A >>= B" := (gteML A B) (at level 100).
   
@@ -285,10 +290,6 @@ Module Lang <: Formulas.
                             (i <- (plus ($ i) (val 1))))
                         ))
                      ((n |-> (! N)) :: nil))).
-
-  
-  (* Valuation *)
-  Definition Valuation : Type := Var -> Model .
 
 
   (* apply valuations *)
@@ -361,9 +362,6 @@ Module Lang <: Formulas.
     end.
 
 
-  Print Model.
-  Print Cfg .
-  Print MapItem.
 
   Fixpoint applyValList (rho: Valuation) (l : list MapItem) : option (list _map_item) :=
     match l with
@@ -387,7 +385,6 @@ Module Lang <: Formulas.
                    end
     end.
 
-  Print _exp .
   
   Fixpoint red_exp (e : _exp) : option Z :=
     match e with
@@ -398,8 +395,6 @@ Module Lang <: Formulas.
                        end
       | _ => None
     end.
-
-
 
    Fixpoint SatML (gamma : State) (rho : Valuation) (phi : MLFormula) : Prop :=
     match phi with
@@ -422,7 +417,6 @@ Module Lang <: Formulas.
                          | _, _ => False
                        end
     end.
-
 
   
 
@@ -473,16 +467,12 @@ Module Lang <: Formulas.
     Qed.
       
 
-
   (* Validity in ML *)
   Definition ValidML (phi : MLFormula) : Prop :=
     forall gamma rho, SatML gamma rho phi.
 
 
-
-  Print MLFormula.
   (* Free variables *)
-
   Fixpoint in_list (v : Var) (l : list Var) : bool :=
     match l with
       | nil => false
@@ -528,7 +518,6 @@ Module Lang <: Formulas.
   Eval compute in (minus_set ((evar N) :: (evar S) :: nil) ((evar N) :: nil) ).
   Eval compute in (minus_set ((evar I) :: (evar N) :: nil) ((evar S) :: (evar N) :: nil) ).
 
-  Print Exp.
   Fixpoint getFreeVarsExp (e : Exp) : list Var :=
     match e with
       | var_exp v => ((evar v) :: nil)
@@ -557,7 +546,7 @@ Module Lang <: Formulas.
 
   Eval compute in (getFreeVarsItems ((n |-> (! N)) :: nil)).
 
-  Print BExp.
+
   Fixpoint getFreeVarsBExp (be : BExp) : list Var :=
     match be with
       | var_bexp vb => ((bvar vb) :: nil)
@@ -565,7 +554,7 @@ Module Lang <: Formulas.
       | _ => nil
     end.
 
-  Print Stmt.
+
   Fixpoint getFreeVarsStmt (st : Stmt) : list Var :=
     match st with
       | assign i' e => getFreeVarsExp e
@@ -608,8 +597,6 @@ Module Lang <: Formulas.
   Definition EClos (phi : MLFormula) := (ExistsML (getFreeVars phi) phi).
 
 
-
-            
   (* Modify valuation on set *)
   Definition modify_val_on_var(rho rho' : Valuation) (x : Var) : Valuation :=
     fun z => if (var_eq x z) then rho' x else rho z .
@@ -619,6 +606,8 @@ Module Lang <: Formulas.
       | cons x' Xs => modify_val_on_var (modify_val_on_set rho rho' Xs) rho' x'
     end.
 
+
+  
   (* helper *)
   Lemma modify_in :
     forall V x rho rho',
@@ -678,7 +667,6 @@ Module Lang <: Formulas.
       exists gamma; trivial.
     - simpl; trivial.
   Qed.
-
 
   Lemma incl_nil :
     forall (X: list Var), incl X nil -> X = nil.
@@ -1237,11 +1225,44 @@ Module Lang <: Formulas.
   Qed.
 
   
+  Lemma not_incl_mapitem:
+    forall mi rho rho' V,
+      (forall x, In x (getFreeVarsMapItem mi) -> ~ In x V) ->
+      applyValMapItem rho mi = applyValMapItem (modify_val_on_set rho rho' V) mi.
+  Proof.
+    induction mi; intros; simpl in *; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. trivial.
+    - rewrite <- not_incl_exp. trivial.
+      intros x Hx. apply H. trivial.
+  Qed.
+
+  Lemma not_incl_list:
+    forall l rho rho' V,
+      (forall x, In x (getFreeVarsItems l) -> ~ In x V) ->
+      applyValList rho l = applyValList (modify_val_on_set rho rho' V) l.
+  Proof.
+    intros l. induction l; intros; simpl in *; trivial.
+    - rewrite <- not_incl_mapitem.
+      rewrite <- IHl; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
+  Qed.
+
+
   Lemma not_incl_cfg:
     forall c rho rho' V,
       (forall x, In x (getFreeVarsCfg c) -> ~ In x V) ->
       applyVal rho c = applyVal (modify_val_on_set rho rho' V) c.
-  Admitted.
+  Proof.
+    intros c. induction c; intros; simpl in *; trivial.
+    - rewrite modify_not_in; trivial.
+      apply H. left. trivial.
+    - rewrite <- not_incl_stmt; trivial.
+      rewrite <- not_incl_list; trivial.
+      intros x Hx. apply H. apply append_right; trivial.
+      intros x Hx. apply H. apply append_left; trivial.
+  Qed.
 
   
       
