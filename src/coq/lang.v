@@ -52,8 +52,6 @@ Open Scope string_scope.
   | Rest : VarMList .
   Inductive VarCfg : Type :=
   | C : VarCfg.
-  Inductive SpecialVar : Type :=
-  | ZZ : SpecialVar.
   
   
   Inductive Exp : Type := 
@@ -162,8 +160,7 @@ Open Scope string_scope.
   | svar : VarStmt -> Var'
   | mivar : VarMI -> Var'
   | lvar : VarMList -> Var'
-  | cvar : VarCfg -> Var'
-  | spvar : SpecialVar -> Var'.
+  | cvar : VarCfg -> Var'.
   Definition Var := Var'.
 
   (* Valuation *)
@@ -198,9 +195,6 @@ Open Scope string_scope.
       | cvar c1, cvar c2 => match c1, c2 with
                               | C, C => true
                             end
-      | spvar c1, spvar c2 => match c1, c2 with
-                                | ZZ, ZZ => true
-                              end
       | _, _ => false
     end.
 
@@ -651,9 +645,6 @@ Open Scope string_scope.
   Qed.
 
   
-  Definition modify_val_on_ZZ(rho : Valuation) (m : State) : Valuation :=
-    fun z => if (var_eq z (spvar ZZ)) then to_m_state m else rho z .
-
 
   Lemma Proposition1 :
     forall phi gamma' rho,
