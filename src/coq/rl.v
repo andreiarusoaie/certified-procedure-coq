@@ -2,9 +2,9 @@ Require Import util.
 Require Import ml.
 Require Import List.
 
-Module Type RL (F : Formulas) (U : Utils).
+Module Type RL (F : Formulas) .
   Import F.
-  Import U.
+  Import Utils.
   Import ListNotations.
 
   (* get free variables for a list of ML formulas *)

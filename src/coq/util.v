@@ -1,6 +1,6 @@
 Require Import Arith.
 
-Module Type Utils .
+Module Utils .
   Import Wf_nat.
   
   Section Paths .

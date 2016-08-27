@@ -9,9 +9,9 @@ Require Arith.
 Require Import Omega.
 
 Module Type Soundness
-       (U : Utils) (F : Formulas)
-       (R : RL F U) (Def : Definitions U F R) .
-  Import U F R Def.
+       (F : Formulas)
+       (R : RL F) (Def : Definitions F R) .
+  Import Utils F R Def.
   Import ListNotations.
   Import Wf_nat.
 

@@ -3,9 +3,9 @@ Require Import ml.
 Require Import rl.
 Require Import List.
 
-Module Type Definitions (U : Utils)
-       (F : Formulas) (R : RL F U) .
-  Import U.
+Module Type Definitions
+       (F : Formulas) (R : RL F) .
+  Import Utils.
   Import F.
   Import R.
   Import ListNotations.
