@@ -533,14 +533,26 @@ Check item.
   Eval compute in (minus_set ((evar N) :: (evar S) :: nil) ((evar N) :: nil) ).
   Eval compute in (minus_set ((evar I) :: (evar N) :: nil) ((evar S) :: (evar N) :: nil) ).
 
+
+  
+  (* helpers to get free variables *)
+  Fixpoint getFreeVarsID (x : ID) : list Var :=
+    match x with
+      | ivar v => ((idvar v) :: nil)
+      | _ => nil
+    end.
+  Eval compute in (getFreeVarsID (idc a)).
+  Eval compute in (getFreeVarsID (ivar X)).
+
   Fixpoint getFreeVarsExp (e : Exp) : list Var :=
     match e with
       | var_exp v => ((evar v) :: nil)
+      | id i' => getFreeVarsID i'
       | plus e1 e2 => append_set (getFreeVarsExp e1) (getFreeVarsExp e2)
       | _ => nil
     end.
 
-  Eval compute in (getFreeVarsExp ($ a)).
+  Eval compute in (getFreeVarsExp ($ (idc a))).
   Eval compute in (getFreeVarsExp (val 2)).
   Eval compute in (getFreeVarsExp (!  N)).
   Eval compute in (getFreeVarsExp (plus (! N) (! N))).  
@@ -548,10 +560,10 @@ Check item.
   Fixpoint getFreeVarsMapItem (mi : MapItem) : list Var :=
     match mi with
       | var_mi v => ((mivar v) :: nil)
-      | item h e => (getFreeVarsExp e)
+      | item h e => append_set (getFreeVarsID h) (getFreeVarsExp e)
     end.
 
-  Eval compute in (getFreeVarsMapItem ((n |-> (! N)))).
+  Eval compute in (getFreeVarsMapItem (((idc n) |-> (! N)))).
 
   Fixpoint getFreeVarsItems (it : MIList) : list Var :=
     match it with
@@ -560,7 +572,7 @@ Check item.
       | list_var lv => ((lvar lv) :: nil)
     end.
 
-  Eval compute in (getFreeVarsItems ((n |-> (! N)) ;; Nil)).
+  Eval compute in (getFreeVarsItems (((idc n) |-> (! N)) ;; Nil)).
 
 
   Fixpoint getFreeVarsBExp (be : BExp) : list Var :=
@@ -573,7 +585,7 @@ Check item.
 
   Fixpoint getFreeVarsStmt (st : Stmt) : list Var :=
     match st with
-      | assign i' e => getFreeVarsExp e
+      | assign i' e => append_set (getFreeVarsID i') (getFreeVarsExp e)
       | var_stmt st => ((svar st) :: nil)
       | ifelse be s1 s2 => append_set (append_set (getFreeVarsBExp be) (getFreeVarsStmt s1)) (getFreeVarsStmt s2)
       | while be st => append_set (getFreeVarsBExp be) (getFreeVarsStmt st)
@@ -598,17 +610,11 @@ Check item.
       | encoding phi' => (getFreeVars phi') (* the encoding doesn't affect the free variable set *)
     end.
 
-  Eval compute in 
-      getFreeVars (AndML
-                     (! N >>= (val 0))
-                     (pattern (cfg 
-                                 (i <- (val 0) ; (s <- (val 0)) ;
-                                  (while (leq ($ i) (! N))
-                                         ((s <- (plus (! S) ($ i))) ;
-                                          (i <- (plus ($ i) (val 1))))
-                                  ))
-                                 ((n |-> (! I)) ;; Nil))))  .
-                   
+  Print SUM.
+  Eval compute in (getFreeVars SUM).
+  Eval compute in getFreeVars (AndML (! S >>= (val 0)) SUM).
+
+  
   (* existential closure *)
   Definition EClos (phi : MLFormula) := (ExistsML (getFreeVars phi) phi).
 
@@ -1034,13 +1040,27 @@ Check item.
   Qed.
         
 
+  Lemma incl_id :
+    forall e rho rho' V,
+      incl (getFreeVarsID e) V ->
+      applyValID rho' e = applyValID (modify_val_on_set rho rho' V) e.
+  Proof.
+    intros e.
+    induction e; intros.
+    - simpl in *. trivial.
+    - simpl in *.
+      rewrite modify_in; trivial.
+      unfold incl in H. apply H. simpl. left. reflexivity.
+  Qed.
+
+  
   Lemma incl_exp :
     forall e rho rho' V,
       incl (getFreeVarsExp e) V ->
       applyValExp rho' e = applyValExp (modify_val_on_set rho rho' V) e.
   Proof.
     induction e; intros.
-    - simpl in *. trivial.
+    - simpl in *. rewrite <- incl_id; trivial.
     - simpl in *. trivial.
     - simpl in *.
       unfold incl in H.
@@ -1098,7 +1118,11 @@ Check item.
     intros s.
     induction s; intros.
     - simpl in *.
-      rewrite incl_exp with (rho := rho) (V := V); trivial.
+      rewrite <- incl_id.
+      rewrite <- incl_exp.
+      trivial.
+      apply incl_append_right in H. trivial.
+      apply incl_append_left in H. trivial.
     - simpl in *.
       assert (H' : In (svar v) (svar v :: nil)).
       simpl. left. trivial.
@@ -1146,7 +1170,10 @@ Check item.
       rewrite H'.
       trivial.
     - simpl in *.
+      rewrite <- incl_id.
       rewrite <- incl_exp; trivial.
+      apply incl_append_right in H; trivial.
+      apply incl_append_left in H; trivial.      
   Qed.
 
   Lemma incl_list :
@@ -1194,13 +1221,26 @@ Check item.
   Qed.      
 
 
+  Lemma not_incl_id:
+    forall e rho rho' V,
+      (forall x, In x (getFreeVarsID e) -> ~ In x V) ->
+      applyValID rho e = applyValID (modify_val_on_set rho rho' V) e.
+  Proof.
+    induction e; intros.
+    - simpl in *. reflexivity.
+    - simpl in *.
+      rewrite modify_not_in; trivial.
+      apply H. left. reflexivity.
+  Qed.
 
+    
   Lemma not_incl_exp:
     forall e rho rho' V,
       (forall x, In x (getFreeVarsExp e) -> ~ In x V) ->
       applyValExp rho e = applyValExp (modify_val_on_set rho rho' V) e.
   Proof.
     intros e. induction e; intros; simpl in *; trivial.
+    - rewrite <- not_incl_id; trivial.
     - rewrite modify_not_in; trivial.
       apply H. left. trivial.
     - rewrite <- IHe1, <- IHe2; trivial.
@@ -1227,7 +1267,10 @@ Check item.
       applyValStmt rho s = applyValStmt (modify_val_on_set rho rho' V) s.
   Proof.
     intros s. induction s; intros; simpl in *; trivial.
-    - rewrite <- not_incl_exp; trivial.
+    - rewrite <- not_incl_exp.
+      rewrite <- not_incl_id; trivial.
+      intros x Hx. apply H. rewrite in_append_iff. left. assumption.
+      intros x Hx. apply H. rewrite in_append_iff. right. assumption.
     - rewrite modify_not_in; trivial.
       apply H. left. trivial.
     - rewrite <- not_incl_bexp.
@@ -1253,8 +1296,9 @@ Check item.
     induction mi; intros; simpl in *; trivial.
     - rewrite modify_not_in; trivial.
       apply H. left. trivial.
-    - rewrite <- not_incl_exp. trivial.
-      intros x Hx. apply H. trivial.
+    - rewrite <- not_incl_id. rewrite <- not_incl_exp. trivial.
+      intros x Hx. apply H. rewrite in_append_iff. right. assumption.
+      intros x Hx. apply H. rewrite in_append_iff. left. assumption.
   Qed.
 
   Lemma not_incl_list:
@@ -1425,8 +1469,7 @@ Check item.
       incl (getFreeVars phi) V ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
   Proof.
-    intros.
-    apply modify_Sat_right; trivial.
+    intros. apply modify_Sat_right; trivial.
   Qed.
   
 
@@ -1587,8 +1630,7 @@ Check item.
       (forall x, In x (getFreeVars phi) -> ~ In x V) ->
       SatML gamma (modify_val_on_set rho rho' V) phi.
   Proof.
-    intros.
-    apply modify_Sat_left; trivial.
+    intros. apply modify_Sat_left; trivial.
   Qed.
          
 End Lang.
