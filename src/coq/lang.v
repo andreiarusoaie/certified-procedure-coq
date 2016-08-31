@@ -290,7 +290,506 @@ Open Scope string_scope.
 
   Eval compute in AndML SUM (! N >>= (val 0)).
 
-Print ID.
+
+
+
+  
+  (* eq_dec needed to deal (remove, search) with goals in G *)
+  Fixpoint Id_eq_dec (id id' : Id) : bool :=
+    match id, id' with
+      | a, a => true
+      | b, b => true
+      | c, c => true
+      | n, n => true
+      | i, i => true
+      | x, x => true
+      | y, y => true
+      | s, s => true
+      | _, _ => false
+    end.
+
+  Lemma Id_eq_dec_true :
+    forall id id', Id_eq_dec id id' = true -> id = id'.
+  Proof.
+    intros i i' H.
+    case_eq i; case_eq i'; intros; subst; trivial; simpl in H; try inversion H.
+  Qed.
+  
+  Lemma Id_eq_dec_false :
+    forall id id', Id_eq_dec id id' = false -> id <> id'.
+  Proof.
+    intros i0 i' H.
+    unfold not. intros H'. subst.
+    case_eq i'; intros; subst; trivial; simpl in H; try inversion H.
+  Qed.
+
+  Lemma Id_eq_dec_refl :
+    forall id, Id_eq_dec id id = true.
+  Proof.
+    intros id.
+    induction id; intros; simpl; trivial.
+  Qed.
+
+
+
+  
+  Fixpoint ID_eq_dec (id id' : ID) : bool :=
+    match id, id' with
+      | idc i0, idc i' => Id_eq_dec i0 i'
+      | ivar v, ivar v' => var_eq (idvar v) (idvar v')
+      | _, _ => false
+    end.
+  
+  Lemma ID_eq_dec_refl :
+    forall id, ID_eq_dec id id = true.
+  Proof.
+    intros id.
+    induction id; intros; simpl.
+    - apply Id_eq_dec_refl.
+    - case_eq v; intros; reflexivity.
+  Qed.
+
+  Lemma ID_eq_dec_true :
+    forall id id', ID_eq_dec id id' = true -> id = id'.
+  Proof.
+    induction id0, id'; intros H; simpl in H; try inversion H.
+    - apply Id_eq_dec_true in H. subst. reflexivity.
+    - case_eq v; case_eq v0; intros H0 H2; subst; trivial; try inversion H.
+  Qed.
+  
+  Lemma ID_eq_dec_false :
+    forall id id', ID_eq_dec id id' = false -> id <> id'.
+  Proof.
+    intros id0 id' H. unfold not. intros H'. subst.
+    rewrite ID_eq_dec_refl in H. inversion H.
+  Qed.
+
+
+
+
+    
+  Fixpoint Exp_eq_dec (e e' : Exp) : bool :=
+    match e, e' with
+      | id i0, id i' => ID_eq_dec i0 i'
+      | val z1, val z2 => if Z.eq_dec z1 z2 then true else false
+      | var_exp v, var_exp v' => var_eq (evar v) (evar v')
+      | plus e1 e2, plus e1' e2' => andb (Exp_eq_dec e1 e1') (Exp_eq_dec e2 e2')
+      | _, _ => false
+    end.
+
+  Lemma Exp_eq_dec_refl :
+    forall e, Exp_eq_dec e e = true.
+  Proof.
+    intros e; induction e; simpl in *.
+    - apply ID_eq_dec_refl.
+    - case_eq (Z.eq_dec z z); intros H' H; try contradiction H'; reflexivity.
+    - case_eq v; intros; reflexivity.
+    - rewrite IHe1, IHe2. simpl. reflexivity.
+  Qed.
+  
+  Lemma Exp_eq_dec_true :
+    forall e1 e2, Exp_eq_dec e1 e2 = true -> e1 = e2.
+  Proof.
+    induction e1, e2; intros; subst; simpl in H; try inversion H.
+    - apply ID_eq_dec_true in H. subst. reflexivity.
+    - case_eq (Z.eq_dec z z0); intros H0 H2; subst; try reflexivity.
+      rewrite H2 in H. inversion H.
+    - case_eq v; case_eq v0; intros H' H''; subst; try reflexivity; try inversion H.
+    - case_eq (Exp_eq_dec e1_1 e2_1); intros H0.
+      apply IHe1_1 in H0. subst.
+      case_eq (Exp_eq_dec e1_2 e2_2). intros H2.
+      apply IHe1_2 in H2. subst. reflexivity.
+      intros H2. rewrite H2 in *. simpl in H.
+      case_eq (Exp_eq_dec e2_1 e2_1). intros H3.
+      rewrite H3 in *. simpl in H. inversion H.
+      intros H3. rewrite H3 in *. simpl in H. inversion H.
+      rewrite H0 in H. simpl in H. inversion H.
+  Qed.
+  
+  Lemma Exp_eq_dec_false :
+    forall e1 e2, Exp_eq_dec e1 e2 = false -> e1 <> e2.
+  Proof.
+    intros e1 e2 H. unfold not. intros H'. subst.
+    rewrite Exp_eq_dec_refl in H. inversion H.
+  Qed.
+
+
+
+
+  
+  
+  Fixpoint BExp_eq_dec (b b' : BExp) : bool :=
+    match b, b' with
+      | TT, TT => true
+      | FF, FF => true
+      | var_bexp v, var_bexp v' => var_eq (bvar v) (bvar v')
+      | leq e1 e2, leq e1' e2' => andb (Exp_eq_dec e1 e1') (Exp_eq_dec e2 e2')
+      | _, _ => false
+    end.
+
+  Lemma BExp_eq_dec_refl :
+    forall b, BExp_eq_dec b b = true.
+  Proof.
+    intros b. induction b; simpl; trivial.
+    - case_eq v; intros; reflexivity.
+    - rewrite 2 Exp_eq_dec_refl.
+      simpl. reflexivity.
+  Qed.
+
+  Lemma BExp_eq_dec_true :
+    forall b b',
+      BExp_eq_dec b b' = true -> b = b'.
+  Proof.
+    intros b b' H.
+    induction b, b'; simpl in H; try inversion H; trivial.
+    - case_eq v; case_eq v0; intros H2 H3.
+      subst. reflexivity.
+    - clear H1.
+      case_eq (Exp_eq_dec e e1); intros H1.
+      case_eq (Exp_eq_dec e0 e2); intros H2.
+      apply Exp_eq_dec_true in H1.
+      apply Exp_eq_dec_true in H2.
+      subst. reflexivity.
+      rewrite H1, H2 in H. simpl in H. inversion H.
+      rewrite H1 in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma BExp_eq_dec_false :
+    forall b b',
+      BExp_eq_dec b b' = false -> b <> b'.
+  Proof.
+    intros b b' H. unfold not. intros H'. subst.
+    rewrite BExp_eq_dec_refl in H. inversion H.
+  Qed.
+
+
+  
+  Fixpoint Stmt_eq_dec (st st' : Stmt) : bool :=
+    match st, st' with
+      | assign i0 e, assign i' e' => andb (ID_eq_dec i0 i') (Exp_eq_dec e e')
+      | var_stmt v, var_stmt v' => var_eq (svar v) (svar v')
+      | ifelse b0 s1 s2, ifelse b' s1' s2' => andb (BExp_eq_dec b0 b') (andb (Stmt_eq_dec s1 s1') (Stmt_eq_dec s2 s2'))
+      | while b0 s0, while b' s' => andb (BExp_eq_dec b0 b') (Stmt_eq_dec s0 s')
+      | skip, skip => true
+      | seq s1 s2, seq s1' s2' => andb (Stmt_eq_dec s1 s1') (Stmt_eq_dec s2 s2')
+      | _, _ => false
+    end.
+
+  Lemma Stmt_eq_dec_refl :
+    forall s, Stmt_eq_dec s s = true.
+  Proof.
+    intros s. induction s; intros; simpl.
+    - rewrite ID_eq_dec_refl. rewrite Exp_eq_dec_refl. simpl. reflexivity.
+    - case_eq v; intros v'; subst; reflexivity.
+    - rewrite BExp_eq_dec_refl.
+      rewrite IHs1, IHs2.
+      simpl. reflexivity.
+    - rewrite BExp_eq_dec_refl.
+      rewrite IHs.
+      simpl. reflexivity.
+    - reflexivity.
+    - rewrite IHs1, IHs2. simpl. reflexivity.
+  Qed.
+  
+  Lemma Stmt_eq_dec_true :
+    forall s1 s2, Stmt_eq_dec s1 s2 = true -> s1 = s2.
+  Proof.
+    intros ss.
+    induction ss; intros ss'; induction ss';
+    simpl in *; intros; try inversion H.
+    - case_eq (ID_eq_dec i0 i1); case_eq (Exp_eq_dec e e0); intros.
+      clear H1.
+      apply Exp_eq_dec_true in H0.
+      apply ID_eq_dec_true in H2.
+      subst. reflexivity.
+      rewrite H0 in *. rewrite H2 in *.
+      simpl in H1. inversion H1.
+      rewrite H0 in *. rewrite H2 in *.
+      simpl in H1. inversion H1.
+      rewrite H0 in *. rewrite H2 in *.
+      simpl in H1. inversion H1.
+    - case_eq v; intros Hv;
+      case_eq v0; intros Hv0;
+      subst; try reflexivity; try inversion H.
+    - clear H1.
+      case_eq (BExp_eq_dec b0 b1); intros Hb.
+      case_eq (Stmt_eq_dec ss1 ss'1); intros Hs1.
+      case_eq (Stmt_eq_dec ss2 ss'2); intros Hs2.
+      + apply BExp_eq_dec_true in Hb.
+        apply IHss1 in Hs1.
+        apply IHss2 in Hs2.
+        subst. reflexivity.
+      + rewrite Hb, Hs1, Hs2 in H. simpl in H. inversion H.
+      + rewrite Hb, Hs1 in H. simpl in H. inversion H.
+      + rewrite Hb in H. simpl in H. inversion H.
+    - case_eq (BExp_eq_dec b0 b1); intros Hb.
+      case_eq (Stmt_eq_dec ss ss'); intros Hs.
+      apply BExp_eq_dec_true in Hb.
+      apply IHss in Hs.
+      subst. reflexivity.
+      rewrite Hb, Hs in H. simpl in H. inversion H.
+      rewrite Hb in H. simpl in H. inversion H.
+    - reflexivity.
+    - case_eq (Stmt_eq_dec ss1 ss'1); intros Hs1.
+      case_eq (Stmt_eq_dec ss2 ss'2); intros Hs2.
+      apply IHss1 in Hs1.
+      apply IHss2 in Hs2.
+      subst. reflexivity.
+      rewrite Hs1, Hs2 in H.
+      simpl in H. inversion H.
+      rewrite Hs1 in H.
+      simpl in H. inversion H.
+  Qed.
+
+  Lemma Stmt_eq_dec_false :
+    forall s1 s2, Stmt_eq_dec s1 s2 = false -> s1 <> s2.
+  Proof.
+    intros s1 s2 H. unfold not. intros H'. subst.
+    rewrite Stmt_eq_dec_refl in H. inversion H.
+  Qed.
+      
+      
+  
+
+  
+  Fixpoint MapItem_eq_dec (mi mi' : MapItem) : bool :=
+    match mi, mi' with
+      | var_mi v, var_mi v' => var_eq (mivar v) (mivar v')
+      | item i0 e0, item i' e' => andb (ID_eq_dec i0 i') (Exp_eq_dec e0 e')
+      | _, _ => false
+    end.
+
+  Lemma MapItem_eq_dec_refl :
+    forall mi, MapItem_eq_dec mi mi = true.
+  Proof.
+    induction mi; simpl.
+    - case_eq v; intros; subst. reflexivity.
+    - rewrite ID_eq_dec_refl, Exp_eq_dec_refl.
+      simpl. reflexivity.
+  Qed.
+
+  Lemma MapItem_eq_dec_true:
+    forall mi mi',
+      MapItem_eq_dec mi mi' = true -> mi = mi'.
+  Proof.
+    intros mi. induction mi; induction mi'; intros; simpl in *; try inversion H.
+    - case_eq v; intros; case_eq v0; intros; subst. reflexivity.
+    - clear H1.
+      case_eq (ID_eq_dec i0 i1); intros H1.
+      case_eq (Exp_eq_dec e e0); intros H2.
+      + apply ID_eq_dec_true in H1.
+        apply Exp_eq_dec_true in H2.
+        subst. reflexivity.
+      + rewrite H1, H2 in H. simpl in H. inversion H.
+      + rewrite H1 in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma MapItem_eq_dec_false:
+    forall mi mi',
+      MapItem_eq_dec mi mi' = false -> mi <> mi'.
+  Proof.
+    intros mi mi' H.
+    unfold not. intros H'. subst.
+    rewrite MapItem_eq_dec_refl in H. inversion H.
+  Qed.
+  
+      
+  
+  
+  Fixpoint MIList_eq_dec (mil mil' : MIList) : bool :=
+    match mil, mil' with
+      | Nil, Nil => true
+      | Cons mi ml, Cons mi' ml' => andb (MapItem_eq_dec mi mi') (MIList_eq_dec ml ml')
+      | list_var v, list_var v' => var_eq (lvar v) (lvar v')
+      | _, _ => false
+    end.
+
+  Lemma MIList_eq_dec_refl :
+    forall ml, MIList_eq_dec ml ml = true.
+  Proof.
+    induction ml; simpl.
+    - reflexivity.
+    - rewrite MapItem_eq_dec_refl, IHml.
+      simpl. reflexivity.
+    - case_eq v. intros. reflexivity.
+  Qed.
+
+
+  Lemma MIList_eq_dec_true:
+    forall ml ml', MIList_eq_dec ml ml' = true -> ml = ml'.
+  Proof.
+    induction ml, ml'; intros; trivial; simpl in H; try inversion H.
+    - clear H1.
+      case_eq (MapItem_eq_dec m m0); intros H1.
+      case_eq (MIList_eq_dec ml ml'); intros H2.
+      + apply MapItem_eq_dec_true in H1.
+        apply IHml in H2.
+        subst. reflexivity.
+      + rewrite H1, H2 in H. simpl in H. inversion H.
+      + rewrite H1 in H. simpl in H. inversion H.
+    - clear H1.
+      case_eq v; case_eq v0; intros Hv Hv0; subst. reflexivity.
+  Qed.
+
+  Lemma MIList_eq_dec_false:
+    forall ml ml', MIList_eq_dec ml ml' = false -> ml <> ml'.
+  Proof.
+    intros ml ml' H. unfold not. intros. subst.
+    rewrite MIList_eq_dec_refl in H. inversion H.
+  Qed.
+    
+
+
+
+  
+  Fixpoint Cfg_eq_dec (cfg cfg' : Cfg) : bool :=
+    match cfg, cfg' with
+      | var_cfg v, var_cfg v' => var_eq (cvar v) (cvar v')
+      | cfg S0 MI, cfg S0' MI' => andb (Stmt_eq_dec S0 S0') (MIList_eq_dec MI MI')
+      | _, _ => false
+    end.
+
+  Lemma Cfg_eq_dec_refl :
+    forall cfg, Cfg_eq_dec cfg cfg = true.
+  Proof.
+    intros cf. induction cf; simpl.
+    - case_eq v; intros; subst. trivial.
+    - rewrite Stmt_eq_dec_refl, MIList_eq_dec_refl.
+      simpl. reflexivity.
+  Qed.
+
+  Lemma Cfg_eq_dec_true :
+    forall c c', Cfg_eq_dec c c' = true -> c = c'.
+  Proof.
+    intros c. induction c; induction c'; intros; simpl; try inversion H.
+    - case_eq v; case_eq v0; intros; subst. reflexivity.
+    - case_eq (Stmt_eq_dec s0 s1); intros H2.
+      case_eq (MIList_eq_dec m m0); intros H3.
+      apply Stmt_eq_dec_true in H2.
+      apply MIList_eq_dec_true in H3.
+      subst. reflexivity.
+      rewrite H2, H3 in H1. simpl in H1. inversion H1.
+      rewrite H2 in H1. simpl in H1. inversion H1.
+  Qed.
+
+  Lemma Cfg_eq_dec_false :
+    forall c c', Cfg_eq_dec c c' = false -> c <> c'.
+  Proof.
+    intros c c' H. unfold not. intros H'. subst.
+    rewrite Cfg_eq_dec_refl in H. inversion H.
+  Qed.
+  
+
+  
+  Fixpoint var_list_eq_dec (l1 l2 : list Var) : bool :=
+    match l1, l2 with
+      | nil, nil => true
+      | cons v vs, cons v' vs' => andb (var_eq v v') (var_list_eq_dec vs vs')
+      | _, _ => false
+    end.
+
+  Lemma var_list_eq_dec_refl :
+    forall x, var_list_eq_dec x x = true.
+  Proof.
+    intros x. induction x; simpl; trivial.
+    rewrite var_eq_refl, IHx.
+    simpl. reflexivity.
+  Qed.
+
+  Lemma var_list_eq_dec_true:
+    forall x y, var_list_eq_dec x y = true -> x = y.
+  Proof.
+    intros x.
+    induction x; intros y; induction y; simpl; intros H; try inversion H; trivial.
+    clear H1.
+    case_eq (var_eq a0 a1); intros Hx.
+    case_eq (var_list_eq_dec x0 y0); intros Hy.
+    - apply var_eq_true in Hx.
+      apply IHx in Hy. subst.
+      reflexivity.
+    - rewrite Hx, Hy in H. simpl in H. inversion H.
+    - rewrite Hx in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma var_list_eq_dec_false:
+    forall x y, var_list_eq_dec x y = false -> x <> y.
+  Proof.
+    intros x y H. unfold not. intros H'. subst.
+    rewrite var_list_eq_dec_refl in H. inversion H.
+  Qed.
+  
+  
+  
+  Fixpoint MLFormula_eq_dec (phi phi' : MLFormula) : bool :=
+    match phi, phi' with
+      | T, T => true
+      | pattern pi, pattern pi' => Cfg_eq_dec pi pi'
+      | AndML p0 p0', AndML p1 p1' => andb (MLFormula_eq_dec p0 p1) (MLFormula_eq_dec p0' p1')
+      | ImpliesML p0 p0', ImpliesML p1 p1' => andb (MLFormula_eq_dec p0 p1) (MLFormula_eq_dec p0' p1')
+      | ExistsML l p, ExistsML l' p' => andb (var_list_eq_dec l l') (MLFormula_eq_dec p p')
+      | encoding p, encoding p' => MLFormula_eq_dec p p'
+      | gteML e1 e2, gteML e3 e4 => andb (Exp_eq_dec e1 e3) (Exp_eq_dec e2 e4)
+      | _, _ => false
+    end.
+
+  Lemma MLFormula_eq_dec_refl :
+    forall phi, MLFormula_eq_dec phi phi = true.
+  Proof.
+    induction phi; simpl; trivial.
+    - apply Cfg_eq_dec_refl; trivial.
+    - rewrite IHphi1, IHphi2. simpl. reflexivity.
+    - rewrite IHphi1, IHphi2. simpl. reflexivity.
+    - rewrite var_list_eq_dec_refl, IHphi. simpl. reflexivity.
+    - rewrite 2 Exp_eq_dec_refl. simpl. reflexivity.
+  Qed.
+
+  Lemma MLFormula_eq_dec_true:
+    forall phi phi', MLFormula_eq_dec phi phi' = true -> phi = phi'.
+  Proof.
+    induction phi; induction phi'; intros; simpl in *; try inversion H; try reflexivity.
+    - apply Cfg_eq_dec_true in H. subst. reflexivity.
+    - case_eq (MLFormula_eq_dec phi1 phi'1); intros H2.
+      case_eq (MLFormula_eq_dec phi2 phi'2); intros H3.
+      apply IHphi1 in H2.
+      apply IHphi2 in H3.
+      subst. reflexivity.
+      rewrite H2, H3 in H. simpl in H. inversion H.
+      rewrite H2 in H. simpl in H. inversion H.
+    - case_eq (MLFormula_eq_dec phi1 phi'1); intros H2.
+      case_eq (MLFormula_eq_dec phi2 phi'2); intros H3.
+      apply IHphi1 in H2.
+      apply IHphi2 in H3.
+      subst. reflexivity.
+      rewrite H2, H3 in H. simpl in H. inversion H.
+      rewrite H2 in H. simpl in H. inversion H.
+    - case_eq (var_list_eq_dec l l0); intros H2.
+      case_eq (MLFormula_eq_dec phi phi'); intros H3.
+      apply var_list_eq_dec_true in H2.
+      apply IHphi in H3. subst. reflexivity.
+      rewrite H2, H3 in H. simpl in H. inversion H.
+      rewrite H2 in H. simpl in H. inversion H.
+    - apply IHphi in H. subst. reflexivity.
+    - case_eq (Exp_eq_dec e e1); intros H2.
+      case_eq (Exp_eq_dec e0 e2); intros H3.
+      apply Exp_eq_dec_true in H2.
+      apply Exp_eq_dec_true in H3.
+      subst. reflexivity.
+      rewrite H2, H3 in H. simpl in H. inversion H.
+      rewrite H2 in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma MLFormula_eq_dec_false :
+    forall phi phi', MLFormula_eq_dec phi phi' = false -> phi <> phi'.
+  Proof.
+    intros phi phi' H. unfold not. intros H'. subst.
+    rewrite MLFormula_eq_dec_refl in H. inversion H.
+  Qed.
+    
+                                                              
+  (* End eq_dec *)
+
+  
+  
   (* apply valuations *)
   Fixpoint applyValID (rho : Valuation) (i : ID) : option Id :=
     match i with

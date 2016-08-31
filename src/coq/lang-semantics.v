@@ -5,7 +5,7 @@ Require Import lang.
 Require Import rl.
 Require Import Classical.
 
-Module Semantics <: RL.
+Module Semantics : RL Lang.
   Import Lang.
   Import Utils.
   Import ListNotations.
@@ -23,9 +23,44 @@ Module Semantics <: RL.
   Notation lhs := fst .
   Notation rhs := snd .
 
-  Definition RLFormula_eq_dec :=
-    forall x y : RLFormula, {x = y} + {x <> y}.
+  Definition RLFormula_eq_dec (F F' : RLFormula) : bool :=
+    andb (MLFormula_eq_dec (lhs F) (lhs F')) (MLFormula_eq_dec (rhs F) (rhs F')).
 
+  Lemma RLFormula_eq_dec_refl :
+    forall F, RLFormula_eq_dec F F = true.
+  Proof.
+    intros F. destruct F.
+    unfold RLFormula_eq_dec. simpl.
+    rewrite 2 MLFormula_eq_dec_refl.
+    simpl. reflexivity.
+  Qed.
+
+  Lemma RLFormula_eq_dec_true :
+    forall F F',
+      RLFormula_eq_dec F F' = true -> F = F'.
+  Proof.
+    intros F F' H.
+    destruct F, F'.
+    unfold RLFormula_eq_dec in H.
+    simpl in *.
+    case_eq (MLFormula_eq_dec m m1). intros H1.
+    case_eq (MLFormula_eq_dec m0 m2). intros H2.
+    - apply MLFormula_eq_dec_true in H1.
+      apply MLFormula_eq_dec_true in H2.
+      subst. reflexivity.
+    - intros H2.
+      rewrite H1, H2 in H. simpl in H. inversion H.
+    - intros H1.
+      rewrite H1 in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma RLFormula_eq_dec_false :
+    forall F1 F2, RLFormula_eq_dec F1 F2 = false -> F1 <> F2.
+  Proof.
+    intros F1 F2 H. unfold not. intros H'. subst.
+    rewrite RLFormula_eq_dec_refl in H. inversion H.
+  Qed.
+  
     (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
     incl (getFreeVars (rhs F)) (getFreeVars (lhs F)).  
@@ -134,14 +169,16 @@ Module Semantics <: RL.
   (* ML helper relation *)
   Definition ML_val_relation (phi : MLFormula) (rho : Valuation)
              (phi' : MLFormula) (rho' : Valuation) : Prop :=
-    forall gamma, SatML gamma rho phi -> SatML gamma rho' phi' .
-  
+    forall gamma, SatML gamma rho phi <-> SatML gamma rho' phi'.
+        
 
-  Print TS_rule.
   (* RL_alpha_equiv *)
   Definition RL_alpha_equiv (F1 F2 : RLFormula) : Prop :=
-    forall rho, exists rho',
-      (ML_val_relation (lhs F1) rho (lhs F2) rho') /\ (ML_val_relation (rhs F1) rho (rhs F2) rho') .
+    (forall rho, exists rho',
+      (ML_val_relation (lhs F1) rho (lhs F2) rho') /\ (ML_val_relation (rhs F1) rho (rhs F2) rho')) /\
+    (forall rho, exists rho',
+       (ML_val_relation (lhs F2) rho (lhs F1) rho') /\ (ML_val_relation (rhs F2) rho (rhs F1) rho')) /\
+    wfFormula F1 /\ wfFormula F2.
   
   Lemma RL_alpha_equiv_ML :
     forall f f' g g',
@@ -156,8 +193,8 @@ Module Semantics <: RL.
         ML_val_relation (lhs (f => f')) rho (lhs (g => g')) rho' /\
         ML_val_relation (rhs (f => f')) rho (rhs (g => g')) rho').
     apply H.
-    destruct H' as (rho' & H').
-    exists rho'; trivial.
+    destruct H' as (rho' & H' & H'').
+    simpl in *. exists rho'. split; trivial.
   Qed.
 
   
@@ -165,18 +202,57 @@ Module Semantics <: RL.
     forall F F',
       RL_alpha_equiv F F' -> RL_alpha_equiv F' F.
   Proof.
-  Admitted.
-  
+    intros F F' H.
+    unfold RL_alpha_equiv in *.
+    destruct H as (H1 & H2 & H7 & H8).
+    split. intros rho.
+    - assert (H: exists rho' : Valuation,
+         ML_val_relation (lhs F') rho (lhs F) rho' /\
+         ML_val_relation (rhs F') rho (rhs F) rho'); trivial.
+    - split. intros rho.
+      assert (H: exists rho' : Valuation,
+         ML_val_relation (lhs F) rho (lhs F') rho' /\
+         ML_val_relation (rhs F) rho (rhs F') rho'); trivial.
+      split; trivial.
+  Qed.
     
-  Axiom RL_alpha_equiv_wf :
+  Lemma RL_alpha_equiv_wf :
     forall F F',
       wfFormula F -> RL_alpha_equiv F F' -> wfFormula F'.
+  Proof.
+    intros F F' H H'.
+    unfold RL_alpha_equiv in H'.
+    destruct H' as (_ & _ & _ & H'); trivial.
+  Qed.
 
   (* Extension to sets *)
   Definition RL_alpha_equiv_S (S S' : list RLFormula) : Prop :=
     (forall F, In F S -> exists F_eqv, In F_eqv S' /\ RL_alpha_equiv F F_eqv) /\
     (forall F_eqv, In F_eqv S' -> exists F, In F S /\ RL_alpha_equiv F_eqv F).
 
+  (* Disjoint variables section *)
+  Definition disjoint_vars (phi phi' : MLFormula) : Prop :=
+    (forall x, In x (getFreeVars phi) -> ~ In x (getFreeVars phi')) .
+
+  Definition disjoint_set_RL (F' : RLFormula) (V : list Var) : Prop :=
+    (forall x, In x V -> ~ In x (FreeVars (lhs F' :: (rhs F' :: nil)))) .
+
+  Definition disjoint_vars_RL (F F' : RLFormula) : Prop :=
+    disjoint_vars (lhs F) (lhs F').
+  
+  Definition disjoint_vars_rules (S' : list RLFormula) (F : RLFormula) :=
+    forall alpha, In alpha S' -> disjoint_vars_RL alpha F .
+
+  (* helper *)
+  Lemma disjoint_vars_RL_sym :
+    forall F F',
+      disjoint_vars_RL F F' <-> disjoint_vars_RL F' F.
+  Proof.
+    intros F F'. split; intros H;
+    unfold disjoint_vars_RL, disjoint_vars in *;
+    intros x Hx; unfold not; intros C; apply H in C;
+    contradiction.
+  Qed.
 
   
 End Semantics.
