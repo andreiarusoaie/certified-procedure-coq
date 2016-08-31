@@ -17,11 +17,17 @@ Module Type RL (F : Formulas) .
   (* RL *)
   Definition RLFormula := (MLFormula * MLFormula)%type .
   Notation "L => R" := (L, R) (at level 100).
-  Notation lhs := fst .
-  Notation rhs := snd .
+  Notation lhs := fst.
+  Notation rhs := snd.
 
-  Parameter RLFormula_eq_dec :
-    forall x y : RLFormula, {x = y} + {x <> y}.
+  Parameter RLFormula_eq_dec : RLFormula -> RLFormula -> bool.
+
+  Axiom RLFormula_eq_dec_true :
+    forall F1 F2, RLFormula_eq_dec F1 F2 = true -> F1 = F2.
+  Axiom RLFormula_eq_dec_false :
+    forall F1 F2, RLFormula_eq_dec F1 F2 = false -> F1 <> F2.
+
+  
 
   (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
@@ -126,7 +132,7 @@ Module Type RL (F : Formulas) .
   (* ML helper relation *)
   Definition ML_val_relation (phi : MLFormula) (rho : Valuation)
              (phi' : MLFormula) (rho' : Valuation) : Prop :=
-    forall gamma, SatML gamma rho phi -> SatML gamma rho' phi' .
+    forall gamma, SatML gamma rho phi <-> SatML gamma rho' phi' .
   
 
   (* RL_alpha_equiv *)
@@ -172,13 +178,9 @@ Module Type RL (F : Formulas) .
     forall F F',
       disjoint_vars_RL F F' <-> disjoint_vars_RL F' F.
   Proof.
-    intros F F'.
-    split; intros H;
+    intros F F'. split; intros H;
     unfold disjoint_vars_RL, disjoint_vars in *;
-    intros x Hx;
-    unfold not;
-    intros C;
-    apply H in C;
+    intros x Hx; unfold not; intros C; apply H in C;
     contradiction.
   Qed.
   

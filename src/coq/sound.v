@@ -17,6 +17,14 @@ Module Type Soundness
 
   (* G0 *)
   Variable G0 : list RLFormula.
+
+
+  (* remove function *)
+  Fixpoint remove (x : RLFormula) (l : list RLFormula) : list RLFormula :=
+    match l with
+      | nil => nil
+      | x' :: ls => if (RLFormula_eq_dec x x') then (remove x ls) else (x' :: (remove x ls))
+    end.
   
   
   (* The 'step' relation encoding the inference steps of the procedure. *)
@@ -25,20 +33,20 @@ Module Type Soundness
   | impl :
       In g G ->
       ValidML (ImpliesML (lhs g) (rhs g)) ->
-      G' = remove RLFormula_eq_dec g G ->
+      G' = remove g G ->
       step G G' g
   | circ :
       forall c c',
         In g G -> In c G0 ->
         RL_alpha_equiv c c' -> disjoint_vars_RL g c' ->
         ValidML (ImpliesML (lhs g) (EClos (lhs c))) ->
-        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL [c'] g) ->
+        G' = (remove g G) ++ (SynDerRL [c'] g) ->
         step G G' g
   | der :
       forall S', 
         In g G -> SDerivable (lhs g) -> 
         RL_alpha_equiv_S R.S S' -> disjoint_vars_rules S' g ->
-        G' = (remove RLFormula_eq_dec g G) ++ (SynDerRL S' g) ->
+        G' = (remove g G) ++ (SynDerRL S' g) ->
       step G G' g.
 
   (* successful execution of the non-deterministic procedure *)
@@ -320,7 +328,7 @@ Module Type Soundness
     forall G g g',
       In g G ->
       g' <> g ->
-      In g (remove RLFormula_eq_dec g' G).
+      In g (remove g' G).
   Proof.
     induction G; intros.
     - contradict H.
@@ -329,7 +337,7 @@ Module Type Soundness
       + subst.
         simpl.
         case_eq (RLFormula_eq_dec g' g); intros.
-        * contradiction.
+        * apply RLFormula_eq_dec_true in H. contradiction.
         * simpl; left; trivial.
       + simpl.
         case_eq (RLFormula_eq_dec g' a); intros.
@@ -1055,7 +1063,7 @@ Module Type Soundness
         else chooseCirc g C'
     end.
 
-  Inductive Status := success | failure .
+  Inductive Status := success | failure.
 
 
   (* Main prove function *)
@@ -1067,13 +1075,13 @@ Module Type Soundness
           | nil => success 
           | g :: G' =>
             if validMLtest (ImpliesML (lhs g) (rhs g))
-            then prove (remove RLFormula_eq_dec g G) n'
+            then prove (remove g G) n'
             else match chooseCirc g G0 with
-                   | Some c => prove ((remove RLFormula_eq_dec g G)
+                   | Some c => prove ((remove g G)
                                         ++ (SynDerRL [renameFresh c g] g)) n'
                    | None =>
                      if derivTest (lhs g)
-                     then prove ((remove RLFormula_eq_dec g G)
+                     then prove ((remove g G)
                                    ++ (SynDerRL (renameFreshSet R.S g) g)) n'
                      else failure
                  end
@@ -1132,7 +1140,7 @@ Module Type Soundness
         subst G.
         simpl in H1.
         case_eq (validMLtest (ImpliesML (lhs g) (rhs g))); intros H''; rewrite H'' in H1.
-        * apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G'))) (g := g).
+        * apply tranz with (G' := (remove g (g :: G'))) (g := g).
           apply impl.
           { simpl; left; trivial. }
           apply soundValidTest; trivial.
@@ -1142,7 +1150,7 @@ Module Type Soundness
           
           intros c Hc.
           rewrite Hc in H1.
-          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL [renameFresh c g] g)) 
+          apply tranz with (G' := (remove g (g :: G') ++ SynDerRL [renameFresh c g] g)) 
                              (g := g).
           apply circ with (c := c) (c' := (renameFresh c g)); trivial.
           apply H in H1; trivial.
@@ -1157,7 +1165,7 @@ Module Type Soundness
           rewrite Hc in H1.
           case_eq (derivTest (lhs g)); intros D; rewrite D in H1.
           
-          apply tranz with (G' := (remove RLFormula_eq_dec g (g :: G') ++ SynDerRL (renameFreshSet R.S g) g)) (g := g).
+          apply tranz with (G' := (remove g (g :: G') ++ SynDerRL (renameFreshSet R.S g) g)) (g := g).
           apply der with (S' := (renameFreshSet R.S g)); trivial.
           simpl; left; trivial.
           apply deriv_test; trivial.
