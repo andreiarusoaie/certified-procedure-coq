@@ -23,44 +23,7 @@ Module Semantics : RL Lang.
   Notation lhs := fst .
   Notation rhs := snd .
 
-  Definition RLFormula_eq_dec (F F' : RLFormula) : bool :=
-    andb (MLFormula_eq_dec (lhs F) (lhs F')) (MLFormula_eq_dec (rhs F) (rhs F')).
 
-  Lemma RLFormula_eq_dec_refl :
-    forall F, RLFormula_eq_dec F F = true.
-  Proof.
-    intros F. destruct F.
-    unfold RLFormula_eq_dec. simpl.
-    rewrite 2 MLFormula_eq_dec_refl.
-    simpl. reflexivity.
-  Qed.
-
-  Lemma RLFormula_eq_dec_true :
-    forall F F',
-      RLFormula_eq_dec F F' = true -> F = F'.
-  Proof.
-    intros F F' H.
-    destruct F, F'.
-    unfold RLFormula_eq_dec in H.
-    simpl in *.
-    case_eq (MLFormula_eq_dec m m1). intros H1.
-    case_eq (MLFormula_eq_dec m0 m2). intros H2.
-    - apply MLFormula_eq_dec_true in H1.
-      apply MLFormula_eq_dec_true in H2.
-      subst. reflexivity.
-    - intros H2.
-      rewrite H1, H2 in H. simpl in H. inversion H.
-    - intros H1.
-      rewrite H1 in H. simpl in H. inversion H.
-  Qed.
-
-  Lemma RLFormula_eq_dec_false :
-    forall F1 F2, RLFormula_eq_dec F1 F2 = false -> F1 <> F2.
-  Proof.
-    intros F1 F2 H. unfold not. intros H'. subst.
-    rewrite RLFormula_eq_dec_refl in H. inversion H.
-  Qed.
-  
     (* well Formed *)
   Definition wfFormula (F : RLFormula) : Prop :=
     incl (getFreeVars (rhs F)) (getFreeVars (lhs F)).  
@@ -94,7 +57,7 @@ Module Semantics : RL Lang.
   Qed.
 
 
-
+(*
   (* RL formulas *)
   Definition skip_rule :=
     (pattern (cfg (seq skip (var_stmt St)) (list_var Rest)) ,
@@ -105,7 +68,8 @@ Module Semantics : RL Lang.
   
   (* TODO: add other rules *)
   Definition S := (skip_rule :: nil).
-
+ *)
+  Parameter S : list RLFormula.
 
 
   
@@ -260,5 +224,43 @@ Module Semantics : RL Lang.
     contradiction.
   Qed.
 
-  
+
+  Definition RLFormula_eq_dec (F F' : RLFormula) : bool :=
+    andb (MLFormula_eq_dec (lhs F) (lhs F')) (MLFormula_eq_dec (rhs F) (rhs F')).
+
+  Lemma RLFormula_eq_dec_refl :
+    forall F, RLFormula_eq_dec F F = true.
+  Proof.
+    intros F. destruct F.
+    unfold RLFormula_eq_dec. simpl.
+    rewrite 2 MLFormula_eq_dec_refl.
+    simpl. reflexivity.
+  Qed.
+
+  Lemma RLFormula_eq_dec_true :
+    forall F F',
+      RLFormula_eq_dec F F' = true -> F = F'.
+  Proof.
+    intros F F' H.
+    destruct F, F'.
+    unfold RLFormula_eq_dec in H.
+    simpl in *.
+    case_eq (MLFormula_eq_dec m m1). intros H1.
+    case_eq (MLFormula_eq_dec m0 m2). intros H2.
+    - apply MLFormula_eq_dec_true in H1.
+      apply MLFormula_eq_dec_true in H2.
+      subst. reflexivity.
+    - intros H2.
+      rewrite H1, H2 in H. simpl in H. inversion H.
+    - intros H1.
+      rewrite H1 in H. simpl in H. inversion H.
+  Qed.
+
+  Lemma RLFormula_eq_dec_false :
+    forall F1 F2, RLFormula_eq_dec F1 F2 = false -> F1 <> F2.
+  Proof.
+    intros F1 F2 H. unfold not. intros H'. subst.
+    rewrite RLFormula_eq_dec_refl in H. inversion H.
+  Qed.
+
 End Semantics.

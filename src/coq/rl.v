@@ -22,6 +22,8 @@ Module Type RL (F : Formulas) .
 
   Parameter RLFormula_eq_dec : RLFormula -> RLFormula -> bool.
 
+  Axiom RLFormula_eq_dec_refl :
+    forall F, RLFormula_eq_dec F F = true.
   Axiom RLFormula_eq_dec_true :
     forall F1 F2, RLFormula_eq_dec F1 F2 = true -> F1 = F2.
   Axiom RLFormula_eq_dec_false :
