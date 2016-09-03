@@ -37,24 +37,37 @@ Open Scope string_scope.
 
   Inductive VarID : Type :=
   | X : VarID
-  | Y : VarID .
+  | Y : VarID
+  | XFRESH : VarID
+  | YFRESH : VarID.
   Inductive VarExp : Type :=
   | N : VarExp
   | I : VarExp
   | S : VarExp
-  | S' : VarExp.
+  | S' : VarExp
+  | NFRESH : VarExp
+  | IFRESH : VarExp
+  | SFRESH : VarExp
+  | S'FRESH : VarExp.
   Inductive VarBExp : Type :=
-  | B : VarBExp.
+  | B : VarBExp
+  | BFRESH : VarBExp.
   Inductive VarStmt : Type :=
   | St : VarStmt
   | S1 : VarStmt
-  | S2 : VarStmt.
+  | S2 : VarStmt
+  | StFRESH : VarStmt
+  | S1FRESH : VarStmt
+  | S2FRESH : VarStmt.
   Inductive VarMI : Type :=
-  | M : VarMI .
+  | M : VarMI
+  | MFRESH : VarMI.
   Inductive VarMIList : Type :=
-  | Rest : VarMIList .
+  | Rest : VarMIList
+  | RestFRESH : VarMIList.
   Inductive VarCfg : Type :=
-  | C : VarCfg.
+  | C : VarCfg
+  | CFRESH : VarCfg.
   
   
   Inductive ID : Type :=
@@ -189,6 +202,8 @@ Open Scope string_scope.
       | idvar v1, idvar v2 => match v1, v2 with
                               | X, X => true
                               | Y, Y => true
+                              | XFRESH, XFRESH => true
+                              | YFRESH, YFRESH => true
                               | _, _ => false
                               end
       | evar e1, evar e2 => match e1, e2 with
@@ -196,25 +211,40 @@ Open Scope string_scope.
                               | I, I => true
                               | S, S => true
                               | S', S' => true
+                              | NFRESH, NFRESH => true
+                              | IFRESH, IFRESH => true
+                              | SFRESH, SFRESH => true
+                              | S'FRESH, S'FRESH => true
                               | _, _ => false
                             end
       | bvar b1, bvar b2 => match b1, b2 with
                               | B, B => true
+                              | BFRESH, BFRESH => true
+                              | _, _ => false
                             end
       | svar s1, svar s2 => match s1, s2 with
                               | St, St => true
                               | S1, S1 => true
                               | S2, S2 => true
+                              | StFRESH, StFRESH => true
+                              | S1FRESH, S1FRESH => true
+                              | S2FRESH, S2FRESH => true
                               | _, _ => false
                             end
       | mivar m1, mivar m2 => match m1, m2 with
                               | M, M => true
+                              | MFRESH, MFRESH => true
+                              | _, _ => false
                             end
       | lvar l1, lvar l2 => match l1, l2 with
                               | Rest, Rest => true
+                              | RestFRESH, RestFRESH => true
+                              | _, _ => false
                             end
       | cvar c1, cvar c2 => match c1, c2 with
                               | C, C => true
+                              | CFRESH, CFRESH => true
+                              | _, _ => false
                             end
       | _, _ => false
     end.
@@ -442,8 +472,8 @@ Open Scope string_scope.
   Proof.
     intros b b' H.
     induction b, b'; simpl in H; try inversion H; trivial.
-    - case_eq v; case_eq v0; intros H2 H3.
-      subst. reflexivity.
+    - case_eq v; case_eq v0; intros H2 H3;
+      subst; try reflexivity; try inversion H.
     - clear H1.
       case_eq (Exp_eq_dec e e1); intros H1.
       case_eq (Exp_eq_dec e0 e2); intros H2.
@@ -563,7 +593,7 @@ Open Scope string_scope.
     forall mi, MapItem_eq_dec mi mi = true.
   Proof.
     induction mi; simpl.
-    - case_eq v; intros; subst. reflexivity.
+    - case_eq v; intros; subst; try reflexivity; try inversion H.
     - rewrite ID_eq_dec_refl, Exp_eq_dec_refl.
       simpl. reflexivity.
   Qed.
@@ -573,7 +603,7 @@ Open Scope string_scope.
       MapItem_eq_dec mi mi' = true -> mi = mi'.
   Proof.
     intros mi. induction mi; induction mi'; intros; simpl in *; try inversion H.
-    - case_eq v; intros; case_eq v0; intros; subst. reflexivity.
+    - case_eq v; intros; case_eq v0; intros; subst; try reflexivity; try inversion H.
     - clear H1.
       case_eq (ID_eq_dec i0 i1); intros H1.
       case_eq (Exp_eq_dec e e0); intros H2.
@@ -611,7 +641,7 @@ Open Scope string_scope.
     - reflexivity.
     - rewrite MapItem_eq_dec_refl, IHml.
       simpl. reflexivity.
-    - case_eq v. intros. reflexivity.
+    - case_eq v; intros; reflexivity.
   Qed.
 
 
@@ -628,7 +658,7 @@ Open Scope string_scope.
       + rewrite H1, H2 in H. simpl in H. inversion H.
       + rewrite H1 in H. simpl in H. inversion H.
     - clear H1.
-      case_eq v; case_eq v0; intros Hv Hv0; subst. reflexivity.
+      case_eq v; case_eq v0; intros Hv Hv0; subst; try reflexivity; try inversion H.
   Qed.
 
   Lemma MIList_eq_dec_false:
@@ -653,7 +683,7 @@ Open Scope string_scope.
     forall cfg, Cfg_eq_dec cfg cfg = true.
   Proof.
     intros cf. induction cf; simpl.
-    - case_eq v; intros; subst. trivial.
+    - case_eq v; intros; subst; trivial; try inversion H.
     - rewrite Stmt_eq_dec_refl, MIList_eq_dec_refl.
       simpl. reflexivity.
   Qed.
@@ -662,7 +692,7 @@ Open Scope string_scope.
     forall c c', Cfg_eq_dec c c' = true -> c = c'.
   Proof.
     intros c. induction c; induction c'; intros; simpl; try inversion H.
-    - case_eq v; case_eq v0; intros; subst. reflexivity.
+    - case_eq v; case_eq v0; intros; subst; try reflexivity; try inversion H.
     - case_eq (Stmt_eq_dec s0 s1); intros H2.
       case_eq (MIList_eq_dec m m0); intros H3.
       apply Stmt_eq_dec_true in H2.

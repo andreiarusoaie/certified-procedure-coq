@@ -100,10 +100,16 @@ Module Semantics : RL Lang.
     (pattern (cfg (seq skip (var_stmt St)) (list_var Rest)) ,
      pattern (cfg (var_stmt St) (list_var Rest))).
 
+
+
+  
   (* TODO: add other rules *)
   Definition S := (skip_rule :: nil).
 
-    (* transition given by a single rule *)
+
+
+  
+  (* transition given by a single rule *)
   Definition TS_rule (gamma gamma' : State)
              (alpha : RLFormula) : Prop :=
     exists rho,

@@ -1028,6 +1028,8 @@ Module Type Soundness
    *******)
 
 
+  (*
+
 
   (************
    * function *
@@ -1190,5 +1192,5 @@ Module Type Soundness
     intros; apply sound; trivial.
     apply function_to_steps with (n := n); trivial.
   Qed.
-
+*)
 End Soundness.
