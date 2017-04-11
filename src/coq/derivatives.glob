@@ -1,0 +1,104 @@
+DIGEST 4a9029c740c56b088fcd72831e3c7539
+Fderivatives
+R15:18 util <> <> lib
+R36:37 ml <> <> lib
+R55:56 rl <> <> lib
+R74:77 Coq.Lists.List <> <> lib
+R117:124 ml <> <> mod
+R132:133 rl <> <> mod
+R135:135 derivatives <> <> modtype
+modtype 93:103 <> Definitions
+def 243:252 Definitions SDerivable
+R261:269 derivatives F MLFormula defax
+R286:292 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R309:310 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R330:334 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R351:351 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R311:315 derivatives F SatML defax
+R327:329 derivatives <> phi var
+R323:325 derivatives <> rho var
+R317:321 derivatives <> gamma var
+R340:344 rl RL ::x_'=>S'_x not
+R335:339 derivatives <> gamma var
+R345:350 derivatives <> gamma' var
+def 385:389 Definitions total
+R473:479 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R486:487 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R493:497 rl RL ::x_'=>S'_x not
+R488:492 derivatives <> gamma var
+R498:503 derivatives <> gamma' var
+R444:448 derivatives F SatML defax
+R460:462 derivatives <> phi var
+R456:458 derivatives <> rho var
+R450:454 derivatives <> gamma var
+R426:435 derivatives Definitions SDerivable def
+R437:439 derivatives <> phi var
+def 552:560 Definitions SynDerML'
+R569:577 derivatives F MLFormula defax
+R598:606 derivatives R RLFormula def
+R612:620 derivatives F MLFormula defax
+R630:637 derivatives F ExistsML defax
+R680:684 derivatives F AndML defax
+R752:754 derivatives R rhs syndef
+R756:756 derivatives <> F var
+R704:711 derivatives F encoding defax
+R714:718 derivatives F AndML defax
+R728:730 derivatives <> phi var
+R721:723 derivatives R lhs syndef
+R725:725 derivatives <> F var
+R640:647 derivatives R FreeVars def
+R649:649 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R655:656 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R662:662 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R657:659 derivatives R rhs syndef
+R661:661 derivatives <> F var
+R650:652 derivatives R lhs syndef
+R654:654 derivatives <> F var
+def 776:784 Definitions SynDerRL'
+R791:799 derivatives R RLFormula def
+R823:831 derivatives F MLFormula defax
+R836:844 derivatives R RLFormula def
+R859:862 rl RL ::x_'=>'_x not
+R855:858 derivatives <> phi1 var
+R863:865 derivatives R rhs syndef
+R867:867 derivatives <> F var
+def 890:897 Definitions SynDerML
+R906:914 derivatives F MLFormula defax
+R936:939 Coq.Init.Datatypes <> list ind
+R941:949 derivatives R RLFormula def
+R954:957 Coq.Init.Datatypes <> list ind
+R959:967 derivatives F MLFormula defax
+R976:978 Coq.Lists.List <> map def
+R996:997 derivatives <> S' var
+R981:989 derivatives Definitions SynDerML' def
+R991:993 derivatives <> phi var
+def 1016:1023 Definitions SynDerRL
+R1031:1034 Coq.Init.Datatypes <> list ind
+R1036:1044 derivatives R RLFormula def
+R1065:1073 derivatives R RLFormula def
+R1078:1081 Coq.Init.Datatypes <> list ind
+R1083:1091 derivatives R RLFormula def
+R1100:1102 Coq.Lists.List <> map def
+R1119:1126 derivatives Definitions SynDerML def
+R1136:1137 derivatives <> S' var
+R1129:1131 derivatives R lhs syndef
+R1133:1133 derivatives <> F var
+R1105:1113 derivatives Definitions SynDerRL' def
+R1115:1115 derivatives <> F var
+def 1174:1178 Definitions Delta
+R1189:1192 Coq.Init.Datatypes <> list ind
+R1194:1202 derivatives R RLFormula def
+R1211:1214 Coq.Init.Datatypes <> list ind
+R1216:1224 derivatives R RLFormula def
+R1241:1242 derivatives <> G' var
+R1259:1261 Coq.Init.Datatypes <> nil constr
+R1266:1268 Coq.Init.Datatypes <> nil constr
+R1285:1288 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1306:1306 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R1324:1329 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R1342:1342 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R1307:1314 derivatives Definitions SynDerRL def
+R1316:1317 derivatives <> S' var
+R1330:1334 derivatives <> Delta def
+R1336:1337 derivatives <> S' var
+R1364:1374 derivatives <> <> modtype

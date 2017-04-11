@@ -1,0 +1,179 @@
+DIGEST 4e6a7859375d20f4371c252230cb1aa8
+Futil
+R15:19 Coq.Arith.Arith <> <> lib
+mod 30:34 <> Utils
+sec 68:72 Utils Paths
+def 115:119 Utils GPath
+R142:147 Coq.Init.Datatypes <> option ind
+R149:149 util <> T var
+R135:137 Coq.Init.Datatypes <> nat ind
+def 167:173 Utils wfGPath
+R198:198 util <> T var
+R193:193 util <> T var
+R214:218 util Utils GPath def
+R220:220 util <> T var
+R243:243 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R289:306 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R472:472 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R282:284 Coq.Init.Logic <> :type_scope:x_'='_x not
+R279:279 util <> p var
+R281:281 util <> j var
+R285:288 Coq.Init.Datatypes <> None constr
+R268:270 Coq.Init.Logic <> :type_scope:x_'='_x not
+R265:265 util <> p var
+R267:267 util <> i var
+R271:274 Coq.Init.Datatypes <> None constr
+R257:259 Coq.Init.Peano <> :nat_scope:x_'<'_x not
+R256:256 util <> i var
+R260:260 util <> j var
+R377:383 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R388:400 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R413:440 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R404:406 Coq.Init.Logic <> :type_scope:x_'='_x not
+R401:401 util <> p var
+R403:403 util <> i var
+R407:410 Coq.Init.Datatypes <> Some constr
+R412:412 util <> e var
+R458:462 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R471:471 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R448:450 Coq.Init.Logic <> :type_scope:x_'='_x not
+R441:441 util <> p var
+R445:445 Coq.Init.Peano <> :nat_scope:x_'+'_x not
+R444:444 util <> i var
+R451:454 Coq.Init.Datatypes <> Some constr
+R456:457 util <> e' var
+R463:465 util <> rel var
+R469:470 util <> e' var
+R467:467 util <> e var
+R327:327 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R339:344 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R362:362 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R331:334 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R328:328 util <> p var
+R330:330 util <> i var
+R335:338 Coq.Init.Datatypes <> None constr
+R354:357 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R345:345 util <> p var
+R349:351 Coq.Init.Peano <> :nat_scope:x_'+'_x not
+R348:348 util <> i var
+R358:361 Coq.Init.Datatypes <> None constr
+def 495:509 Utils isInfiniteGPath
+R527:531 util Utils GPath def
+R533:533 util <> T var
+R565:568 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R562:562 util <> p var
+R564:564 util <> i var
+R569:572 Coq.Init.Datatypes <> None constr
+def 593:599 Utils GPath_i
+R617:621 util Utils GPath def
+R623:623 util <> T var
+R631:633 Coq.Init.Datatypes <> nat ind
+R638:642 util Utils GPath def
+R644:644 util <> T var
+R664:664 util <> p var
+R668:668 Coq.Init.Peano <> :nat_scope:x_'+'_x not
+R667:667 util <> i var
+R669:669 util <> j var
+def 689:699 Utils lengthGPath
+R739:739 util <> T var
+R734:734 util <> T var
+R771:775 util Utils GPath def
+R777:777 util <> T var
+R785:787 Coq.Init.Datatypes <> nat ind
+R828:831 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R806:807 Coq.Init.Logic <> :type_scope:'~'_x not
+R808:822 util Utils isInfiniteGPath def
+R826:827 util <> mu var
+R824:824 util <> T var
+R848:858 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R832:838 util Utils wfGPath def
+R846:847 util <> mu var
+R842:844 util <> rel var
+R840:840 util <> T var
+R859:865 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R871:880 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R896:899 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R885:887 Coq.Init.Logic <> :type_scope:x_'='_x not
+R881:882 util <> mu var
+R884:884 util <> n var
+R888:891 Coq.Init.Datatypes <> Some constr
+R893:895 util <> phi var
+R910:912 Coq.Init.Logic <> :type_scope:x_'='_x not
+R900:901 util <> mu var
+R905:907 Coq.Init.Peano <> :nat_scope:x_'+'_x not
+R904:904 util <> n var
+R913:916 Coq.Init.Datatypes <> None constr
+R930:934 util Utils.Paths <> sec
+sec 949:966 Utils InductionPrinciple
+prf 1014:1029 Utils custom_lt_wf_ind
+R1048:1050 Coq.Init.Datatypes <> nat ind
+R1186:1186 util <> P var
+R1188:1188 util <> n var
+R1146:1146 util <> P var
+R1149:1159 Coq.Init.Datatypes <> S constr
+R1161:1161 util <> n var
+R1138:1138 util <> P var
+R1140:1140 util <> m var
+R1129:1132 Coq.Init.Peano <> :nat_scope:x_'<='_x not
+R1128:1128 util <> m var
+R1133:1133 util <> n var
+R1069:1069 util <> P var
+R1236:1244 Coq.Arith.Wf_nat <> lt_wf_ind thm
+R1236:1244 Coq.Arith.Wf_nat <> lt_wf_ind thm
+R1370:1379 Coq.Arith.Lt <> le_lt_n_Sm thm
+R1370:1379 Coq.Arith.Lt <> le_lt_n_Sm thm
+ind 1452:1464 Utils strictsublist
+constr 1512:1528 Utils strictsublist_nil
+constr 1576:1593 Utils strictsublist_skip
+constr 1665:1682 Utils strictsublist_cons
+R1489:1492 Coq.Init.Datatypes <> list ind
+R1479:1482 Coq.Init.Datatypes <> list ind
+R1544:1556 util <> strictsublist ind
+R1564:1567 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1563:1563 util <> h var
+R1568:1568 util <> t var
+R1558:1560 Coq.Init.Datatypes <> nil constr
+R1634:1646 util <> strictsublist ind
+R1653:1656 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1652:1652 util <> h var
+R1657:1657 util <> t var
+R1648:1649 util <> l1 var
+R1612:1624 util <> strictsublist ind
+R1629:1629 util <> t var
+R1626:1627 util <> l1 var
+R1725:1737 util <> strictsublist ind
+R1751:1754 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1750:1750 util <> h var
+R1755:1756 util <> t2 var
+R1741:1744 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1740:1740 util <> h var
+R1745:1746 util <> t1 var
+R1702:1714 util <> strictsublist ind
+R1719:1720 util <> t2 var
+R1716:1717 util <> t1 var
+prf 1774:1789 Utils strictsublist_wf
+R1809:1820 Coq.Init.Wf <> well_founded def
+R1823:1835 util Utils strictsublist ind
+R1843:1843 util <> A var
+R1905:1910 Coq.Init.Datatypes <> length def
+R1870:1891 Coq.Arith.Wf_nat <> well_founded_lt_compat thm
+R1905:1910 Coq.Init.Datatypes <> length def
+R1870:1891 Coq.Arith.Wf_nat <> well_founded_lt_compat thm
+prf 2008:2027 Utils strictsublist_wf_ind
+R2045:2048 Coq.Init.Datatypes <> list ind
+R2050:2050 util <> A var
+R2140:2143 Coq.Init.Datatypes <> list ind
+R2145:2145 util <> A var
+R2148:2148 util <> P var
+R2150:2150 util <> l var
+R2122:2122 util <> P var
+R2124:2124 util <> l var
+R2113:2113 util <> P var
+R2115:2116 util <> l' var
+R2091:2103 util Utils strictsublist ind
+R2108:2108 util <> l var
+R2105:2106 util <> l' var
+R2192:2207 util Utils strictsublist_wf thm
+R2192:2207 util Utils strictsublist_wf thm
+R2285:2302 util Utils.InductionPrinciple <> sec
+R2313:2317 util <> <> mod

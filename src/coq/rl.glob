@@ -1,0 +1,418 @@
+DIGEST f839cf623a352f7c7616285e8391ccbf
+Frl
+R15:18 util <> <> lib
+R36:37 ml <> <> lib
+R55:58 Coq.Lists.List <> <> lib
+R82:89 ml <> <> mod
+modtype 74:75 <> RL
+def 211:218 RL FreeVars
+R225:228 Coq.Init.Datatypes <> list ind
+R230:238 rl F MLFormula defax
+R243:246 Coq.Init.Datatypes <> list ind
+R248:250 rl F Var defax
+R265:265 rl <> l var
+R280:282 Coq.Init.Datatypes <> nil constr
+R287:289 Coq.Init.Datatypes <> nil constr
+R300:303 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R323:327 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R339:339 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R310:320 rl F getFreeVars defax
+R328:335 rl <> FreeVars def
+def 377:385 RL RLFormula
+R400:402 Coq.Init.Datatypes <> :type_scope:x_'*'_x not
+R391:399 rl F MLFormula defax
+R403:411 rl F MLFormula defax
+R444:444 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R446:447 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R449:449 Coq.Init.Datatypes <> :core_scope:'('_x_','_x_','_'..'_','_x_')' not
+not 432 RL ::x_'=>'_x
+syndef 478:480 RL lhs
+R485:487 Coq.Init.Datatypes <> fst def
+syndef 501:503 RL rhs
+R508:510 Coq.Init.Datatypes <> snd def
+ax 526:541 RL RLFormula_eq_dec
+R571:574 Coq.Init.Datatypes <> bool ind
+R558:566 rl RL RLFormula def
+R545:553 rl RL RLFormula def
+ax 586:606 RL RLFormula_eq_dec_refl
+R644:646 Coq.Init.Logic <> :type_scope:x_'='_x not
+R624:639 rl RL RLFormula_eq_dec defax
+R643:643 rl <> F var
+R641:641 rl <> F var
+R647:650 Coq.Init.Datatypes <> true constr
+ax 661:681 RL RLFormula_eq_dec_true
+R738:740 Coq.Init.Logic <> :type_scope:x_'='_x not
+R736:737 rl <> F1 var
+R741:742 rl <> F2 var
+R725:727 Coq.Init.Logic <> :type_scope:x_'='_x not
+R703:718 rl RL RLFormula_eq_dec defax
+R723:724 rl <> F2 var
+R720:721 rl <> F1 var
+R728:731 Coq.Init.Datatypes <> true constr
+ax 753:774 RL RLFormula_eq_dec_false
+R832:835 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R830:831 rl <> F1 var
+R836:837 rl <> F2 var
+R818:820 Coq.Init.Logic <> :type_scope:x_'='_x not
+R796:811 rl RL RLFormula_eq_dec defax
+R816:817 rl <> F2 var
+R813:814 rl <> F1 var
+R821:825 Coq.Init.Datatypes <> false constr
+def 878:886 RL wfFormula
+R893:901 rl RL RLFormula def
+R918:921 Coq.Lists.List <> incl def
+R946:956 rl F getFreeVars defax
+R959:961 rl RL lhs syndef
+R963:963 rl <> F var
+R924:934 rl F getFreeVars defax
+R937:939 rl RL rhs syndef
+R941:941 rl <> F var
+prf 994:1000 RL wf_free
+R1109:1113 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1067:1068 Coq.Lists.List <> In def
+R1088:1091 Coq.Init.Datatypes <> :list_scope:x_'++'_x not
+R1073:1083 rl F getFreeVars defax
+R1085:1087 rl <> phi var
+R1092:1102 rl F getFreeVars defax
+R1104:1107 rl <> phi' var
+R1070:1070 rl <> x var
+R1114:1115 Coq.Lists.List <> In def
+R1120:1130 rl F getFreeVars defax
+R1132:1134 rl <> phi var
+R1117:1117 rl <> x var
+R1033:1041 rl RL wfFormula def
+R1047:1050 rl RL ::x_'=>'_x not
+R1044:1046 rl <> phi var
+R1051:1054 rl <> phi' var
+R1208:1216 rl RL wfFormula def
+R1219:1222 Coq.Lists.List <> incl def
+R1244:1253 Coq.Lists.List <> in_app_iff thm
+R1244:1253 Coq.Lists.List <> in_app_iff thm
+R1347:1356 Coq.Lists.List <> in_app_iff thm
+R1347:1356 Coq.Lists.List <> in_app_iff thm
+prf 1418:1429 RL RL_decompose
+R1448:1456 rl RL RLFormula def
+R1460:1463 Coq.Init.Logic <> :type_scope:x_'='_x not
+R1482:1482 Coq.Init.Logic <> :type_scope:x_'='_x not
+R1459:1459 rl <> F var
+R1464:1464 rl RL ::x_'=>'_x not
+R1470:1475 rl RL ::x_'=>'_x not
+R1481:1481 rl RL ::x_'=>'_x not
+R1465:1467 rl RL lhs syndef
+R1469:1469 rl <> F var
+R1476:1478 rl RL rhs syndef
+R1480:1480 rl <> F var
+var 1617:1617 RL S
+R1621:1624 Coq.Init.Datatypes <> list ind
+R1626:1634 rl RL RLFormula def
+def 1694:1700 RL TS_rule
+R1718:1722 rl F State defax
+R1747:1755 rl RL RLFormula def
+R1772:1778 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1782:1789 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1817:1820 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1790:1794 rl F SatML defax
+R1807:1809 rl RL lhs syndef
+R1811:1815 rl <> alpha var
+R1802:1804 rl <> rho var
+R1796:1800 rl <> gamma var
+R1821:1825 rl F SatML defax
+R1839:1841 rl RL rhs syndef
+R1843:1847 rl <> alpha var
+R1834:1836 rl <> rho var
+R1827:1832 rl <> gamma' var
+def 1918:1919 RL TS
+R1927:1930 Coq.Init.Datatypes <> list ind
+R1932:1940 rl RL RLFormula def
+R1959:1963 rl F State defax
+R1980:1986 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1999:2006 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2026:2035 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2007:2008 Coq.Lists.List <> In def
+R2024:2025 rl <> S' var
+R2014:2017 rl RL ::x_'=>'_x not
+R2011:2013 rl <> phi var
+R2018:2021 rl <> phi' var
+R2036:2036 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2056:2061 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2083:2083 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2037:2041 rl F SatML defax
+R2053:2055 rl <> phi var
+R2049:2051 rl <> rho var
+R2043:2047 rl <> gamma var
+R2062:2066 rl F SatML defax
+R2079:2082 rl <> phi' var
+R2075:2077 rl <> rho var
+R2068:2073 rl <> gamma' var
+R2112:2113 rl RL TS def
+R2115:2115 rl RL S defax
+not 2097 RL ::x_'=>S'_x
+def 2179:2182 RL Path
+R2187:2191 util Utils GPath def
+R2193:2197 rl F State defax
+def 2213:2218 RL wfPath
+R2223:2229 util Utils wfGPath def
+R2238:2239 rl RL TS def
+R2241:2241 rl RL S defax
+R2231:2235 rl F State defax
+def 2258:2263 RL Path_i
+R2272:2275 rl RL Path def
+R2281:2287 util Utils GPath_i def
+R2295:2297 rl <> tau var
+R2289:2293 rl F State defax
+def 2313:2322 RL isInfinite
+R2331:2334 rl RL Path def
+R2340:2354 util Utils isInfiniteGPath def
+R2362:2364 rl <> tau var
+R2356:2360 rl F State defax
+def 2404:2413 RL startsFrom
+R2422:2425 rl RL Path def
+R2435:2443 rl F Valuation def
+R2467:2475 rl F MLFormula defax
+R2492:2498 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2504:2505 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2524:2527 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2511:2513 Coq.Init.Logic <> :type_scope:x_'='_x not
+R2506:2508 rl <> tau var
+R2514:2517 Coq.Init.Datatypes <> Some constr
+R2519:2523 rl <> gamma var
+R2528:2532 rl F SatML defax
+R2544:2546 rl <> phi var
+R2540:2542 rl <> rho var
+R2534:2538 rl <> gamma var
+def 2590:2600 RL terminating
+R2611:2615 rl F State defax
+R2640:2642 Coq.Init.Logic <> not def
+R2650:2654 rl RL ::x_'=>S'_x not
+R2645:2649 rl <> gamma var
+R2655:2660 rl <> gamma' var
+def 2720:2728 RL completeN
+R2737:2740 rl RL Path def
+R2748:2750 Coq.Init.Datatypes <> nat ind
+R2760:2766 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2772:2773 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2792:2795 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2779:2781 Coq.Init.Logic <> :type_scope:x_'='_x not
+R2774:2776 rl <> tau var
+R2778:2778 rl <> n var
+R2782:2785 Coq.Init.Datatypes <> Some constr
+R2787:2791 rl <> gamma var
+R2796:2806 rl RL terminating def
+R2808:2812 rl <> gamma var
+def 2829:2836 RL complete
+R2845:2848 rl RL Path def
+R2872:2876 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R2922:2922 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R2858:2867 rl RL isInfinite def
+R2869:2871 rl <> tau var
+R2893:2896 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R2877:2878 Coq.Init.Logic <> :type_scope:'~'_x not
+R2879:2888 rl RL isInfinite def
+R2890:2892 rl <> tau var
+R2897:2903 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2905:2906 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R2907:2915 rl RL completeN def
+R2921:2921 rl <> n var
+R2917:2919 rl <> tau var
+def 3011:3015 RL SatRL
+R3024:3027 rl RL Path def
+R3037:3045 rl F Valuation def
+R3067:3075 rl RL RLFormula def
+R3118:3126 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3275:3275 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3092:3101 rl RL startsFrom def
+R3112:3114 rl RL lhs syndef
+R3116:3116 rl <> F var
+R3107:3109 rl <> rho var
+R3103:3105 rl <> tau var
+R3127:3127 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3248:3260 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3128:3134 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3144:3152 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3159:3169 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3154:3157 Coq.Init.Peano <> :nat_scope:x_'<='_x not
+R3153:3153 rl <> i var
+R3158:3158 rl <> n var
+R3185:3195 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3170:3178 rl RL completeN def
+R3184:3184 rl <> n var
+R3180:3182 rl <> tau var
+R3214:3224 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3201:3203 Coq.Init.Logic <> :type_scope:x_'='_x not
+R3196:3198 rl <> tau var
+R3200:3200 rl <> i var
+R3204:3207 Coq.Init.Datatypes <> Some constr
+R3209:3213 rl <> gamma var
+R3225:3229 rl F SatML defax
+R3242:3244 rl RL rhs syndef
+R3246:3246 rl <> F var
+R3237:3239 rl <> rho var
+R3231:3235 rl <> gamma var
+R3261:3270 rl RL isInfinite def
+R3272:3274 rl <> tau var
+def 3335:3339 RL SatTS
+R3346:3354 rl RL RLFormula def
+R3471:3475 rl RL SatRL def
+R3485:3485 rl <> F var
+R3481:3483 rl <> rho var
+R3477:3479 rl <> tau var
+R3449:3456 rl RL complete def
+R3458:3460 rl <> tau var
+R3413:3422 rl RL startsFrom def
+R3433:3435 rl RL lhs syndef
+R3437:3437 rl <> F var
+R3428:3430 rl <> rho var
+R3424:3426 rl <> tau var
+R3393:3398 rl RL wfPath def
+R3400:3402 rl <> tau var
+def 3548:3554 RL SatTS_G
+R3561:3564 Coq.Init.Datatypes <> list ind
+R3566:3574 rl RL RLFormula def
+R3611:3615 rl RL SatTS def
+R3617:3617 rl <> F var
+R3601:3602 Coq.Lists.List <> In def
+R3606:3606 rl <> G var
+R3604:3604 rl <> F var
+def 3663:3677 RL ML_val_relation
+R3686:3694 rl F MLFormula defax
+R3704:3712 rl F Valuation def
+R3736:3744 rl F MLFormula defax
+R3755:3763 rl F Valuation def
+R3813:3817 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R3794:3798 rl F SatML defax
+R3810:3812 rl <> phi var
+R3806:3808 rl <> rho var
+R3800:3804 rl <> gamma var
+R3818:3822 rl F SatML defax
+R3835:3838 rl <> phi' var
+R3830:3833 rl <> rho' var
+R3824:3828 rl <> gamma var
+ax 3881:3894 RL RL_alpha_equiv
+R3911:3919 rl RL RLFormula def
+R3898:3906 rl RL RLFormula def
+ax 3939:3955 RL RL_alpha_equiv_ML
+R4043:4049 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4054:4063 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4064:4064 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4093:4098 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4129:4129 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4065:4079 rl RL ML_val_relation def
+R4089:4092 rl <> rho' var
+R4087:4087 rl <> g var
+R4083:4085 rl <> rho var
+R4081:4081 rl <> f var
+R4099:4113 rl RL ML_val_relation def
+R4125:4128 rl <> rho' var
+R4122:4123 rl <> g' var
+R4118:4120 rl <> rho var
+R4115:4116 rl <> f' var
+R3987:4000 rl RL RL_alpha_equiv defax
+R4014:4017 rl RL ::x_'=>'_x not
+R4013:4013 rl <> g var
+R4018:4019 rl <> g' var
+R4004:4007 rl RL ::x_'=>'_x not
+R4003:4003 rl <> f var
+R4008:4009 rl <> f' var
+ax 4142:4159 RL RL_alpha_equiv_sym
+R4209:4222 rl RL RL_alpha_equiv defax
+R4227:4227 rl <> F var
+R4224:4225 rl <> F' var
+R4186:4199 rl RL RL_alpha_equiv defax
+R4203:4204 rl <> F' var
+R4201:4201 rl <> F var
+ax 4246:4262 RL RL_alpha_equiv_wf
+R4327:4335 rl RL wfFormula def
+R4337:4338 rl <> F' var
+R4304:4317 rl RL RL_alpha_equiv defax
+R4321:4322 rl <> F' var
+R4319:4319 rl <> F var
+R4289:4297 rl RL wfFormula def
+R4299:4299 rl <> F var
+def 4381:4396 RL RL_alpha_equiv_S
+R4406:4409 Coq.Init.Datatypes <> list ind
+R4411:4419 rl RL RLFormula def
+R4436:4436 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4508:4517 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4589:4589 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4457:4463 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4469:4470 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4482:4485 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4471:4472 Coq.Lists.List <> In def
+R4480:4481 rl <> S' var
+R4474:4478 rl <> F_eqv var
+R4486:4499 rl RL RL_alpha_equiv defax
+R4503:4507 rl <> F_eqv var
+R4501:4501 rl <> F var
+R4447:4448 Coq.Lists.List <> In def
+R4452:4452 rl <> S var
+R4450:4450 rl <> F var
+R4547:4553 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4555:4556 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4563:4566 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R4557:4558 Coq.Lists.List <> In def
+R4562:4562 rl <> S var
+R4560:4560 rl <> F var
+R4567:4580 rl RL RL_alpha_equiv defax
+R4588:4588 rl <> F var
+R4582:4586 rl <> F_eqv var
+R4532:4533 Coq.Lists.List <> In def
+R4541:4542 rl <> S' var
+R4535:4539 rl <> F_eqv var
+def 4645:4657 RL disjoint_vars
+R4671:4679 rl F MLFormula defax
+R4733:4734 Coq.Init.Logic <> :type_scope:'~'_x not
+R4735:4736 Coq.Lists.List <> In def
+R4741:4751 rl F getFreeVars defax
+R4753:4756 rl <> phi' var
+R4738:4738 rl <> x var
+R4707:4708 Coq.Lists.List <> In def
+R4713:4723 rl F getFreeVars defax
+R4725:4727 rl <> phi var
+R4710:4710 rl <> x var
+def 4776:4790 RL disjoint_set_RL
+R4797:4805 rl RL RLFormula def
+R4813:4816 Coq.Init.Datatypes <> list ind
+R4818:4820 rl F Var defax
+R4858:4859 Coq.Init.Logic <> :type_scope:'~'_x not
+R4860:4861 Coq.Lists.List <> In def
+R4866:4873 rl RL FreeVars def
+R4875:4875 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R4881:4882 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R4888:4888 Coq.Lists.List ListNotations :list_scope:'['_x_';'_'..'_';'_x_']' not
+R4883:4885 rl RL rhs syndef
+R4887:4887 rl <> F var
+R4876:4878 rl RL lhs syndef
+R4880:4880 rl <> F var
+R4863:4863 rl <> x var
+R4848:4849 Coq.Lists.List <> In def
+R4853:4853 rl <> V var
+R4851:4851 rl <> x var
+def 4908:4923 RL disjoint_vars_RL
+R4933:4941 rl RL RLFormula def
+R4958:4970 rl RL disjoint_vars def
+R4981:4983 rl RL lhs syndef
+R4985:4986 rl <> F' var
+R4973:4975 rl RL lhs syndef
+R4977:4977 rl <> F var
+def 5006:5024 RL disjoint_vars_rules
+R5032:5035 Coq.Init.Datatypes <> list ind
+R5037:5045 rl RL RLFormula def
+R5053:5061 rl RL RLFormula def
+R5100:5115 rl RL disjoint_vars_RL def
+R5123:5123 rl <> F var
+R5117:5121 rl <> alpha var
+R5085:5086 Coq.Lists.List <> In def
+R5094:5095 rl <> S' var
+R5088:5092 rl <> alpha var
+prf 5151:5170 RL disjoint_vars_RL_sym
+R5218:5222 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R5197:5212 rl RL disjoint_vars_RL def
+R5216:5217 rl <> F' var
+R5214:5214 rl <> F var
+R5223:5238 rl RL disjoint_vars_RL def
+R5243:5243 rl <> F var
+R5240:5241 rl <> F' var
+R5300:5315 rl RL disjoint_vars_RL def
+R5318:5330 rl RL disjoint_vars def
+R5362:5364 Coq.Init.Logic <> not def
+R5424:5425 rl <> <> modtype

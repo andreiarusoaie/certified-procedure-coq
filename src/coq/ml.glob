@@ -1,0 +1,253 @@
+DIGEST 5ada83b7ccf319eaf20e353e065b9ca1
+Fml
+R15:18 Coq.Lists.List <> <> lib
+R37:45 Coq.Logic.Classical <> <> lib
+R64:68 Coq.omega.Omega <> <> lib
+modtype 86:93 <> Formulas
+ax 153:157 Formulas State
+ax 181:185 Formulas Model
+ax 209:211 Formulas Var
+def 236:244 Formulas Valuation
+R263:267 ml Formulas Model defax
+R256:258 ml Formulas Var defax
+ax 314:319 Formulas var_eq
+R337:340 Coq.Init.Datatypes <> bool ind
+R330:332 ml Formulas Var defax
+R323:325 ml Formulas Var defax
+ax 353:363 Formulas var_eq_true
+R396:400 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R389:391 Coq.Init.Logic <> :type_scope:x_'='_x not
+R379:384 ml Formulas var_eq defax
+R388:388 ml <> y var
+R386:386 ml <> x var
+R392:395 Coq.Init.Datatypes <> true constr
+R402:404 Coq.Init.Logic <> :type_scope:x_'='_x not
+R401:401 ml <> x var
+R405:405 ml <> y var
+ax 418:429 Formulas var_eq_false
+R463:467 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R455:457 Coq.Init.Logic <> :type_scope:x_'='_x not
+R445:450 ml Formulas var_eq defax
+R454:454 ml <> y var
+R452:452 ml <> x var
+R458:462 Coq.Init.Datatypes <> false constr
+R469:472 Coq.Init.Logic <> :type_scope:x_'<>'_x not
+R468:468 ml <> x var
+R473:473 ml <> y var
+ax 486:496 Formulas var_eq_refl
+R520:522 Coq.Init.Logic <> :type_scope:x_'='_x not
+R510:515 ml Formulas var_eq defax
+R519:519 ml <> x var
+R517:517 ml <> x var
+R523:526 Coq.Init.Datatypes <> true constr
+ax 583:591 Formulas MLFormula
+ax 615:619 Formulas AndML
+R649:657 ml Formulas MLFormula defax
+R636:644 ml Formulas MLFormula defax
+R623:631 ml Formulas MLFormula defax
+ax 674:681 Formulas ExistsML
+R710:718 ml Formulas MLFormula defax
+R697:705 ml Formulas MLFormula defax
+R685:688 Coq.Init.Datatypes <> list ind
+R690:692 ml Formulas Var defax
+ax 735:743 Formulas ImpliesML
+R774:782 ml Formulas MLFormula defax
+R760:768 ml Formulas MLFormula defax
+R747:755 ml Formulas MLFormula defax
+ax 839:843 Formulas SatML
+R869:877 ml Formulas MLFormula defax
+R856:864 ml Formulas Valuation def
+R847:851 ml Formulas State defax
+ax 900:911 Formulas SatML_Exists
+R983:994 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R951:955 ml Formulas SatML defax
+R968:975 ml Formulas ExistsML defax
+R979:981 ml <> phi var
+R977:977 ml <> V var
+R963:965 ml <> rho var
+R957:961 ml <> gamma var
+R995:1001 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1006:1016 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1017:1017 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1053:1066 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1044:1046 Coq.Init.Logic <> :type_scope:x_'='_x not
+R1039:1041 ml <> rho var
+R1043:1043 ml <> v var
+R1047:1050 ml <> rho' var
+R1052:1052 ml <> v var
+R1028:1028 Coq.Init.Logic <> :type_scope:'~'_x not
+R1029:1030 Coq.Lists.List <> In def
+R1034:1034 ml <> V var
+R1032:1032 ml <> v var
+R1067:1071 ml Formulas SatML defax
+R1084:1086 ml <> phi var
+R1079:1082 ml <> rho' var
+R1073:1077 ml <> gamma var
+ax 1100:1108 Formulas SatML_And
+R1183:1194 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1151:1155 ml Formulas SatML defax
+R1168:1172 ml Formulas AndML defax
+R1178:1181 ml <> phi' var
+R1174:1176 ml <> phi var
+R1163:1165 ml <> rho var
+R1157:1161 ml <> gamma var
+R1214:1217 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1195:1199 ml Formulas SatML defax
+R1211:1213 ml <> phi var
+R1207:1209 ml <> rho var
+R1201:1205 ml <> gamma var
+R1218:1222 ml Formulas SatML defax
+R1234:1237 ml <> phi' var
+R1230:1232 ml <> rho var
+R1224:1228 ml <> gamma var
+ax 1251:1263 Formulas SatML_Implies
+R1342:1354 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1398:1398 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1306:1310 ml Formulas SatML defax
+R1323:1331 ml Formulas ImpliesML defax
+R1337:1340 ml <> phi' var
+R1333:1335 ml <> phi var
+R1318:1320 ml <> rho var
+R1312:1316 ml <> gamma var
+R1378:1382 ml Formulas SatML defax
+R1394:1397 ml <> phi' var
+R1390:1392 ml <> rho var
+R1384:1388 ml <> gamma var
+R1355:1359 ml Formulas SatML defax
+R1371:1373 ml <> phi var
+R1367:1369 ml <> rho var
+R1361:1365 ml <> gamma var
+def 1441:1447 Formulas ValidML
+R1456:1464 ml Formulas MLFormula defax
+R1500:1504 ml Formulas SatML defax
+R1516:1518 ml <> phi var
+R1512:1514 ml <> rho var
+R1506:1510 ml <> gamma var
+ax 1564:1574 Formulas getFreeVars
+R1591:1594 Coq.Init.Datatypes <> list ind
+R1596:1598 ml Formulas Var defax
+R1578:1586 ml Formulas MLFormula defax
+def 1647:1651 Formulas EClos
+R1660:1668 ml Formulas MLFormula defax
+R1680:1687 ml Formulas ExistsML defax
+R1707:1709 ml <> phi var
+R1690:1700 ml Formulas getFreeVars defax
+R1702:1704 ml <> phi var
+ax 1746:1753 Formulas encoding
+R1770:1778 ml Formulas MLFormula defax
+R1757:1765 ml Formulas MLFormula defax
+ax 1827:1838 Formulas Proposition1
+R1908:1919 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1877:1881 ml Formulas SatML defax
+R1895:1902 ml Formulas encoding defax
+R1904:1906 ml <> phi var
+R1890:1892 ml <> rho var
+R1883:1888 ml <> gamma' var
+R1920:1926 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1932:1933 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R1934:1938 ml Formulas SatML defax
+R1950:1952 ml <> phi var
+R1946:1948 ml <> rho var
+R1940:1944 ml <> gamma var
+def 2012:2028 Formulas modify_val_on_var
+R2041:2049 ml Formulas Valuation def
+R2057:2059 ml Formulas Var defax
+R2064:2072 ml Formulas Valuation def
+R2095:2100 ml Formulas var_eq defax
+R2104:2104 ml <> z var
+R2102:2102 ml <> x var
+R2124:2126 ml <> rho var
+R2128:2128 ml <> z var
+R2112:2115 ml <> rho' var
+R2117:2117 ml <> x var
+def 2144:2160 Formulas modify_val_on_set
+R2173:2181 ml Formulas Valuation def
+R2189:2192 Coq.Init.Datatypes <> list ind
+R2194:2196 ml Formulas Var defax
+R2201:2209 ml Formulas Valuation def
+R2225:2225 ml <> X var
+R2241:2243 Coq.Init.Datatypes <> nil constr
+R2248:2250 ml <> rho var
+R2261:2264 Coq.Init.Datatypes <> cons constr
+R2274:2290 ml Formulas modify_val_on_var def
+R2324:2327 ml <> rho' var
+R2293:2309 ml <> modify_val_on_set def
+R2315:2318 ml <> rho' var
+R2311:2313 ml <> rho var
+prf 2368:2376 Formulas modify_in
+R2455:2457 Coq.Init.Logic <> :type_scope:x_'='_x not
+R2424:2440 ml Formulas modify_val_on_set def
+R2451:2451 ml <> V var
+R2446:2449 ml <> rho' var
+R2442:2444 ml <> rho var
+R2454:2454 ml <> x var
+R2458:2461 ml <> rho' var
+R2463:2463 ml <> x var
+R2413:2414 Coq.Lists.List <> In def
+R2418:2418 ml <> V var
+R2416:2416 ml <> x var
+R2607:2623 ml Formulas modify_val_on_var def
+R2643:2653 ml Formulas var_eq_refl prfax
+R2643:2653 ml Formulas var_eq_refl prfax
+R2694:2710 ml Formulas modify_val_on_var def
+R2731:2736 ml Formulas var_eq defax
+R2731:2736 ml Formulas var_eq defax
+R2772:2782 ml Formulas var_eq_true prfax
+R2772:2782 ml Formulas var_eq_true prfax
+prf 2907:2919 Formulas modify_not_in
+R3000:3002 Coq.Init.Logic <> :type_scope:x_'='_x not
+R2969:2985 ml Formulas modify_val_on_set def
+R2996:2996 ml <> V var
+R2991:2994 ml <> rho' var
+R2987:2989 ml <> rho var
+R2999:2999 ml <> x var
+R3003:3005 ml <> rho var
+R3007:3007 ml <> x var
+R2956:2957 Coq.Init.Logic <> :type_scope:'~'_x not
+R2958:2959 Coq.Lists.List <> In def
+R2963:2963 ml <> V var
+R2961:2961 ml <> x var
+R3112:3121 Coq.Logic.Classical_Prop <> not_or_and thm
+R3112:3121 Coq.Logic.Classical_Prop <> not_or_and thm
+R3174:3190 ml Formulas modify_val_on_var def
+R3209:3214 ml Formulas var_eq defax
+R3209:3214 ml Formulas var_eq defax
+R3249:3259 ml Formulas var_eq_true prfax
+R3249:3259 ml Formulas var_eq_true prfax
+ax 3384:3394 Formulas modify_Sat1
+R3505:3509 ml Formulas SatML defax
+R3548:3550 ml <> phi var
+R3518:3534 ml Formulas modify_val_on_set def
+R3545:3545 ml <> V var
+R3540:3543 ml <> rho' var
+R3536:3538 ml <> rho var
+R3511:3515 ml <> gamma var
+R3470:3473 Coq.Lists.List <> incl def
+R3493:3493 ml <> V var
+R3476:3486 ml Formulas getFreeVars defax
+R3488:3490 ml <> phi var
+R3439:3443 ml Formulas SatML defax
+R3456:3458 ml <> phi var
+R3451:3454 ml <> rho' var
+R3445:3449 ml <> gamma var
+ax 3566:3576 Formulas modify_Sat2
+R3708:3712 ml Formulas SatML defax
+R3751:3753 ml <> phi var
+R3721:3737 ml Formulas modify_val_on_set def
+R3748:3748 ml <> V var
+R3743:3746 ml <> rho' var
+R3739:3741 ml <> rho var
+R3714:3718 ml <> gamma var
+R3688:3689 Coq.Init.Logic <> :type_scope:'~'_x not
+R3690:3691 Coq.Lists.List <> In def
+R3695:3695 ml <> V var
+R3693:3693 ml <> x var
+R3662:3663 Coq.Lists.List <> In def
+R3668:3678 ml Formulas getFreeVars defax
+R3680:3682 ml <> phi var
+R3665:3665 ml <> x var
+R3621:3625 ml Formulas SatML defax
+R3637:3639 ml <> phi var
+R3633:3635 ml <> rho var
+R3627:3631 ml <> gamma var
+R3767:3774 ml <> <> modtype
